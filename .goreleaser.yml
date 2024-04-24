@@ -1,0 +1,57 @@
+---
+project_name: kaytu
+
+release:
+  github:
+    owner: kaytu-io
+    name: kaytu
+
+checksum: {}
+
+builds:
+  - id: linux
+    binary: kaytu
+    ldflags:
+      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    main: ./main.go
+  - id: darwin
+    binary: kaytu
+    ldflags:
+      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./main.go
+  - id: windows
+    binary: kaytu
+    ldflags:
+      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+    goos:
+      - windows
+    goarch:
+      - amd64
+    main: ./main.go
+archives:
+  - id: binary
+    format: binary
+  - id: default
+    format: tar.gz
+    builds: [linux, darwin]
+
+signs:
+  - cmd: cosign
+    stdin: "{{ .Env.COSIGN_PWD }}"
+    args:
+      - "sign-blob"
+      - "--key=env://COSIGN_SECRET"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
