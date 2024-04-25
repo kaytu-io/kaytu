@@ -43,6 +43,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(predef.VersionCmd)
+	rootCmd.Flags().String("profile", "", "AWS profile for authentication")
 }
 
 func Execute() {

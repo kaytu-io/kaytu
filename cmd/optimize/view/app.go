@@ -279,47 +279,19 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 	}
 	m.jobChan <- job
 
-	if res.RightSizing == nil {
+	if res.RightSizing.Current.InstanceType == "" {
 		item.OptimizationLoading = false
 		m.optimizationsTable.SendItem(item)
 		return
 	}
 
-	res.RightSizing.AvgVolumesThroughputUtilization = map[string]float64{}
-	res.RightSizing.MinVolumesThroughputUtilization = map[string]float64{}
-	res.RightSizing.MaxVolumesThroughputUtilization = map[string]float64{}
-	res.RightSizing.AvgVolumesIOPSUtilization = map[string]float64{}
-	res.RightSizing.MinVolumesIOPSUtilization = map[string]float64{}
-	res.RightSizing.MaxVolumesIOPSUtilization = map[string]float64{}
-	for volumeID, v := range req.VolumeMetrics {
-		readBytesAvg := averageOfDatapoints(v["VolumeReadBytes"])
-		writeBytesAvg := averageOfDatapoints(v["VolumeWriteBytes"])
-		res.RightSizing.AvgVolumesThroughputUtilization[volumeID] = (readBytesAvg + writeBytesAvg) / 1000000.0
-		readBytesMin := minOfDatapoints(v["VolumeReadBytes"])
-		writeBytesMin := minOfDatapoints(v["VolumeWriteBytes"])
-		res.RightSizing.MinVolumesThroughputUtilization[volumeID] = (readBytesMin + writeBytesMin) / 1000000.0
-		readBytesMax := maxOfDatapoints(v["VolumeReadBytes"])
-		writeBytesMax := maxOfDatapoints(v["VolumeWriteBytes"])
-		res.RightSizing.MaxVolumesThroughputUtilization[volumeID] = (readBytesMax + writeBytesMax) / 1000000.0
-
-		readOpsAvg := averageOfDatapoints(v["VolumeReadOps"])
-		writeOpsAvg := averageOfDatapoints(v["VolumeWriteOps"])
-		res.RightSizing.AvgVolumesIOPSUtilization[volumeID] = readOpsAvg + writeOpsAvg
-		readOpsMin := minOfDatapoints(v["VolumeReadOps"])
-		writeOpsMin := minOfDatapoints(v["VolumeWriteOps"])
-		res.RightSizing.MinVolumesIOPSUtilization[volumeID] = readOpsMin + writeOpsMin
-		readOpsMax := maxOfDatapoints(v["VolumeReadOps"])
-		writeOpsMax := maxOfDatapoints(v["VolumeWriteOps"])
-		res.RightSizing.MaxVolumesIOPSUtilization[volumeID] = readOpsMax + writeOpsMax
-	}
-
 	m.optimizationsTable.SendItem(OptimizationItem{
-		Instance:                  item.Instance,
-		Volumes:                   volumesResp.Volumes,
-		Region:                    awsConf.Region,
-		OptimizationLoading:       false,
-		RightSizingRecommendation: *res.RightSizing,
-		Preferences:               item.Preferences,
+		Instance:            item.Instance,
+		Volumes:             volumesResp.Volumes,
+		Region:              awsConf.Region,
+		OptimizationLoading: false,
+		Wastage:             *res,
+		Preferences:         item.Preferences,
 	})
 }
 

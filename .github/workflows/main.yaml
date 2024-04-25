@@ -148,3 +148,37 @@ jobs:
           asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_signed.zip
           asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
           asset_content_type: application/zip
+
+      - name: update cli version in homebrew
+        run: |
+          sed -i "s+VERSION_HOMEBREW+$(echo "${{ steps.tag_version.outputs.new_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
+          
+          sha256sum build/ktucli-macos-amd64 | awk '{print $1}' > newHash
+          sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
+          
+          sha256sum build/ktucli-macos-arm64 | awk '{print $1}' > newHash
+          sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
+          
+          sha256sum build/ktucli-linux-arm64 | awk '{print $1}' > newHash
+          sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
+          
+          sha256sum build/ktucli-linux-amd64 | awk '{print $1}' > newHash
+          sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
+          
+          git clone https://x-access-token:${{ secrets.GITHUBCI_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
+          
+          cd homebrew-cli-tap
+          
+          git remote add homebrew-cli-tap-origin https://x-access-token:${{ secrets.GITHUBCI_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
+          git config user.name 'Kaytu Developer'
+          git config user.email 'dev@kaytu.io'
+          
+          cp ../homebrew/kaytu.rb kaytu.rb  
+          
+          git checkout main
+          git add .
+          git commit -a -m "update cli version"
+          git push homebrew-cli-tap-origin 
+          
+          cd ..
+          rm -rf homebrew-cli-tap

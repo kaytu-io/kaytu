@@ -22,73 +22,197 @@ type Ec2InstanceDetail struct {
 	help             HelpView
 }
 
+func PFloat64ToString(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.2f", *v)
+}
+
+func Percentage(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.2f%%", *v)
+}
+
+func PNetworkThroughputMbps(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	vv := *v / 1000000 * 8
+	return fmt.Sprintf("%.2f Mbps", vv)
+}
+
+func PNetworkThroughputMBps(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	vv := *v / 1000000
+	return fmt.Sprintf("%.2f MB/s", vv)
+}
+
+func NetworkThroughputMbps(v float64) string {
+	return fmt.Sprintf("%.2f Mbps", v/1000000.0)
+}
+
+func IOPS(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.2f", *v)
+}
+
+func SizeByteToGB(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	vv := *v // / 1000000000
+	return fmt.Sprintf("%d GB", vv)
+}
+
 func ExtractProperties(item OptimizationItem) map[string][]table.Row {
+	ifRecommendationExists := func(f func() string) string {
+		if item.Wastage.RightSizing.Recommended != nil {
+			return f()
+		}
+		return ""
+	}
+
 	res := map[string][]table.Row{
 		*item.Instance.InstanceId: {
+			{
+				"",
+				"",
+				"Average",
+				"Min",
+				"Max",
+				"",
+			},
 			{
 				"Region",
 				item.Region,
 				"",
 				"",
+				"",
+				item.Region,
 			},
 			{
-				"Instance Type",
+				"Instance Size",
 				string(item.Instance.InstanceType),
 				"",
-				item.RightSizingRecommendation.TargetInstanceType,
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return item.Wastage.RightSizing.Recommended.InstanceType
+				}),
 			},
 			{
-				"vCPU",
-				fmt.Sprintf("%v", *item.Instance.CpuOptions.CoreCount**item.Instance.CpuOptions.ThreadsPerCore),
-				item.RightSizingRecommendation.AvgCPUUsage,
-				item.RightSizingRecommendation.TargetCores,
+				"Compute",
+				"",
+				"",
+				"",
+				"",
+				"",
+			},
+			{
+				"  vCPU",
+				fmt.Sprintf("%d", item.Wastage.RightSizing.Current.VCPU),
+				Percentage(item.Wastage.RightSizing.VCPU.Avg),
+				Percentage(item.Wastage.RightSizing.VCPU.Min),
+				Percentage(item.Wastage.RightSizing.VCPU.Max),
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("%d", item.Wastage.RightSizing.Recommended.VCPU)
+				}),
+			},
+			{
+				"  Processor(s)",
+				item.Wastage.RightSizing.Current.Processor,
+				"",
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return item.Wastage.RightSizing.Recommended.Processor
+				}),
+			},
+			{
+				"  Architecture",
+				item.Wastage.RightSizing.Current.Architecture,
+				"",
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return item.Wastage.RightSizing.Recommended.Architecture
+				}),
 			},
 			{
 				"Memory",
-				item.RightSizingRecommendation.CurrentMemory,
-				item.RightSizingRecommendation.MaxMemoryUsagePercentage,
-				item.RightSizingRecommendation.TargetMemory,
+				fmt.Sprintf("%d", item.Wastage.RightSizing.Current.Memory),
+				Percentage(item.Wastage.RightSizing.Memory.Avg),
+				Percentage(item.Wastage.RightSizing.Memory.Min),
+				Percentage(item.Wastage.RightSizing.Memory.Max),
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("%d", item.Wastage.RightSizing.Recommended.Memory)
+				}),
 			},
 			{
-				"Network Bandwidth",
-				item.RightSizingRecommendation.CurrentNetworkPerformance,
-				item.RightSizingRecommendation.AvgNetworkBandwidth,
-				item.RightSizingRecommendation.TargetNetworkPerformance,
+				"Storage Limits",
+				"",
+				"",
+				"",
+				"",
+				"",
 			},
 			{
-				"EBS Bandwidth",
-				item.RightSizingRecommendation.CurrentEBSBandwidth,
-				item.RightSizingRecommendation.AvgEBSBandwidth,
-				item.RightSizingRecommendation.TargetEBSBandwidth,
+				"  EBS Bandwidth",
+				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.EBSBandwidth),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Avg),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Min),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Max),
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.EBSBandwidth)
+				}),
+			},
+			{
+				"Network Performance",
+				"",
+				"",
+				"",
+				"",
+				"",
+			},
+			{
+				"  Throughput",
+				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.NetworkThroughput),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Avg),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Min),
+				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Max),
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.NetworkThroughput)
+				}),
+			},
+			{
+				"  ENA",
+				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.ENASupported),
+				"",
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.ENASupported)
+				}),
 			},
 		},
 	}
 
 	for _, v := range item.Volumes {
 		vid := hash.HashString(*v.VolumeId)
-		volumeSize := ""
-		volumeThroughput := ""
-		targetThroughput := "Not applicable"
-		volumeIops := ""
-		targetIops := "Not applicable"
-		targetBaselineIops := fmt.Sprintf("%d", item.RightSizingRecommendation.VolumesTargetBaselineIOPS[vid])
-		targetBaselineThroughput := fmt.Sprintf("%.2f MB/s", item.RightSizingRecommendation.VolumesTargetBaselineThroughput[vid]/8.0)
-		if v.Size != nil {
-			volumeSize = fmt.Sprintf("%d GB", *v.Size)
-		}
-		if v.Throughput != nil {
-			volumeThroughput = fmt.Sprintf("%d MB/s", *v.Throughput)
-		}
-		if vt := item.RightSizingRecommendation.VolumesTargetTypes[vid]; vt == "gp3" {
-			targetThroughput = fmt.Sprintf("%.2f MB/s", item.RightSizingRecommendation.VolumesTargetThroughput[vid]/8.0)
+		ifVolumeRecommendationExists := func(f func() string) string {
+			if item.Wastage.VolumeRightSizing[vid].Recommended != nil {
+				return f()
+			}
+			return ""
 		}
 
-		if v.Iops != nil {
-			volumeIops = fmt.Sprintf("%d", *v.Iops)
-		}
-		if vt := item.RightSizingRecommendation.VolumesTargetTypes[vid]; vt == "io1" || vt == "io2" || vt == "gp3" {
-			targetIops = fmt.Sprintf("%d", item.RightSizingRecommendation.VolumesTargetIOPS[vid])
-		}
 		res[*v.VolumeId] = []table.Row{
 			{
 				"",
@@ -100,54 +224,83 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			},
 			{
 				"  EBS Storage Tier",
-				string(v.VolumeType),
+				string(item.Wastage.VolumeRightSizing[vid].Current.Tier),
 				"",
 				"",
 				"",
-				string(item.RightSizingRecommendation.VolumesTargetTypes[vid]),
+				ifVolumeRecommendationExists(func() string {
+					return string(item.Wastage.VolumeRightSizing[vid].Recommended.Tier)
+				}),
 			},
 			{
-				"Volume Size",
-				volumeSize,
+				"  Volume Size (GB)",
+				SizeByteToGB(item.Wastage.VolumeRightSizing[vid].Current.VolumeSize),
 				"",
 				"",
 				"",
-				fmt.Sprintf("%d GB", item.RightSizingRecommendation.VolumesTargetSizes[vid]),
+				ifVolumeRecommendationExists(func() string {
+					return SizeByteToGB(item.Wastage.VolumeRightSizing[vid].Recommended.VolumeSize)
+				}),
 			},
 			{
-				"IOPs",
-				volumeIops,
-				fmt.Sprintf("Avg: %.2f, Min: %.2f, Max: %.2f", item.RightSizingRecommendation.AvgVolumesIOPSUtilization[vid],
-					item.RightSizingRecommendation.MinVolumesIOPSUtilization[vid], item.RightSizingRecommendation.MaxVolumesIOPSUtilization[vid]),
-				fmt.Sprintf("%s / %s", targetBaselineIops, targetIops),
+				"IOPS",
+				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.IOPS()),
+				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Avg),
+				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Min),
+				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Max),
+				ifVolumeRecommendationExists(func() string {
+					return fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Recommended.IOPS())
+				}),
 			},
 			{
-				"IOPS (Baseline / Provisioned)",
-				volumeIops,
-				fmt.Sprintf("Avg: %.2f, Min: %.2f, Max: %.2f", item.RightSizingRecommendation.AvgVolumesIOPSUtilization[vid],
-					item.RightSizingRecommendation.MinVolumesIOPSUtilization[vid], item.RightSizingRecommendation.MaxVolumesIOPSUtilization[vid]),
-				fmt.Sprintf("%s / %s", targetBaselineIops, targetIops),
+				"  Baseline IOPS",
+				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.BaselineIOPS),
+				"",
+				"",
+				"",
+				ifVolumeRecommendationExists(func() string {
+					return fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Recommended.BaselineIOPS)
+				}),
 			},
 			{
-				"IOPS (Baseline / Provisioned)",
-				volumeIops,
-				fmt.Sprintf("Avg: %.2f, Min: %.2f, Max: %.2f", item.RightSizingRecommendation.AvgVolumesIOPSUtilization[vid],
-					item.RightSizingRecommendation.MinVolumesIOPSUtilization[vid], item.RightSizingRecommendation.MaxVolumesIOPSUtilization[vid]),
-				fmt.Sprintf("%s / %s", targetBaselineIops, targetIops),
+				"  Provisioned IOPS",
+				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.ProvisionedIOPS),
+				"",
+				"",
+				"",
+				ifVolumeRecommendationExists(func() string {
+					return fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Recommended.ProvisionedIOPS)
+				}),
 			},
 			{
-				"IOPS (Baseline / Provisioned)",
-				volumeIops,
-				fmt.Sprintf("Avg: %.2f, Min: %.2f, Max: %.2f", item.RightSizingRecommendation.AvgVolumesIOPSUtilization[vid],
-					item.RightSizingRecommendation.MinVolumesIOPSUtilization[vid], item.RightSizingRecommendation.MaxVolumesIOPSUtilization[vid]),
-				fmt.Sprintf("%s / %s", targetBaselineIops, targetIops),
+				"Throughput (MB/s)",
+				fmt.Sprintf("%.2f", item.Wastage.VolumeRightSizing[vid].Current.Throughput()),
+				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Avg),
+				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Min),
+				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Max),
+				ifVolumeRecommendationExists(func() string {
+					return fmt.Sprintf("%.2f", item.Wastage.VolumeRightSizing[vid].Recommended.Throughput())
+				}),
 			},
 			{
-				"Throughput (Baseline / Provisioned)",
-				volumeThroughput,
-				fmt.Sprintf("Avg: %.2f MB/s, Min: %.2f, Max: %.2f", item.RightSizingRecommendation.AvgVolumesThroughputUtilization[vid]/8.0,
-					item.RightSizingRecommendation.MinVolumesThroughputUtilization[vid]/8.0, item.RightSizingRecommendation.MaxVolumesThroughputUtilization[vid]/8.0),
-				fmt.Sprintf("%s / %s", targetBaselineThroughput, targetThroughput),
+				"  Baseline Throughput",
+				NetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Current.BaselineThroughput),
+				"",
+				"",
+				"",
+				ifVolumeRecommendationExists(func() string {
+					return NetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Recommended.BaselineThroughput)
+				}),
+			},
+			{
+				"  Provisioned Throughput",
+				PNetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Current.ProvisionedThroughput),
+				"",
+				"",
+				"",
+				ifVolumeRecommendationExists(func() string {
+					return PNetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Recommended.ProvisionedThroughput)
+				}),
 			},
 		}
 	}
@@ -156,6 +309,13 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 }
 
 func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetail {
+	ifRecommendationExists := func(f func() string) string {
+		if item.Wastage.RightSizing.Recommended != nil {
+			return f()
+		}
+		return ""
+	}
+
 	deviceColumns := []table.Column{
 		{Title: "DeviceID", Width: 30},
 		{Title: "ResourceType", Width: 20},
@@ -167,27 +327,45 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		{
 			*item.Instance.InstanceId,
 			"EC2 Instance",
-			fmt.Sprintf("$%.2f", item.RightSizingRecommendation.CurrentCost),
-			fmt.Sprintf("$%.2f", item.RightSizingRecommendation.TargetCost),
-			fmt.Sprintf("$%.2f", item.RightSizingRecommendation.CurrentCost-item.RightSizingRecommendation.TargetCost),
+			fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Current.Cost),
+			ifRecommendationExists(func() string {
+				return fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Recommended.Cost)
+			}),
+			ifRecommendationExists(func() string {
+				return fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Current.Cost-item.Wastage.RightSizing.Recommended.Cost)
+			}),
 		},
 	}
 	for _, v := range item.Instance.BlockDeviceMappings {
-		saving := item.RightSizingRecommendation.VolumesCurrentCosts[hash.HashString(*v.Ebs.VolumeId)] - item.RightSizingRecommendation.VolumesTargetCosts[hash.HashString(*v.Ebs.VolumeId)]
+		ifRecommendationExists := func(f func() string) string {
+			if item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended != nil {
+				return f()
+			}
+			return ""
+		}
+
+		saving := 0.0
+		if item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended != nil {
+			saving = item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Current.Cost - item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended.Cost
+		}
 		deviceRows = append(deviceRows, table.Row{
 			*v.Ebs.VolumeId,
 			"EBS Volume",
-			fmt.Sprintf("$%.2f", item.RightSizingRecommendation.VolumesCurrentCosts[hash.HashString(*v.Ebs.VolumeId)]),
-			fmt.Sprintf("$%.2f", item.RightSizingRecommendation.VolumesTargetCosts[hash.HashString(*v.Ebs.VolumeId)]),
+			fmt.Sprintf("$%.2f", item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Current.Cost),
+			ifRecommendationExists(func() string {
+				return fmt.Sprintf("$%.2f", item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended.Cost)
+			}),
 			fmt.Sprintf("$%.2f", saving),
 		})
 	}
 
 	detailColumns := []table.Column{
-		{Title: "Properties", Width: 30},
+		{Title: "", Width: 30},
 		{Title: "Current", Width: 20},
-		{Title: "Usage", Width: 60},
-		{Title: "Suggested", Width: 30},
+		{Title: "", Width: 10},
+		{Title: "Usage", Width: 10},
+		{Title: "", Width: 10},
+		{Title: "Recommendation", Width: 30},
 	}
 
 	model := Ec2InstanceDetail{
@@ -272,7 +450,7 @@ func (m *Ec2InstanceDetail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Ec2InstanceDetail) View() string {
 	return baseStyle.Render(m.deviceTable.View()) + "\n" +
-		wordwrap.String(m.item.RightSizingRecommendation.Description, m.width) + "\n" +
+		wordwrap.String(m.item.Wastage.RightSizing.Description, m.width) + "\n" +
 		baseStyle.Render(m.detailTable.View()) + "\n" +
 		m.help.String()
 }
@@ -282,12 +460,12 @@ func (m *Ec2InstanceDetail) IsResponsive() bool {
 }
 
 func (m *Ec2InstanceDetail) SetHeight(height int) {
-	l := strings.Count(wordwrap.String(m.item.RightSizingRecommendation.Description, m.width), "\n")
+	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n")
 	m.height = height
 	m.help.SetHeight(m.height - (len(m.detailTable.Rows()) + 4 + len(m.deviceTable.Rows()) + 4 + l))
 }
 
 func (m *Ec2InstanceDetail) MinHeight() int {
-	l := strings.Count(wordwrap.String(m.item.RightSizingRecommendation.Description, m.width), "\n")
+	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n")
 	return len(m.detailTable.Rows()) + 4 + len(m.deviceTable.Rows()) + 4 + m.help.MinHeight() + l
 }

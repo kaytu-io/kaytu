@@ -1,7 +1,6 @@
 package flags
 
 import (
-	"fmt"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -13,7 +12,7 @@ import (
 func ReadStringFlag(cmd *cobra.Command, name string) string {
 	name = strings.ReplaceAll(strcase.ToSnake(name), "_", "-")
 	if cmd.Flags().Lookup(name) == nil {
-		fmt.Println("cant find", name)
+		return ""
 	}
 	value := cmd.Flags().Lookup(name).Value.String()
 	if strings.HasPrefix(value, "@") {

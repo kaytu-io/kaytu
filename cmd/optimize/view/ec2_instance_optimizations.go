@@ -24,8 +24,8 @@ type OptimizationItem struct {
 	Region              string
 	OptimizationLoading bool
 
-	Preferences               []preferences2.PreferenceItem
-	RightSizingRecommendation wastage.RightSizingRecommendation
+	Preferences []preferences2.PreferenceItem
+	Wastage     wastage.EC2InstanceWastageResponse
 }
 
 type Ec2InstanceOptimizations struct {
@@ -137,9 +137,14 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						platform = *i.Instance.PlatformDetails
 					}
 
-					totalSaving := i.RightSizingRecommendation.Saving
-					for _, s := range i.RightSizingRecommendation.VolumesSaving {
-						totalSaving += s
+					totalSaving := 0.0
+					if i.Wastage.RightSizing.Recommended != nil {
+						totalSaving = i.Wastage.RightSizing.Current.Cost - i.Wastage.RightSizing.Recommended.Cost
+						for _, s := range i.Wastage.VolumeRightSizing {
+							if s.Recommended != nil {
+								totalSaving += s.Current.Cost - s.Recommended.Cost
+							}
+						}
 					}
 
 					//name := ""
@@ -261,14 +266,18 @@ func (m *Ec2InstanceOptimizations) View() string {
 	totalCost := 0.0
 	savings := 0.0
 	for _, i := range m.items {
-		totalCost += i.RightSizingRecommendation.CurrentCost
-		savings += i.RightSizingRecommendation.Saving
-
-		for _, v := range i.RightSizingRecommendation.VolumesCurrentCosts {
-			totalCost += v
+		totalCost += i.Wastage.RightSizing.Current.Cost
+		if i.Wastage.RightSizing.Recommended != nil {
+			savings += i.Wastage.RightSizing.Current.Cost - i.Wastage.RightSizing.Recommended.Cost
 		}
-		for _, v := range i.RightSizingRecommendation.VolumesCurrentCosts {
-			savings += v
+
+		for _, v := range i.Wastage.VolumeRightSizing {
+			totalCost += v.Current.Cost
+		}
+		for _, v := range i.Wastage.VolumeRightSizing {
+			if v.Recommended != nil {
+				savings += v.Current.Cost - v.Recommended.Cost
+			}
 		}
 	}
 	return "Current runtime cost: " + costStyle.Render(fmt.Sprintf("$%.2f", totalCost)) +
