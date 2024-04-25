@@ -138,17 +138,16 @@ jobs:
 #                    curl --request DELETE \
 #                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
 #                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-      - name: Upload Release Asset amd64 zip
-        id: upload-release-asset-amd64-zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ steps.sign_executable.outputs.upload_url }}
+#      - name: Upload Release Asset amd64 zip
+#        id: upload-release-asset-amd64-zip
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.sign_executable.outputs.upload_url }}
 #          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_signed.zip
-          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
-          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
-          asset_content_type: application/zip
+#          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
+#          asset_content_type: application/zip
 
       - name: update cli version in homebrew
         run: |

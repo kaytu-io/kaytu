@@ -16,7 +16,7 @@ type PreferenceItem struct {
 
 func DefaultPreferences() []PreferenceItem {
 	return []PreferenceItem{
-		{Service: "EC2Instance", Key: "Tenancy", PossibleValues: []string{"", "Host", "Shared", "Dedicated"}},
+		{Service: "EC2Instance", Key: "Tenancy", Pinned: true, PossibleValues: []string{"", "Host", "Shared", "Dedicated"}},
 		{Service: "EC2Instance", Key: "EBSOptimized", PossibleValues: []string{"", "Yes", "No"}},
 		{Service: "EC2Instance", Key: "LicenseModel", PossibleValues: []string{"", "Bring your own license", "No License required"}},
 		{Service: "EC2Instance", Key: "Region", Pinned: true},
