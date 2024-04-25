@@ -45,57 +45,73 @@ type EC2InstanceWastageRequest struct {
 	Preferences     map[string]*string                       `json:"preferences"`
 }
 
+type RightsizingEC2Instance struct {
+	InstanceType      string  `json:"instanceType"`
+	Cost              float64 `json:"cost"`
+	Processor         string  `json:"processor"`
+	Architecture      string  `json:"architecture"`
+	VCPU              int64   `json:"vCPU"`
+	Memory            int64   `json:"memory"`
+	EBSBandwidth      string  `json:"ebsBandwidth"`
+	NetworkThroughput string  `json:"networkThroughput"`
+	ENASupported      string  `json:"enaSupported"`
+}
+
+type Usage struct {
+	Avg *float64
+	Min *float64
+	Max *float64
+}
+
 type RightSizingRecommendation struct {
-	TargetInstanceType string  `json:"targetInstanceType"`
-	Saving             float64 `json:"saving"`
-	CurrentCost        float64 `json:"currentCost"`
-	TargetCost         float64 `json:"targetCost"`
+	Current     RightsizingEC2Instance  `json:"current"`
+	Recommended *RightsizingEC2Instance `json:"recommended"`
 
-	AvgCPUUsage string `json:"avgCPUUsage"`
-	TargetCores string `json:"targetCores"`
+	VCPU              Usage `json:"vCPU"`
+	Memory            Usage `json:"memory"`
+	EBSBandwidth      Usage `json:"ebsBandwidth"`
+	NetworkThroughput Usage `json:"networkThroughput"`
 
-	AvgNetworkBandwidth       string `json:"avgNetworkBandwidth"`
-	TargetNetworkPerformance  string `json:"targetNetworkBandwidth"`
-	CurrentNetworkPerformance string `json:"currentNetworkPerformance"`
+	Description string `json:"description"`
+}
 
-	TargetEBSBandwidth  string `json:"targetEBSBandwidth"`
-	CurrentEBSBandwidth string `json:"currentEBSBandwidth"`
-	AvgEBSBandwidth     string `json:"avgEBSBandwidth"`
+type RightsizingEBSVolume struct {
+	Tier                  types.VolumeType `json:"tier"`
+	VolumeSize            *int32           `json:"volumeSize"`
+	BaselineIOPS          int32            `json:"baselineIOPS"`
+	ProvisionedIOPS       *int32           `json:"provisionedIOPS"`
+	BaselineThroughput    float64          `json:"baselineThroughput"`
+	ProvisionedThroughput *float64         `json:"provisionedThroughput"`
+	Cost                  float64          `json:"cost"`
+}
 
-	MaxMemoryUsagePercentage string `json:"maxMemoryUsagePercentage"`
-	CurrentMemory            string `json:"currentMemory"`
-	TargetMemory             string `json:"targetMemory"`
+func (v RightsizingEBSVolume) IOPS() int32 {
+	val := v.BaselineIOPS
+	if v.ProvisionedIOPS != nil {
+		val += *v.ProvisionedIOPS
+	}
+	return val
+}
 
-	VolumesCurrentSizes map[string]int32 `json:"volumeCurrentSizes"`
-	VolumesTargetSizes  map[string]int32 `json:"volumeTargetSizes"`
+func (v RightsizingEBSVolume) Throughput() float64 {
+	val := v.BaselineThroughput
+	if v.ProvisionedThroughput != nil {
+		val += *v.ProvisionedThroughput
+	}
+	return val
+}
 
-	VolumesCurrentTypes map[string]types.VolumeType `json:"volumeCurrentTypes"`
-	VolumesTargetTypes  map[string]types.VolumeType `json:"volumeTargetTypes"`
+type EBSVolumeRecommendation struct {
+	Current     RightsizingEBSVolume
+	Recommended *RightsizingEBSVolume
 
-	VolumesCurrentIOPS        map[string]int32   `json:"volumeCurrentIOPS"`
-	VolumesTargetBaselineIOPS map[string]int32   `json:"volumeTargetBaselineIOPS"`
-	VolumesTargetIOPS         map[string]int32   `json:"volumeTargetIOPS"`
-	AvgVolumesIOPSUtilization map[string]float64 `json:"avgVolumesIOPSUtilization"`
-	MinVolumesIOPSUtilization map[string]float64 `json:"minVolumesIOPSUtilization"`
-	MaxVolumesIOPSUtilization map[string]float64 `json:"maxVolumesIOPSUtilization"`
-
-	VolumesCurrentThroughput        map[string]float64 `json:"volumeCurrentThroughput"`
-	VolumesTargetBaselineThroughput map[string]float64 `json:"volumeTargetBaselineThroughput"`
-	VolumesTargetThroughput         map[string]float64 `json:"volumeTargetThroughput"`
-	AvgVolumesThroughputUtilization map[string]float64 `json:"avgVolumesThroughputUtilization"`
-	MinVolumesThroughputUtilization map[string]float64 `json:"minVolumesThroughputUtilization"`
-	MaxVolumesThroughputUtilization map[string]float64 `json:"maxVolumesThroughputUtilization"`
-
-	VolumesCurrentCosts map[string]float64 `json:"volumeCurrentCosts"`
-	VolumesTargetCosts  map[string]float64 `json:"volumeTargetCosts"`
-	VolumesSaving       map[string]float64 `json:"volumeSaving"`
+	IOPS       Usage `json:"iops"`
+	Throughput Usage `json:"throughput"`
 
 	Description string `json:"description"`
 }
 
 type EC2InstanceWastageResponse struct {
-	CurrentCost     float64                    `json:"currentCost"`
-	TotalSavings    float64                    `json:"totalSavings"`
-	EbsTotalSavings map[string]float64         `json:"ebsTotalSavings"`
-	RightSizing     *RightSizingRecommendation `json:"rightSizing"`
+	RightSizing       RightSizingRecommendation          `json:"rightSizing"`
+	VolumeRightSizing map[string]EBSVolumeRecommendation `json:"volumes"`
 }
