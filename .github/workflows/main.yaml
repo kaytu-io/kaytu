@@ -75,26 +75,74 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 #          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
 #          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
-#  sign-windows:
-#    runs-on: ubuntu-latest
-#    needs:
-#      - tag
-#      - release
-#    steps:
-#      - name: Download new tag
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: new_tag
-#      - name: Set new tag
-#        id: set_new_tag
-#        run: |
-#          echo "::set-output name=new_tag::$(cat new_tag.txt)"
-#      - uses: robinraju/release-downloader@v1.10
-#        id: download_release_amd64
-#        with:
-#          repository: "kaytu-io/kaytu"
-#          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
-#          latest: true
+  sign-windows:
+    runs-on: ubuntu-latest
+    needs:
+      - tag
+      - release
+    steps:
+      - name: Download new tag
+        uses: actions/download-artifact@v2
+        with:
+          name: new_tag
+      - name: Set new tag
+        id: set_new_tag
+        run: |
+          echo "::set-output name=new_tag::$(cat new_tag.txt)"
+      - uses: robinraju/release-downloader@v1.10
+        id: download_release_amd64
+        with:
+          repository: "kaytu-io/kaytu"
+          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
+          latest: true
+      - name: Add windows zip
+        id: add_windows_zip
+        run: |
+          mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+          mv kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64/kaytu.exe
+          zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+          export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" | jq -r .upload_url)
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+
+          release_id=$(curl --request GET \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}' | jq '.id')
+          echo $release_id
+          assets=$(curl --request GET \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/$release_id/assets \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}')
+          echo $assets
+          amd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe") | .id')
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$amd64 \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          linuxarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_arm64") | .id')
+                    curl --request DELETE \
+                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxarm64 \
+                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          linuxamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_amd64") | .id')
+                    curl --request DELETE \
+                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxamd64 \
+                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          darwinarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_arm64") | .id')
+                    curl --request DELETE \
+                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinarm64 \
+                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          darwinamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_amd64") | .id')
+                    curl --request DELETE \
+                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
+                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+
+      - name: Upload Release Asset amd64 zip
+        id: upload-release-asset-amd64-zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
+          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
+          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
+          asset_content_type: application/zip
 #      - name: Sign executable
 #        id: sign_executable
 #        env:
