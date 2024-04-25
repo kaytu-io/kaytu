@@ -163,15 +163,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"Storage Limits",
-				"",
-				"",
-				"",
-				"",
-				"",
-			},
-			{
-				"  EBS Bandwidth",
+				"EBS Bandwidth",
 				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.EBSBandwidth),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Avg),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Min),

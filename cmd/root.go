@@ -5,11 +5,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/flags"
+	"github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/cmd/optimize/view"
 	"github.com/kaytu-io/kaytu/cmd/predef"
 	awsConfig "github.com/kaytu-io/kaytu/pkg/aws"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	"os"
 )
 
@@ -18,6 +20,21 @@ var rootCmd = &cobra.Command{
 	Use: "kaytu",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		profile := flags.ReadStringFlag(cmd, "profile")
+		preferencesFlag := flags.ReadStringFlag(cmd, "preferences")
+		if len(preferencesFlag) > 0 {
+			cnt, err := os.ReadFile(preferencesFlag)
+			if err != nil {
+				return err
+			}
+			var p []preferences.PreferenceItem
+			err = yaml.Unmarshal(cnt, &p)
+			if err != nil {
+				return err
+			}
+			preferences.DefaultPreferences()
+			preferences.Update(p)
+		}
+
 		cfg, err := awsConfig.GetConfig(context.Background(), "", "", "", "", &profile, nil)
 		if err != nil {
 			return err
@@ -44,6 +61,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(predef.VersionCmd)
 	rootCmd.Flags().String("profile", "", "AWS profile for authentication")
+	rootCmd.Flags().String("preferences", "", "Path to preferences file (yaml)")
 }
 
 func Execute() {
