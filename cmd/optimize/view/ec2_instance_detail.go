@@ -63,6 +63,13 @@ func IOPS(v *float64) string {
 	return fmt.Sprintf("%.2f", *v)
 }
 
+func PInt32ToString(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", *v)
+}
+
 func SizeByteToGB(v *int32) string {
 	if v == nil {
 		return ""
@@ -264,12 +271,12 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			},
 			{
 				"  Provisioned IOPS",
-				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.ProvisionedIOPS),
+				PInt32ToString(item.Wastage.VolumeRightSizing[vid].Current.ProvisionedIOPS),
 				"",
 				"",
 				"",
 				ifVolumeRecommendationExists(func() string {
-					return fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Recommended.ProvisionedIOPS)
+					return PInt32ToString(item.Wastage.VolumeRightSizing[vid].Recommended.ProvisionedIOPS)
 				}),
 			},
 			{

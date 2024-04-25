@@ -45,13 +45,13 @@ archives:
     format: tar.gz
     builds: [linux, darwin]
 
-signs:
-  - cmd: cosign
-    stdin: "{{ .Env.COSIGN_PWD }}"
-    args:
-      - "sign-blob"
-      - "--key=env://COSIGN_SECRET"
-      - "--output-signature=${signature}"
-      - "${artifact}"
-      - "--yes"
-    artifacts: checksum
+#signs:
+#  - cmd: cosign
+#    stdin: "{{ .Env.COSIGN_PWD }}"
+#    args:
+#      - "sign-blob"
+#      - "--key=env://COSIGN_SECRET"
+#      - "--output-signature=${signature}"
+#      - "${artifact}"
+#      - "--yes"
+#    artifacts: checksum
