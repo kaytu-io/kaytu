@@ -95,11 +95,8 @@ jobs:
           repository: "kaytu-io/kaytu"
           fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
           latest: true
-      - name: Sign executable
-        id: sign_executable
-        env:
-          CODESIGN_KEY: ${{ secrets.SELFSIGNED_KEY}}
-          CODESIGN_CRT: ${{ secrets.SELFSIGNED_CRT}}
+      - name: Add windows zip
+        id: add_windows_zip
         run: |
 #          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
 #          sudo apt-get update -y
