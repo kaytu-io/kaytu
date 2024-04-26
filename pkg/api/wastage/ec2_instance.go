@@ -51,7 +51,7 @@ type RightsizingEC2Instance struct {
 	Processor         string  `json:"processor"`
 	Architecture      string  `json:"architecture"`
 	VCPU              int64   `json:"vCPU"`
-	Memory            int64   `json:"memory"`
+	Memory            float64 `json:"memory"`
 	EBSBandwidth      string  `json:"ebsBandwidth"`
 	NetworkThroughput string  `json:"networkThroughput"`
 	ENASupported      string  `json:"enaSupported"`
