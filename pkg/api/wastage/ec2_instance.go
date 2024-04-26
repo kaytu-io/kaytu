@@ -23,6 +23,7 @@ type EC2Instance struct {
 	Monitoring        *types.MonitoringState      `json:"monitoring"`
 	Placement         *EC2Placement               `json:"placement"`
 	UsageOperation    string                      `json:"usageOperation"`
+	Tenancy           types.Tenancy               `json:"tenancy"`
 }
 
 type EC2Volume struct {
