@@ -168,7 +168,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						fmt.Sprintf("$%.2f", totalSaving),
 					}
 					if i.OptimizationLoading {
-						row[4] = "loading"
+						row[5] = "loading"
 					}
 					row = append(row, "→")
 					rows = append(rows, row)
