@@ -22,6 +22,7 @@ type EC2Instance struct {
 	InstanceLifecycle types.InstanceLifecycleType `json:"instanceLifecycle"`
 	Monitoring        *types.MonitoringState      `json:"monitoring"`
 	Placement         *EC2Placement               `json:"placement"`
+	UsageOperation    string                      `json:"usageOperation"`
 }
 
 type EC2Volume struct {

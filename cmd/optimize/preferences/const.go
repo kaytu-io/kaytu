@@ -46,6 +46,7 @@ func DefaultPreferences() []PreferenceItem {
 			{Service: "EC2Instance", Key: "OperatingSystem", Pinned: true, PossibleValues: []string{"", "Windows", "Linux/UNIX"}},
 			{Service: "EC2Instance", Key: "ProcessorArchitecture", Pinned: true, PossibleValues: []string{"", "x86_64", "arm64", "arm64_mac"}},
 			{Service: "EC2Instance", Key: "InstanceFamily", PossibleValues: []string{"", "General purpose", "Compute optimized", "Memory optimized", "Storage optimized", "FPGA Instances", "GPU instance", "Machine Learning ASIC Instances", "Media Accelerator Instances"}},
+			{Service: "EC2Instance", Key: "UsageOperation", PossibleValues: []string{"", "Linux/UNIX", "Red Hat BYOL Linux", "Red Hat Enterprise Linux", "Red Hat Enterprise Linux with HA", "Red Hat Enterprise Linux with SQL Server Standard and HA", "Red Hat Enterprise Linux with SQL Server Enterprise and HA", "Red Hat Enterprise Linux with SQL Server Standard", "Red Hat Enterprise Linux with SQL Server Web", "Red Hat Enterprise Linux with SQL Server Enterprise", "SQL Server Enterprise", "SQL Server Standard", "SQL Server Web", "SUSE Linux", "Ubuntu Pro", "Windows", "Windows BYOL", "Windows with SQL Server Enterprise", "Windows with SQL Server Standard", "Windows with SQL Server Web"}},
 			{Service: "EC2Instance", Key: "ENASupported"},
 			{Service: "EC2Instance", Key: "SupportedRootDeviceTypes", Value: aws.String("EBSOnly"), PreventPinning: true, PossibleValues: []string{"EBSOnly"}},
 			{Service: "EC2Instance", Key: "vCPU", IsNumber: true},
