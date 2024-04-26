@@ -125,21 +125,25 @@ jobs:
             --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$amd64 \
             --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
           linuxarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_arm64") | .id')
-                    curl --request DELETE \
-                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxarm64 \
-                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxarm64 \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
           linuxamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_amd64") | .id')
-                    curl --request DELETE \
-                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxamd64 \
-                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxamd64 \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
           darwinarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_arm64") | .id')
-                    curl --request DELETE \
-                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinarm64 \
-                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinarm64 \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
           darwinamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_amd64") | .id')
-                    curl --request DELETE \
-                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
-                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          windowszip=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip") | .id')
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$windowszip \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
 
       - name: Upload Release Asset amd64 zip
         id: upload-release-asset-amd64-zip
