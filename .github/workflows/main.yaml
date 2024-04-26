@@ -96,16 +96,16 @@ jobs:
           echo "version=$VERSION"
           echo "kaytu_$VERSION_darwin_amd64"
 
-          sha256sum "kaytu_$VERSION_darwin_amd64" | awk '{print $1}' > newHash
+          sha256sum "kaytu_${VERSION}_darwin_amd64" | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum "kaytu_$VERSION_darwin_arm64" | awk '{print $1}' > newHash
+          sha256sum "kaytu_${VERSION}_darwin_arm64" | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum "kaytu_$VERSION_linux_arm64" | awk '{print $1}' > newHash
+          sha256sum "kaytu_${VERSION}_linux_arm64" | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum "kaytu_$VERSION_linux_amd64" | awk '{print $1}' > newHash
+          sha256sum "kaytu_${VERSION}_linux_amd64" | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
           git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
