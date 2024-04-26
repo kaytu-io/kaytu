@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var bold = lipgloss.NewStyle().Bold(true)
+
 type Ec2InstanceDetail struct {
 	item             OptimizationItem
 	close            func()
@@ -84,19 +86,19 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			{
 				"",
 				"",
-				"Average",
-				"Max",
+				bold.Render("Average"),
+				bold.Render("Max"),
 				"",
 			},
 			{
-				"Region",
+				bold.Render("Region"),
 				item.Region,
 				"",
 				"",
 				item.Region,
 			},
 			{
-				"Instance Size",
+				bold.Render("Instance Size"),
 				string(item.Instance.InstanceType),
 				"",
 				"",
@@ -105,7 +107,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"Compute",
+				bold.Render("Compute"),
 				"",
 				"",
 				"",
@@ -139,7 +141,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"Memory",
+				bold.Render("Memory"),
 				fmt.Sprintf("%d GiB", item.Wastage.RightSizing.Current.Memory),
 				Percentage(item.Wastage.RightSizing.Memory.Avg),
 				Percentage(item.Wastage.RightSizing.Memory.Max),
@@ -148,7 +150,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"EBS Bandwidth",
+				bold.Render("EBS Bandwidth"),
 				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.EBSBandwidth),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Avg),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Max),
@@ -157,7 +159,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"Network Performance",
+				bold.Render("Network Performance"),
 				"",
 				"",
 				"",
@@ -197,8 +199,8 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			{
 				"",
 				"",
-				"Average",
-				"Max",
+				bold.Render("Average"),
+				bold.Render("Max"),
 				"",
 			},
 			{
@@ -220,7 +222,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"IOPS",
+				bold.Render("IOPS"),
 				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.IOPS()),
 				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Avg),
 				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Max),
@@ -247,7 +249,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"Throughput (MB/s)",
+				bold.Render("Throughput (MB/s)"),
 				fmt.Sprintf("%.2f", item.Wastage.VolumeRightSizing[vid].Current.Throughput()),
 				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Avg),
 				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Max),
