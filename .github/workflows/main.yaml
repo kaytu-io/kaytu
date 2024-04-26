@@ -73,6 +73,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
 #          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
 #          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
   sign-windows:
@@ -98,8 +99,14 @@ jobs:
       - name: Add windows zip
         id: add_windows_zip
         run: |
+          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
+          sudo apt-get update -y
+          sudo apt-get -y install osslsigncode
+          echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
+          echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt          
+          osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
           mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
-          mv kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64/kaytu.exe
+          mv kaytu.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}"  | jq -r .upload_url)
           echo "$UPLOAD_URL"
