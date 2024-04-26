@@ -5,7 +5,7 @@ class Kaytu < Formula
   license "MIT"
 
   if OS.mac? && Hardware::CPU.intel?
-    url "https://github.com/kaytu-io/cli-program/releases/download/vVERSION_HOMEBREW/ktucli-macos-amd64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-darwin-amd64"
     sha256 "HASH_MAC_AMD64"
     def install
       bin.install "ktucli-macos-amd64" => "kaytu"
@@ -13,7 +13,7 @@ class Kaytu < Formula
   end
 
   if OS.mac? && Hardware::CPU.arm?
-    url "https://github.com/kaytu-io/cli-program/releases/download/vVERSION_HOMEBREW/ktucli-macos-arm64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-darwin-arm64"
     sha256 "HASH_MAC_ARM64"
     def install
       bin.install "ktucli-macos-arm64" => "kaytu"
@@ -21,7 +21,7 @@ class Kaytu < Formula
   end
 
   if OS.linux? && Hardware::CPU.arm?
-    url "https://github.com/kaytu-io/cli-program/releases/download/vVERSION_HOMEBREW/ktucli-linux-arm64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-linux-arm64"
     sha256 "HASH_LINUX_ARM64"
     def install
       bin.install "ktucli-linux-arm64" => "kaytu"
@@ -29,7 +29,7 @@ class Kaytu < Formula
   end
 
   if OS.linux? && Hardware::CPU.intel?
-    url "https://github.com/kaytu-io/cli-program/releases/download/vVERSION_HOMEBREW/ktucli-linux-amd64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-linux-amd64"
     sha256 "HASH_LINUX_AMD64"
     def install
       bin.install "ktucli-linux-amd64" => "kaytu"
