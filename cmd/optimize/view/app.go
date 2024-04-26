@@ -212,7 +212,7 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 		return
 	}
 
-	job = Job{ID: fmt.Sprintf("wastage_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("getting wastage of %s", *item.Instance.InstanceId)}
+	job = Job{ID: fmt.Sprintf("wastage_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("Evaluating usage data for %s", *item.Instance.InstanceId)}
 	m.jobChan <- job
 	job.Done = true
 
@@ -352,7 +352,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 	}
 	metrics := map[string][]types2.Datapoint{}
 
-	job := Job{ID: fmt.Sprintf("metrics_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting metrics of %s", *instance.InstanceId)}
+	job := Job{ID: fmt.Sprintf("metrics_%s", *instance.InstanceId), Descrption: fmt.Sprintf("Gathering monitoring metrics for %s", *instance.InstanceId)}
 	m.jobChan <- job
 	job.Done = true
 
