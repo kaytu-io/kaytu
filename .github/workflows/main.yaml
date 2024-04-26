@@ -95,14 +95,22 @@ jobs:
           repository: "kaytu-io/kaytu"
           fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
           latest: true
-      - name: Add windows zip
-        id: add_windows_zip
+      - name: Sign executable
+        id: sign_executable
+        env:
+          CODESIGN_KEY: ${{ secrets.SELFSIGNED_KEY}}
+          CODESIGN_CRT: ${{ secrets.SELFSIGNED_CRT}}
         run: |
+          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
+          sudo apt-get update -y
+          sudo apt-get -y install osslsigncode
+          echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
+          echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt          
+          osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
           mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
-          mv kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64/kaytu.exe
+          mv kaytu.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64/kaytu.exe
           zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" | jq -r .upload_url)
-          echo "$UPLOAD_URL"
           echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
 
           release_id=$(curl --request GET \
