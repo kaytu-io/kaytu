@@ -1,7 +1,7 @@
 # this script updates powershell and nuspec files found in the the templates folder to the latest version of Infracost.
 
 # $zip = "kaytu_$($env:CHOCO_API_KEY)_windows_amd64.zip"
-$version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/cli/releases/latest | convertfrom-json).name
+$version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/kaytu/releases/latest | convertfrom-json).name
 
 Write-Host "$(get-date) - downloading release $version"
 # Invoke-WebRequest -uri "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)" -OutFile $zip
