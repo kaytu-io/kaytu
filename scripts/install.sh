@@ -67,8 +67,8 @@ verify_downloader() {
 
 # Find version from Github metadata
 get_release_version() {
-    if [ -n "${FLUX_VERSION}" ]; then
-      SUFFIX_URL="tags/v${FLUX_VERSION}"
+    if [ -n "${KAYTU_VERSION}" ]; then
+      SUFFIX_URL="tags/v${KAYTU_VERSION}"
     else
       SUFFIX_URL="latest"
     fi

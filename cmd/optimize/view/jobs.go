@@ -35,7 +35,7 @@ type JobsView struct {
 }
 
 func NewJobsView() *JobsView {
-	return &JobsView{
+	jobView := JobsView{
 		runningJobsMap:  map[string]string{},
 		failedJobsMap:   map[string]string{},
 		runningJobs:     nil,
@@ -49,10 +49,12 @@ func NewJobsView() *JobsView {
 		jobChan:         make(chan Job, 10000),
 		errorChan:       make(chan error, 10000),
 	}
+	go jobView.UpdateStatus()
+
+	return &jobView
 }
 
 func (m *JobsView) Init() tea.Cmd {
-	go m.UpdateStatus()
 	return nil
 }
 

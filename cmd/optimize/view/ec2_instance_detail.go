@@ -85,7 +85,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"",
 				"",
 				"Average",
-				"Min",
 				"Max",
 				"",
 			},
@@ -94,13 +93,11 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				item.Region,
 				"",
 				"",
-				"",
 				item.Region,
 			},
 			{
 				"Instance Size",
 				string(item.Instance.InstanceType),
-				"",
 				"",
 				"",
 				ifRecommendationExists(func() string {
@@ -113,13 +110,11 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"",
 				"",
 				"",
-				"",
 			},
 			{
 				"  vCPU",
 				fmt.Sprintf("%d", item.Wastage.RightSizing.Current.VCPU),
 				Percentage(item.Wastage.RightSizing.VCPU.Avg),
-				Percentage(item.Wastage.RightSizing.VCPU.Min),
 				Percentage(item.Wastage.RightSizing.VCPU.Max),
 				ifRecommendationExists(func() string {
 					return fmt.Sprintf("%d", item.Wastage.RightSizing.Recommended.VCPU)
@@ -128,7 +123,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			{
 				"  Processor(s)",
 				item.Wastage.RightSizing.Current.Processor,
-				"",
 				"",
 				"",
 				ifRecommendationExists(func() string {
@@ -140,26 +134,23 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				item.Wastage.RightSizing.Current.Architecture,
 				"",
 				"",
-				"",
 				ifRecommendationExists(func() string {
 					return item.Wastage.RightSizing.Recommended.Architecture
 				}),
 			},
 			{
 				"Memory",
-				fmt.Sprintf("%d", item.Wastage.RightSizing.Current.Memory),
+				fmt.Sprintf("%d GiB", item.Wastage.RightSizing.Current.Memory),
 				Percentage(item.Wastage.RightSizing.Memory.Avg),
-				Percentage(item.Wastage.RightSizing.Memory.Min),
 				Percentage(item.Wastage.RightSizing.Memory.Max),
 				ifRecommendationExists(func() string {
-					return fmt.Sprintf("%d", item.Wastage.RightSizing.Recommended.Memory)
+					return fmt.Sprintf("%d GiB", item.Wastage.RightSizing.Recommended.Memory)
 				}),
 			},
 			{
 				"EBS Bandwidth",
 				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.EBSBandwidth),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Avg),
-				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Min),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Max),
 				ifRecommendationExists(func() string {
 					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.EBSBandwidth)
@@ -171,13 +162,11 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"",
 				"",
 				"",
-				"",
 			},
 			{
 				"  Throughput",
 				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.NetworkThroughput),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Avg),
-				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Min),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.NetworkThroughput.Max),
 				ifRecommendationExists(func() string {
 					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.NetworkThroughput)
@@ -188,19 +177,8 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.ENASupported),
 				"",
 				"",
-				"",
 				ifRecommendationExists(func() string {
 					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.ENASupported)
-				}),
-			},
-			{
-				"Runtime hours",
-				"730",
-				"",
-				"",
-				"",
-				ifRecommendationExists(func() string {
-					return "730"
 				}),
 			},
 		},
@@ -220,14 +198,12 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"",
 				"",
 				"Average",
-				"Min",
 				"Max",
 				"",
 			},
 			{
 				"  EBS Storage Tier",
 				string(item.Wastage.VolumeRightSizing[vid].Current.Tier),
-				"",
 				"",
 				"",
 				ifVolumeRecommendationExists(func() string {
@@ -239,7 +215,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				SizeByteToGB(item.Wastage.VolumeRightSizing[vid].Current.VolumeSize),
 				"",
 				"",
-				"",
 				ifVolumeRecommendationExists(func() string {
 					return SizeByteToGB(item.Wastage.VolumeRightSizing[vid].Recommended.VolumeSize)
 				}),
@@ -248,7 +223,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"IOPS",
 				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.IOPS()),
 				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Avg),
-				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Min),
 				PFloat64ToString(item.Wastage.VolumeRightSizing[vid].IOPS.Max),
 				ifVolumeRecommendationExists(func() string {
 					return fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Recommended.IOPS())
@@ -257,7 +231,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			{
 				"  Baseline IOPS",
 				fmt.Sprintf("%d", item.Wastage.VolumeRightSizing[vid].Current.BaselineIOPS),
-				"",
 				"",
 				"",
 				ifVolumeRecommendationExists(func() string {
@@ -269,7 +242,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				PInt32ToString(item.Wastage.VolumeRightSizing[vid].Current.ProvisionedIOPS),
 				"",
 				"",
-				"",
 				ifVolumeRecommendationExists(func() string {
 					return PInt32ToString(item.Wastage.VolumeRightSizing[vid].Recommended.ProvisionedIOPS)
 				}),
@@ -278,7 +250,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"Throughput (MB/s)",
 				fmt.Sprintf("%.2f", item.Wastage.VolumeRightSizing[vid].Current.Throughput()),
 				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Avg),
-				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Min),
 				PNetworkThroughputMBps(item.Wastage.VolumeRightSizing[vid].Throughput.Max),
 				ifVolumeRecommendationExists(func() string {
 					return fmt.Sprintf("%.2f", item.Wastage.VolumeRightSizing[vid].Recommended.Throughput())
@@ -289,7 +260,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				NetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Current.BaselineThroughput),
 				"",
 				"",
-				"",
 				ifVolumeRecommendationExists(func() string {
 					return NetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Recommended.BaselineThroughput)
 				}),
@@ -297,7 +267,6 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			{
 				"  Provisioned Throughput",
 				PNetworkThroughputMbps(item.Wastage.VolumeRightSizing[vid].Current.ProvisionedThroughput),
-				"",
 				"",
 				"",
 				ifVolumeRecommendationExists(func() string {
@@ -321,6 +290,7 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 	deviceColumns := []table.Column{
 		{Title: "DeviceID", Width: 30},
 		{Title: "ResourceType", Width: 20},
+		{Title: "Runtime", Width: 13},
 		{Title: "Current Cost", Width: 20},
 		{Title: "Right sized Cost", Width: 20},
 		{Title: "Savings", Width: 20},
@@ -329,6 +299,7 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		{
 			*item.Instance.InstanceId,
 			"EC2 Instance",
+			"730 hours",
 			fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Current.Cost),
 			ifRecommendationExists(func() string {
 				return fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Recommended.Cost)
@@ -353,6 +324,7 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		deviceRows = append(deviceRows, table.Row{
 			*v.Ebs.VolumeId,
 			"EBS Volume",
+			"730 hours",
 			fmt.Sprintf("$%.2f", item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Current.Cost),
 			ifRecommendationExists(func() string {
 				return fmt.Sprintf("$%.2f", item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended.Cost)
@@ -370,9 +342,8 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 	detailColumns := []table.Column{
 		{Title: "", Width: 30},
 		{Title: "Current", Width: 20},
-		{Title: "", Width: 10},
-		{Title: fmt.Sprintf("%s day usage", days), Width: 10},
-		{Title: "", Width: 10},
+		{Title: fmt.Sprintf("%s day usage", days), Width: 15},
+		{Title: "", Width: 15},
 		{Title: "Recommendation", Width: 30},
 	}
 
