@@ -14,29 +14,21 @@ The Kaytu CLI helps you save on cloud costs by finding the perfect server sizes.
 ### 1. Install Kaytu CLI
 
 **MacOS**
-***Package manager***
 ```shell
 brew tap kaytu-io/cli-tap && brew install kaytu
 ```
-***Binary Download***
-Download and install manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
-**Windows**
-
-***Chocolatey package manager***
+**Windows w/Chocolatey**
 ```shell
 choco install infracost
 ```
-***Binary Download***
-Download and install manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
 **Linux**
-***Package manager***
 ```shell
 curl -fsSL https://raw.githubusercontent.com/kaytu-io/kaytu/main/scripts/install.sh | sh
 ```
 ***Binary Download***
-Download and install manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
+Download and install Windows, MacOS, and Linux binaries manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
 ### 2. Ensure you have AWS CLI
 
