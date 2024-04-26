@@ -60,11 +60,11 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: stable
-#      - name: Install cosign
-#        run: |
-#          curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
-#          sudo mv cosign-linux-amd64 /usr/local/bin/cosign
-#          sudo chmod +x /usr/local/bin/cosign
+      - name: Install cosign
+        run: |
+          curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+          sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+          sudo chmod +x /usr/local/bin/cosign
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
