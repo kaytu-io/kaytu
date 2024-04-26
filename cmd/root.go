@@ -57,7 +57,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		identification := map[string]string{}
-		if config.AccessToken != "" {
+		if config != nil && config.AccessToken != "" {
 			identification["account"] = hash.HashString(*out.Account)
 			identification["user_id"] = hash.HashString(*out.UserId)
 			identification["sts_arn"] = hash.HashString(*out.Arn)
