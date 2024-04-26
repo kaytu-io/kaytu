@@ -81,7 +81,7 @@ func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2Instanc
 		help: HelpView{
 			lines: []string{
 				"↑/↓: move",
-				"enter: see details",
+				"enter/→: see details",
 				"p: change preferences for one item",
 				"P: change preferences for all items",
 				"q/ctrl+c: exit",
@@ -222,7 +222,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}, m.Width)
 			initCmd = m.prefConf.Init()
 			m.UpdateResponsive()
-		case "enter":
+		case "enter", "right":
 			if len(m.table.SelectedRow()) == 0 {
 				break
 			}

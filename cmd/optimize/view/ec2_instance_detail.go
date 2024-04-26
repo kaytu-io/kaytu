@@ -408,7 +408,7 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 	model.help = HelpView{
 		lines: []string{
 			"↑/↓: move",
-			"esc: back to ec2 instance list",
+			"esc/←: back to ec2 instance list",
 			"q/ctrl+c: exit",
 		},
 		height: 0,
@@ -430,7 +430,7 @@ func (m *Ec2InstanceDetail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q":
 			return m, tea.Quit
-		case "esc":
+		case "esc", "left":
 			m.close()
 		}
 	}
