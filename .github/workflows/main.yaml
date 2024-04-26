@@ -81,8 +81,10 @@ jobs:
         id: download_release_amd64
         with:
           repository: "kaytu-io/kaytu"
-          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_*
+          fileName: '*'
           latest: true
+          tarBall: true
+          zipBall: true
 
       - name: update cli version in homebrew
         run: |
