@@ -45,6 +45,7 @@ func DefaultPreferences() []PreferenceItem {
 			{Service: "EC2Instance", Key: "ClockSpeed"},
 			{Service: "EC2Instance", Key: "OperatingSystem", Pinned: true, PossibleValues: []string{"", "Windows", "Linux/UNIX"}},
 			{Service: "EC2Instance", Key: "ProcessorArchitecture", Pinned: true, PossibleValues: []string{"", "x86_64", "arm64", "arm64_mac"}},
+			{Service: "EC2Instance", Key: "InstanceFamily", PossibleValues: []string{"", "General purpose", "Compute optimized", "Memory optimized", "Storage optimized", "FPGA Instances", "GPU instance", "Machine Learning ASIC Instances", "Media Accelerator Instances"}},
 			{Service: "EC2Instance", Key: "ENASupported"},
 			{Service: "EC2Instance", Key: "SupportedRootDeviceTypes", Value: aws.String("EBSOnly"), PreventPinning: true, PossibleValues: []string{"EBSOnly"}},
 			{Service: "EC2Instance", Key: "vCPU", IsNumber: true},
