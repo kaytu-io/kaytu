@@ -3,12 +3,21 @@ package wastage
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/kaytu-io/kaytu/pkg/server"
 	"io"
 	"net/http"
 )
 
+var ErrLogin = errors.New("your session is expired, please login")
+
 func Ec2InstanceWastageRequest(reqBody EC2InstanceWastageRequest) (*EC2InstanceWastageResponse, error) {
+	config, err := server.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	payloadEncoded, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, err
@@ -19,6 +28,9 @@ func Ec2InstanceWastageRequest(reqBody EC2InstanceWastageRequest) (*EC2InstanceW
 		return nil, fmt.Errorf("[requestAbout] : %v", err)
 	}
 	req.Header.Add("content-type", "application/json")
+	if config != nil && len(config.AccessToken) > 0 {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", config.AccessToken))
+	}
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("[requestAbout] : %v", err)
@@ -32,6 +44,11 @@ func Ec2InstanceWastageRequest(reqBody EC2InstanceWastageRequest) (*EC2InstanceW
 	if err != nil {
 		return nil, fmt.Errorf("[requestAbout] : %v", err)
 	}
+
+	if res.StatusCode == 403 {
+		return nil, ErrLogin
+	}
+
 	response := EC2InstanceWastageResponse{}
 	err = json.Unmarshal(body, &response)
 	if err != nil {

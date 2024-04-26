@@ -56,13 +56,6 @@ func NetworkThroughputMbps(v float64) string {
 	return fmt.Sprintf("%.2f Mbps", v/1000000.0)
 }
 
-func IOPS(v *float64) string {
-	if v == nil {
-		return ""
-	}
-	return fmt.Sprintf("%.2f", *v)
-}
-
 func PInt32ToString(v *int32) string {
 	if v == nil {
 		return ""
@@ -198,6 +191,16 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				"",
 				ifRecommendationExists(func() string {
 					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.ENASupported)
+				}),
+			},
+			{
+				"Runtime hours",
+				"730",
+				"",
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return "730"
 				}),
 			},
 		},
@@ -358,11 +361,17 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		})
 	}
 
+	days := "7"
+	for _, p := range item.Preferences {
+		if p.Key == "ObservabilityTimePeriod" && p.Value != nil {
+			days = *p.Value
+		}
+	}
 	detailColumns := []table.Column{
 		{Title: "", Width: 30},
 		{Title: "Current", Width: 20},
 		{Title: "", Width: 10},
-		{Title: "Usage", Width: 10},
+		{Title: fmt.Sprintf("%s day usage", days), Width: 10},
 		{Title: "", Width: 10},
 		{Title: "Recommendation", Width: 30},
 	}

@@ -54,6 +54,8 @@ func DefaultPreferences() []PreferenceItem {
 			{Service: "EC2Instance", Key: "MemoryBreathingRoom", IsNumber: true, Value: aws.String("10"), PreventPinning: true, Unit: "%"},
 			{Service: "EC2Instance", Key: "NetworkBreathingRoom", IsNumber: true, Value: aws.String("10"), PreventPinning: true, Unit: "%"},
 			{Service: "EC2Instance", Key: "ObservabilityTimePeriod", Value: aws.String("7"), PreventPinning: true, Unit: "days", PossibleValues: []string{"7"}},
+			{Service: "EC2Instance", Key: "RuntimeInterval", Value: aws.String("730"), PreventPinning: true, Unit: "hours", PossibleValues: []string{"730"}},
+			{Service: "EC2Instance", Key: "ExcludeBurstableInstances", Value: aws.String("No"), PreventPinning: true, PossibleValues: []string{"No", "Yes"}},
 			{Service: "EBSVolume", Key: "IOPS", IsNumber: true},
 			{Service: "EBSVolume", Key: "Throughput", IsNumber: true, Unit: "Mbps"},
 			{Service: "EBSVolume", Key: "Size", IsNumber: true, Pinned: true, Unit: "GB"},
