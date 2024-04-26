@@ -81,16 +81,16 @@ jobs:
         run: |
           sed -i "s+VERSION_HOMEBREW+$(echo "${{ needs.tag.outputs.latest_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
           
-          sha256sum build/ktucli-macos-amd64 | awk '{print $1}' > newHash
+          sha256sum kaytu_${{ needs.tag.outputs.latest_tag }}_darwin_amd64 | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum build/ktucli-macos-arm64 | awk '{print $1}' > newHash
+          sha256sum kaytu_${{ needs.tag.outputs.latest_tag }}_darwin_arm64 | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum build/ktucli-linux-arm64 | awk '{print $1}' > newHash
+          sha256sum kaytu_${{ needs.tag.outputs.latest_tag }}_linux_arm64 | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum build/ktucli-linux-amd64 | awk '{print $1}' > newHash
+          sha256sum kaytu_${{ needs.tag.outputs.latest_tag }}_linux_amd64 | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
           git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
