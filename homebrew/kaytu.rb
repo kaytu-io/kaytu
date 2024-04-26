@@ -5,34 +5,38 @@ class Kaytu < Formula
   license "MIT"
 
   if OS.mac? && Hardware::CPU.intel?
-    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-darwin-amd64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu_VERSION_HOMEBREW_darwin_amd64.tar.gz"
     sha256 "HASH_MAC_AMD64"
     def install
-      bin.install "ktucli-macos-amd64" => "kaytu"
+      system "tar", "-xf", "kaytu_VERSION_HOMEBREW_darwin_amd64.tar.gz"
+      bin.install "kaytu_VERSION_HOMEBREW_darwin_amd64" => "kaytu"
     end
   end
 
   if OS.mac? && Hardware::CPU.arm?
-    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-darwin-arm64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu_VERSION_HOMEBREW_darwin_arm64.tar.gz"
     sha256 "HASH_MAC_ARM64"
     def install
-      bin.install "ktucli-macos-arm64" => "kaytu"
+      system "tar", "-xf", "kaytu_VERSION_HOMEBREW_darwin_arm64.tar.gz"
+      bin.install "kaytu_VERSION_HOMEBREW_darwin_arm64" => "kaytu"
     end
   end
 
   if OS.linux? && Hardware::CPU.arm?
-    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-linux-arm64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu_VERSION_HOMEBREW_linux_arm64.tar.gz"
     sha256 "HASH_LINUX_ARM64"
     def install
-      bin.install "ktucli-linux-arm64" => "kaytu"
+      system "tar", "-xf", "kaytu_VERSION_HOMEBREW_linux_arm64.tar.gz"
+      bin.install "kaytu_VERSION_HOMEBREW_linux_arm64" => "kaytu"
     end
   end
 
   if OS.linux? && Hardware::CPU.intel?
-    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu-linux-amd64"
+    url "https://github.com/kaytu-io/kaytu/releases/download/vVERSION_HOMEBREW/kaytu_VERSION_HOMEBREW_linux_amd64.tar.gz"
     sha256 "HASH_LINUX_AMD64"
     def install
-      bin.install "ktucli-linux-amd64" => "kaytu"
+      system "tar", "-xf", "kaytu_VERSION_HOMEBREW_linux_amd64.tar.gz"
+      bin.install "kaytu_VERSION_HOMEBREW_linux_amd64" => "kaytu"
     end
   end
 
