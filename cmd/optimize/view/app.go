@@ -33,14 +33,14 @@ var (
 	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 )
 
-func NewApp(cfg aws.Config, accountHash string, idHash string, arnHash string) *App {
+func NewApp(cfg aws.Config, identification map[string]string) *App {
 	pi := make(chan OptimizationItem, 1000)
 	r := &App{
 		processInstanceChan: pi,
 		optimizationsTable:  NewEC2InstanceOptimizations(pi),
 		jobs:                NewJobsView(),
 	}
-	go r.ProcessInstances(cfg, accountHash, idHash, arnHash)
+	go r.ProcessInstances(cfg, identification)
 	go r.ProcessAllRegions(cfg)
 	return r
 }
@@ -115,17 +115,17 @@ func (m *App) UpdateResponsive() {
 	}
 }
 
-func (m *App) ProcessInstances(awsCfg aws.Config, accountHash, idHash, arnHash string) {
+func (m *App) ProcessInstances(awsCfg aws.Config, identification map[string]string) {
 	for item := range m.processInstanceChan {
 		awsCfg.Region = item.Region
 		localAWSCfg := awsCfg
 		localItem := item
 
-		go m.ProcessInstance(localAWSCfg, localItem, accountHash, idHash, arnHash)
+		go m.ProcessInstance(localAWSCfg, localItem, identification)
 	}
 }
 
-func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, accountHash, idHash, arnHash string) {
+func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, identification map[string]string) {
 	defer func() {
 		if r := recover(); r != nil {
 			m.jobs.PublishError(fmt.Errorf("%v", r))
@@ -154,7 +154,7 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 	}
 	m.jobs.Publish(job)
 
-	req, err := m.getEc2InstanceRequestData(context.Background(), awsConf, item.Instance, volumesResp.Volumes, preferences2.Export(item.Preferences), accountHash, idHash, arnHash)
+	req, err := m.getEc2InstanceRequestData(context.Background(), awsConf, item.Instance, volumesResp.Volumes, preferences2.Export(item.Preferences), identification)
 	if err != nil {
 		job.FailureMessage = err.Error()
 		m.jobs.Publish(job)
@@ -283,7 +283,7 @@ func (m *App) ProcessAllRegions(cfg aws.Config) {
 	wg.Wait()
 }
 
-func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, instance types.Instance, volumes []types.Volume, preferences map[string]*string, accountHash, idHash, arnHash string) (*wastage.EC2InstanceWastageRequest, error) {
+func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, instance types.Instance, volumes []types.Volume, preferences map[string]*string, identification map[string]string) (*wastage.EC2InstanceWastageRequest, error) {
 	cloudwatchClient := cloudwatch.NewFromConfig(cfg)
 	startTime := time.Now().Add(-24 * 7 * time.Hour)
 	endTime := time.Now()
@@ -491,9 +491,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 	}
 
 	return &wastage.EC2InstanceWastageRequest{
-		HashedAccountID: accountHash,
-		HashedUserID:    idHash,
-		HashedARN:       arnHash,
+		Identification: identification,
 		Instance: wastage.EC2Instance{
 			HashedInstanceId:  hash.HashString(*instance.InstanceId),
 			State:             instance.State.Name,
