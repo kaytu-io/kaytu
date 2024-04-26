@@ -44,7 +44,25 @@ archives:
   - id: default
     format: tar.gz
     builds: [linux, darwin]
-
+chocolateys:
+    name: kaytu
+    ids:
+      - kaytu
+    package_source_url: https://github.com/kaytu-io/kaytu
+    owners: Kaytu Inc.
+    title: kaytu
+    authors: Kaytu
+    project_url: https://kaytu.io/
+    tags: "kaytu"
+    summary: Kaytu cli program
+    description: Kaytu cli program
+    dependencies:
+      - id: nfpm
+        version: 2.20.0
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    source_repo: "https://push.chocolatey.org/"
+    skip_publish: false
+    goamd64: v1
 #signs:
 #  - cmd: cosign
 #    stdin: "{{ .Env.COSIGN_PWD }}"
