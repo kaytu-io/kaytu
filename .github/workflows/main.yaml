@@ -215,7 +215,7 @@ jobs:
       - name: Generate & push
         run: scripts/build.ps1
         env:
-          CHOCO_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+          CHOCO_API_KEY: ${{ secrets.CHOCO_APIKEY }}
 #      - name: Sign executable
 #        id: sign_executable
 #        env:
