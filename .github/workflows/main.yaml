@@ -101,7 +101,7 @@ jobs:
           mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           mv kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64/kaytu.exe
           zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
-          export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" | jq -r .upload_url)
+          export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}"  | jq -r .upload_url)
           echo "$UPLOAD_URL"
           echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
 
