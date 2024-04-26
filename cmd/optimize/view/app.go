@@ -13,33 +13,16 @@ import (
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
 	"github.com/kaytu-io/kaytu/pkg/hash"
-	"github.com/muesli/reflow/wordwrap"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
-type Job struct {
-	ID             string
-	Descrption     string
-	FailureMessage string
-	Done           bool
-}
-
 type App struct {
-	statusErr           string
-	errorChan           chan error
 	processInstanceChan chan OptimizationItem
-
-	jobChan     chan Job
-	runningJobs map[string]string
-	failedJobs  map[string]string
-	jobMutex    sync.RWMutex
-
-	optimizationsTable *Ec2InstanceOptimizations
-	jobs               JobsView
+	optimizationsTable  *Ec2InstanceOptimizations
+	jobs                *JobsView
 
 	width  int
 	height int
@@ -53,15 +36,10 @@ var (
 func NewApp(cfg aws.Config, accountHash string, idHash string, arnHash string) *App {
 	pi := make(chan OptimizationItem, 1000)
 	r := &App{
-		errorChan:           make(chan error, 1000),
-		jobChan:             make(chan Job, 10000),
-		runningJobs:         map[string]string{},
-		failedJobs:          map[string]string{},
-		jobMutex:            sync.RWMutex{},
 		processInstanceChan: pi,
 		optimizationsTable:  NewEC2InstanceOptimizations(pi),
+		jobs:                NewJobsView(),
 	}
-	go r.UpdateStatus()
 	go r.ProcessInstances(cfg, accountHash, idHash, arnHash)
 	go r.ProcessAllRegions(cfg)
 	return r
@@ -69,7 +47,6 @@ func NewApp(cfg aws.Config, accountHash string, idHash string, arnHash string) *
 
 func (m *App) Init() tea.Cmd {
 	optTableCmd := m.optimizationsTable.Init()
-
 	return tea.Batch(optTableCmd, tea.EnterAltScreen)
 }
 
@@ -86,45 +63,9 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	m.jobMutex.RLock()
-	m.jobs.runningJobs, m.jobs.moreRunningJobs = m.RunningJobs()
-	m.jobs.failedJobs, m.jobs.moreFailedJobs = m.FailedJobs()
-	m.jobMutex.RUnlock()
-
+	m.jobs.Update(msg)
 	_, optTableCmd := m.optimizationsTable.Update(msg)
 	return m, tea.Batch(optTableCmd)
-}
-
-func (m *App) RunningJobs() ([]string, bool) {
-	if len(m.runningJobs) == 0 {
-		return nil, false
-	}
-	var res []string
-	for _, v := range m.runningJobs {
-		res = append(res, v)
-	}
-	sort.Strings(res)
-	count := 3
-	if len(res) < 3 {
-		count = len(res)
-	}
-	return res[:count], len(m.runningJobs) > 3
-}
-
-func (m *App) FailedJobs() ([]string, bool) {
-	if len(m.failedJobs) == 0 {
-		return nil, false
-	}
-	var res []string
-	for _, v := range m.failedJobs {
-		res = append(res, v)
-	}
-	sort.Strings(res)
-	count := 3
-	if len(res) < 3 {
-		count = len(res)
-	}
-	return res[:count], len(m.failedJobs) > 3
 }
 
 func (m *App) View() string {
@@ -133,35 +74,43 @@ func (m *App) View() string {
 	}
 	sb := strings.Builder{}
 	sb.WriteString(m.optimizationsTable.View())
-	//sb.WriteString("\n")
-
-	sb.WriteString(m.jobs.String())
-
-	if len(m.statusErr) > 0 {
-		sb.WriteString(errorStyle.Render(wordwrap.String("  error: "+m.statusErr, m.width)) + "\n")
-	}
+	sb.WriteString(m.jobs.View())
 	return sb.String()
 }
 
-func (m *App) UpdateStatus() {
-	for {
-		select {
-		case job := <-m.jobChan:
-			m.jobMutex.Lock()
-			if !job.Done {
-				m.runningJobs[job.ID] = job.Descrption
-			} else {
-				if _, ok := m.runningJobs[job.ID]; ok {
-					delete(m.runningJobs, job.ID)
-				}
-			}
-			if len(job.FailureMessage) > 0 {
-				m.failedJobs[job.ID] = fmt.Sprintf("%s failed due to %s", job.Descrption, job.FailureMessage)
-			}
-			m.jobMutex.Unlock()
+func (m *App) checkResponsive() bool {
+	return m.height >= m.jobs.height+m.optimizationsTable.height && m.jobs.IsResponsive() && m.optimizationsTable.IsResponsive()
+}
 
-		case err := <-m.errorChan:
-			m.statusErr = fmt.Sprintf("Failed due to %v", err)
+func (m *App) UpdateResponsive() {
+	m.optimizationsTable.SetHeight(m.optimizationsTable.MinHeight())
+	m.jobs.SetHeight(m.jobs.MinHeight())
+
+	if !m.checkResponsive() {
+		return // nothing we can do
+	}
+
+	for m.optimizationsTable.height < m.optimizationsTable.PreferredMinHeight() {
+		m.optimizationsTable.SetHeight(m.optimizationsTable.height + 1)
+		if !m.checkResponsive() {
+			m.optimizationsTable.SetHeight(m.optimizationsTable.height - 1)
+			return
+		}
+	}
+
+	for m.jobs.height < m.jobs.MaxHeight() {
+		m.jobs.SetHeight(m.jobs.height + 1)
+		if !m.checkResponsive() {
+			m.jobs.SetHeight(m.jobs.height - 1)
+			return
+		}
+	}
+
+	for m.optimizationsTable.height < m.optimizationsTable.MaxHeight() {
+		m.optimizationsTable.SetHeight(m.optimizationsTable.height + 1)
+		if !m.checkResponsive() {
+			m.optimizationsTable.SetHeight(m.optimizationsTable.height - 1)
+			return
 		}
 	}
 }
@@ -179,7 +128,7 @@ func (m *App) ProcessInstances(awsCfg aws.Config, accountHash, idHash, arnHash s
 func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, accountHash, idHash, arnHash string) {
 	defer func() {
 		if r := recover(); r != nil {
-			m.errorChan <- fmt.Errorf("%v", r)
+			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 
@@ -192,8 +141,7 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 		volumeIds = append(volumeIds, *bd.Ebs.VolumeId)
 	}
 
-	job := Job{ID: fmt.Sprintf("volumes_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("getting volumes of %s", *item.Instance.InstanceId)}
-	m.jobChan <- job
+	job := m.jobs.Publish(Job{ID: fmt.Sprintf("volumes_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("getting volumes of %s", *item.Instance.InstanceId)})
 	job.Done = true
 
 	volumesResp, err := client.DescribeVolumes(context.Background(), &ec2.DescribeVolumesInput{
@@ -201,19 +149,20 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 	})
 	if err != nil {
 		job.FailureMessage = err.Error()
-		m.jobChan <- job
+		m.jobs.Publish(job)
 		return
 	}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 
 	req, err := m.getEc2InstanceRequestData(context.Background(), awsConf, item.Instance, volumesResp.Volumes, preferences2.Export(item.Preferences), accountHash, idHash, arnHash)
 	if err != nil {
-		m.errorChan <- err
+		job.FailureMessage = err.Error()
+		m.jobs.Publish(job)
 		return
 	}
 
 	job = Job{ID: fmt.Sprintf("wastage_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("Evaluating usage data for %s", *item.Instance.InstanceId)}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 	job.Done = true
 
 	res, err := wastage.Ec2InstanceWastageRequest(*req)
@@ -221,12 +170,13 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 		if strings.Contains(err.Error(), "please login") {
 			fmt.Println(err.Error())
 			os.Exit(1)
+			return
 		}
 		job.FailureMessage = err.Error()
-		m.jobChan <- job
+		m.jobs.Publish(job)
 		return
 	}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 
 	if res.RightSizing.Current.InstanceType == "" {
 		item.OptimizationLoading = false
@@ -248,16 +198,16 @@ func (m *App) ProcessRegion(cfg aws.Config) {
 	ctx := context.Background()
 	defer func() {
 		if r := recover(); r != nil {
-			m.errorChan <- fmt.Errorf("%v", r)
+			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 	client := ec2.NewFromConfig(cfg)
 
 	job := Job{ID: fmt.Sprintf("region_ec2_instances_%s", cfg.Region), Descrption: "Listing all ec2 instances in " + cfg.Region}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 	job.Done = true
 	defer func() {
-		m.jobChan <- job
+		m.jobs.Publish(job)
 	}()
 
 	paginator := ec2.NewDescribeInstancesPaginator(client, &ec2.DescribeInstancesInput{})
@@ -303,22 +253,20 @@ func (m *App) ProcessRegion(cfg aws.Config) {
 func (m *App) ProcessAllRegions(cfg aws.Config) {
 	defer func() {
 		if r := recover(); r != nil {
-			m.errorChan <- fmt.Errorf("%v", r)
-			return
+			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 	regionClient := ec2.NewFromConfig(cfg)
 
-	job := Job{ID: "list_all_regions", Descrption: "Listing all available regions"}
-	m.jobChan <- job
+	job := m.jobs.Publish(Job{ID: "list_all_regions", Descrption: "Listing all available regions"})
 	job.Done = true
 	regions, err := regionClient.DescribeRegions(context.Background(), &ec2.DescribeRegionsInput{AllRegions: aws.Bool(false)})
 	if err != nil {
 		job.FailureMessage = err.Error()
-		m.jobChan <- job
+		m.jobs.Publish(job)
 		return
 	}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(regions.Regions))
@@ -352,8 +300,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 	}
 	metrics := map[string][]types2.Datapoint{}
 
-	job := Job{ID: fmt.Sprintf("metrics_%s", *instance.InstanceId), Descrption: fmt.Sprintf("Gathering monitoring metrics for %s", *instance.InstanceId)}
-	m.jobChan <- job
+	job := m.jobs.Publish(Job{ID: fmt.Sprintf("metrics_%s", *instance.InstanceId), Descrption: fmt.Sprintf("Gathering monitoring metrics for %s", *instance.InstanceId)})
 	job.Done = true
 
 	paginator := cloudwatch.NewListMetricsPaginator(cloudwatchClient, &cloudwatch.ListMetricsInput{
@@ -369,7 +316,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			job.FailureMessage = err.Error()
-			m.jobChan <- job
+			m.jobs.Publish(job)
 			return nil, err
 		}
 
@@ -395,17 +342,17 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 			resp, err := cloudwatchClient.GetMetricStatistics(ctx, input)
 			if err != nil {
 				job.FailureMessage = err.Error()
-				m.jobChan <- job
+				m.jobs.Publish(job)
 				return nil, err
 			}
 
 			metrics[*p.MetricName] = resp.Datapoints
 		}
 	}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 
 	job = Job{ID: fmt.Sprintf("metrics_cw_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting cloud watch agent metrics of %s", *instance.InstanceId)}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 	job.Done = true
 
 	paginator = cloudwatch.NewListMetricsPaginator(cloudwatchClient, &cloudwatch.ListMetricsInput{
@@ -421,7 +368,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			job.FailureMessage = err.Error()
-			m.jobChan <- job
+			m.jobs.Publish(job)
 			return nil, err
 		}
 
@@ -445,14 +392,14 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 			resp, err := cloudwatchClient.GetMetricStatistics(ctx, input)
 			if err != nil {
 				job.FailureMessage = err.Error()
-				m.jobChan <- job
+				m.jobs.Publish(job)
 				return nil, err
 			}
 
 			metrics[*p.MetricName] = resp.Datapoints
 		}
 	}
-	m.jobChan <- job
+	m.jobs.Publish(job)
 
 	var monitoring *types.MonitoringState
 	if instance.Monitoring != nil {
@@ -477,7 +424,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 		kaytuVolumes = append(kaytuVolumes, toEBSVolume(v))
 
 		job = Job{ID: fmt.Sprintf("metrics_volume_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting volume metrics of %s", *v.VolumeId)}
-		m.jobChan <- job
+		m.jobs.Publish(job)
 		job.Done = true
 
 		paginator := cloudwatch.NewListMetricsPaginator(cloudwatchClient, &cloudwatch.ListMetricsInput{
@@ -493,7 +440,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 			page, err := paginator.NextPage(ctx)
 			if err != nil {
 				job.FailureMessage = err.Error()
-				m.jobChan <- job
+				m.jobs.Publish(job)
 				return nil, err
 			}
 
@@ -525,7 +472,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 				resp, err := cloudwatchClient.GetMetricStatistics(ctx, input)
 				if err != nil {
 					job.FailureMessage = err.Error()
-					m.jobChan <- job
+					m.jobs.Publish(job)
 					return nil, err
 				}
 
@@ -536,7 +483,7 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 			}
 		}
 
-		m.jobChan <- job
+		m.jobs.Publish(job)
 	}
 	platform := ""
 	if instance.PlatformDetails != nil {
@@ -567,47 +514,6 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 		Region:        cfg.Region,
 		Preferences:   preferences,
 	}, nil
-}
-
-func (m *App) checkResponsive() bool {
-	return m.height >= m.jobs.height+m.optimizationsTable.height && m.jobs.IsResponsive() && m.optimizationsTable.IsResponsive()
-}
-
-func (m *App) UpdateResponsive() {
-	m.optimizationsTable.SetHeight(m.optimizationsTable.MinHeight())
-	m.jobs.SetHeight(m.jobs.MinHeight())
-	defer func() {
-		i := m.jobs.height + m.optimizationsTable.height
-		i++
-	}()
-
-	if !m.checkResponsive() {
-		return // nothing to do
-	}
-
-	for m.optimizationsTable.height < m.optimizationsTable.PreferredMinHeight() {
-		m.optimizationsTable.SetHeight(m.optimizationsTable.height + 1)
-		if !m.checkResponsive() {
-			m.optimizationsTable.SetHeight(m.optimizationsTable.height - 1)
-			return
-		}
-	}
-
-	for m.jobs.height < m.jobs.MaxHeight() {
-		m.jobs.SetHeight(m.jobs.height + 1)
-		if !m.checkResponsive() {
-			m.jobs.SetHeight(m.jobs.height - 1)
-			return
-		}
-	}
-
-	for m.optimizationsTable.height < m.optimizationsTable.MaxHeight() {
-		m.optimizationsTable.SetHeight(m.optimizationsTable.height + 1)
-		if !m.checkResponsive() {
-			m.optimizationsTable.SetHeight(m.optimizationsTable.height - 1)
-			return
-		}
-	}
 }
 
 func toEBSVolume(v types.Volume) wastage.EC2Volume {

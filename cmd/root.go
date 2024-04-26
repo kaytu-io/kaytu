@@ -60,6 +60,8 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(predef.VersionCmd)
+	rootCmd.AddCommand(predef.LoginCmd)
+	rootCmd.AddCommand(predef.LogoutCmd)
 	rootCmd.Flags().String("profile", "", "AWS profile for authentication")
 	rootCmd.Flags().String("preferences", "", "Path to preferences file (yaml)")
 }
