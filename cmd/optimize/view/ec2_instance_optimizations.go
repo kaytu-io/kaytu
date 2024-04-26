@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -50,6 +51,7 @@ type Ec2InstanceOptimizations struct {
 func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2InstanceOptimizations {
 	columns := []table.Column{
 		{Title: "Instance Id", Width: 23},
+		{Title: "Instance Name", Width: 23},
 		{Title: "Instance Type", Width: 15},
 		{Title: "Region", Width: 15},
 		{Title: "Platform", Width: 15},
@@ -147,17 +149,19 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 
-					//name := ""
-					//for _, t := range i.Instance.Tags {
-					//	if t.Key != nil && strings.ToLower(*t.Key) == "name" && t.Value != nil {
-					//		name = *t.Value
-					//	}
-					//}
-					//if name != "" {
-					//	name = *i.Instance.InstanceId
-					//}
+					name := ""
+					for _, t := range i.Instance.Tags {
+						if t.Key != nil && strings.ToLower(*t.Key) == "name" && t.Value != nil {
+							name = *t.Value
+						}
+					}
+					if name == "" {
+						name = *i.Instance.InstanceId
+					}
+
 					row := table.Row{
 						*i.Instance.InstanceId,
+						name,
 						string(i.Instance.InstanceType),
 						i.Region,
 						platform,
