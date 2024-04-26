@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+	<metadata>
+		<id>kaytu</id>
+		<version>{PLACEHOLDER_VERSION}</version>
+		<packageSourceUrl>https://github.com/kaytu-io/kaytu</packageSourceUrl>
+		<owners>kaytu</owners>
+		<title>Kaytu</title>
+		<authors>Kaytu</authors>
+		<projectUrl>https://kaytu.io</projectUrl>
+<!-- 		<iconUrl>https://rawcdn.githack.com/kaytu-io/chocolatey-packages/master/media/icon.png</iconUrl> -->
+		<licenseUrl>https://github.com/kaytu-io/kaytu/blob/master/LICENSE</licenseUrl>
+		<projectSourceUrl>https://github.com/kaytu-io/kaytu</projectSourceUrl>
+		<docsUrl>https://docs.kaytu.io/</docsUrl>
+		<bugTrackerUrl>https://github.com/kaytu-io/kaytu/issues</bugTrackerUrl>
+    <tags>finops cloud workload optimization iac openstack azure aws cost cost-estimate</tags>
+		<summary>Optimize your cloud workload.</summary>
+		<description>
+			Kaytu helps engineering, Operations, DevOps and SREs otpimize workload by identifying waste.
+		</description>
+		<releaseNotes>https://github.com/kaytu-io/kaytu/releases</releaseNotes>
+	</metadata>
+	<files>
+		<file src="tools\**" target="tools" />
+	</files>
+</package>
