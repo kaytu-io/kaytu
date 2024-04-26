@@ -93,6 +93,8 @@ jobs:
           ls 
           export VERSION=${{ needs.tag.outputs.latest_tag }}
           export VERSION=${VERSION#v}
+          echo "version=$VERSION"
+          echo "kaytu_$VERSION_darwin_amd64"
 
           sha256sum "kaytu_$VERSION_darwin_amd64" | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
