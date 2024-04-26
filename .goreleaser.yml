@@ -44,6 +44,9 @@ archives:
   - id: default
     format: tar.gz
     builds: [linux, darwin]
+  - id: windows
+    format: zip
+    builds: [windows]
 chocolateys:
   - name: kaytu
     ids:
