@@ -44,5 +44,8 @@ choco install kaytu --source .
 Get-ChildItem *.nupkg
 Write-Host "$(get-date) - Pushing to Chocolatey"
 choco push -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
-choco apikey --api-key $env:CHOCO_API_KEY -source https://push.chocolatey.org/
+
+choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
+choco push kaytu.$version.nupkg --source https://push.chocolatey.org/
+# choco apikey --api-key $env:CHOCO_API_KEY -source https://push.chocolatey.org/
 choco push --source https://push.chocolatey.org/
