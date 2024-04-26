@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
@@ -13,7 +14,6 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/muesli/reflow/wordwrap"
-	"golang.org/x/net/context"
 	"os"
 	"sort"
 	"strings"
