@@ -558,6 +558,8 @@ func (m *App) getEc2InstanceRequestData(ctx context.Context, cfg aws.Config, ins
 			InstanceLifecycle: instance.InstanceLifecycle,
 			Monitoring:        monitoring,
 			Placement:         placement,
+			UsageOperation:    *instance.UsageOperation,
+			Tenancy:           instance.Placement.Tenancy,
 		},
 		Volumes:       kaytuVolumes,
 		Metrics:       metrics,
