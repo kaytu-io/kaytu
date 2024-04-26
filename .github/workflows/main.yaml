@@ -77,6 +77,13 @@ jobs:
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
           COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
 
+      - uses: robinraju/release-downloader@v1.10
+        id: download_release_amd64
+        with:
+          repository: "kaytu-io/kaytu"
+          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_*
+          latest: true
+
       - name: update cli version in homebrew
         run: |
           sed -i "s+VERSION_HOMEBREW+$(echo "${{ needs.tag.outputs.latest_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
