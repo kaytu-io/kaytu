@@ -155,6 +155,15 @@ jobs:
           asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
           asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
           asset_content_type: application/zip
+  chocolatey-publish:
+    name: Release Kaytu choco
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate & push
+        run: kaytu/build.ps1
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
 #      - name: Sign executable
 #        id: sign_executable
 #        env:
