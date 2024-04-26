@@ -1,24 +1,9 @@
+## Overview
 
-# Kaytu
+The Kaytu CLI helps you save on cloud costs by finding the perfect server sizes. Kaytu analyzes historical usage and provides tailored recommendations, ensuring you only pay for the resources you need.
 
-The Kaytu CLI helps you rightsize your AWS servers by analyzing **actual past usage** and existing Cloud Native Observability data. 
-
-Quickly identify over-provisioned resources by analyzing CPU, memory, storage, OS licensing, and network performance to significantly reduce cloud spend.
-
-![Static Badge](https://img.shields.io/badge/:Latest%20Release)
-
-
-
-## Features
-* Currently supports AWS on demand instances with EBS backed instances
-* Optimize on CPU, Memory, Network Performance, Storage, OS Licensing
-* Secure - no credentials to share
-* No SaaS onboarding –Extract required metrics metrics from the client side; sends the required metrics to optimized
-* Save customizations / preferences locally
-* Open-core philosophy – client code is open-sourced, with server-side code opening up soon.
-
-## Coming Soon
-* Azure support
-* GPU Optimization
-* Credit utilization for Burst instances
-* Observability data integration with Prometheus
+- **Historical Usage**: Analyzes the past seven days of usage from CloudWatch, including advanced AWS CloudWatch metrics (where available).
+- **Optimize as needed**: Optimize based on Region, CPU, memory, network performance, storage, and licenses.
+- **Secure** - no credentials to share; extracts required metrics from the client side
+- **Open-core philosophy** No credentials to share; extracts required metrics from the client side.
+- **Coming Soon**: Azure support, GPU Optimization, Credit utilization for Burst instances, and Observability data from Prometheus
