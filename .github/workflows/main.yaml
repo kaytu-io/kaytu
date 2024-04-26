@@ -91,19 +91,19 @@ jobs:
           sed -i "s+VERSION_HOMEBREW+$(echo "${{ needs.tag.outputs.latest_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
           
           ls 
-          export version=${{ needs.tag.outputs.latest_tag }}
-          export version=${version#v}
+          export VERSION=${{ needs.tag.outputs.latest_tag }}
+          export VERSION=${VERSION#v}
 
-          sha256sum kaytu_$version_darwin_amd64 | awk '{print $1}' > newHash
+          sha256sum "kaytu_$VERSION_darwin_amd64" | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum kaytu_$version_darwin_arm64 | awk '{print $1}' > newHash
+          sha256sum "kaytu_$VERSION_darwin_arm64" | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum kaytu_$version_linux_arm64 | awk '{print $1}' > newHash
+          sha256sum "kaytu_$VERSION_linux_arm64" | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
           
-          sha256sum kaytu_$version_linux_amd64 | awk '{print $1}' > newHash
+          sha256sum "kaytu_$VERSION_linux_amd64" | awk '{print $1}' > newHash
           sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
           
           git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
