@@ -158,10 +158,13 @@ jobs:
   chocolatey-publish:
     name: Release Kaytu choco
     runs-on: windows-latest
+    needs:
+      - tag
+      - release
     steps:
       - uses: actions/checkout@v2
       - name: Generate & push
-        run: kaytu/build.ps1
+        run: scripts/build.ps1
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
 #      - name: Sign executable
