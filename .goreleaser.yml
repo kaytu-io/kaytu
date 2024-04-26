@@ -45,7 +45,7 @@ archives:
     format: tar.gz
     builds: [linux, darwin]
 chocolateys:
-    name: kaytu
+  - name: kaytu
     ids:
       - kaytu
     package_source_url: https://github.com/kaytu-io/kaytu
