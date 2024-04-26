@@ -66,6 +66,9 @@ archives:
 #    source_repo: "https://push.chocolatey.org/"
 #    skip_publish: false
 #    goamd64: v1
+#    files:
+#      - src: "dist/windows_amd64/kaytu.exe"
+#        dest: "bin"
 signs:
   - cmd: cosign
     stdin: "{{ .Env.COSIGN_PWD }}"
