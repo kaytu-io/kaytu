@@ -79,7 +79,7 @@ jobs:
 
       - name: update cli version in homebrew
         run: |
-          sed -i "s+VERSION_HOMEBREW+$(echo "${{ steps.tag_version.outputs.new_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
+          sed -i "s+VERSION_HOMEBREW+$(echo "${{ needs.tag.outputs.latest_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
           
           sha256sum build/ktucli-macos-amd64 | awk '{print $1}' > newHash
           sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
