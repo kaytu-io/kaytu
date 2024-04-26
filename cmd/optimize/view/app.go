@@ -14,6 +14,7 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/muesli/reflow/wordwrap"
 	"golang.org/x/net/context"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -175,62 +176,6 @@ func (m *App) ProcessInstances(awsCfg aws.Config, accountHash, idHash, arnHash s
 	}
 }
 
-func minOfDatapoints(datapoints []types2.Datapoint) float64 {
-	if len(datapoints) == 0 {
-		return 0.0
-	}
-
-	avg := float64(0)
-	for _, dp := range datapoints {
-		if dp.Minimum == nil {
-			if dp.Average == nil {
-				continue
-			}
-			avg += *dp.Average
-			continue
-		}
-		avg += *dp.Minimum
-	}
-	avg = avg / float64(len(datapoints))
-	return avg
-}
-
-func maxOfDatapoints(datapoints []types2.Datapoint) float64 {
-	if len(datapoints) == 0 {
-		return 0.0
-	}
-
-	avg := float64(0)
-	for _, dp := range datapoints {
-		if dp.Maximum == nil {
-			if dp.Average == nil {
-				continue
-			}
-			avg += *dp.Average
-			continue
-		}
-		avg += *dp.Maximum
-	}
-	avg = avg / float64(len(datapoints))
-	return avg
-}
-
-func averageOfDatapoints(datapoints []types2.Datapoint) float64 {
-	if len(datapoints) == 0 {
-		return 0.0
-	}
-
-	avg := float64(0)
-	for _, dp := range datapoints {
-		if dp.Average == nil {
-			continue
-		}
-		avg += *dp.Average
-	}
-	avg = avg / float64(len(datapoints))
-	return avg
-}
-
 func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, accountHash, idHash, arnHash string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -273,6 +218,10 @@ func (m *App) ProcessInstance(awsConf aws.Config, item OptimizationItem, account
 
 	res, err := wastage.Ec2InstanceWastageRequest(*req)
 	if err != nil {
+		if strings.Contains(err.Error(), "please login") {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 		job.FailureMessage = err.Error()
 		m.jobChan <- job
 		return
