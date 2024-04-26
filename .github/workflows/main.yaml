@@ -73,6 +73,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
 #          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
 #          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
   sign-windows:
