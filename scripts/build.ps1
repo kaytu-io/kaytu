@@ -1,10 +1,12 @@
-# this script updates powershell and nuspec files found in the the templates folder to the latest version of Infracost.
+# this script updates powershell and nuspec files found in the the templates folder to the latest version of Kaytu.
 
-# $zip = "kaytu_$($env:CHOCO_API_KEY)_windows_amd64.zip"
 $version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/kaytu/releases/latest | convertfrom-json).name
+$versionNumber = $version.Substring(1)
+$zip = "kaytu_${versionNumber}_windows_amd64.zip"
 
 Write-Host "$(get-date) - downloading release $version"
-# Invoke-WebRequest -uri "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)" -OutFile $zip
+Write-Host "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)"
+Invoke-WebRequest -uri "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)" -OutFile $zip
 
 # $sha = (Get-FileHash $zip).Hash
 # $contents = (Get-Content $shafile)
@@ -20,7 +22,7 @@ New-Item .\tools -ItemType "directory"
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 # removing the first v as chocolatey doesnt like this version
 $chocoVersion = $version.Substring(1, ($version.Length-1));
-choco new -h
+# choco new -h
 function Get-ScriptDirectory { Split-Path $MyInvocation.ScriptName }
 $templatePath = Join-Path (Get-ScriptDirectory) ".\templates"
 
@@ -31,7 +33,7 @@ Write-Host "$(get-date) - Building choco pkg"
 choco pack --version $chocoVersion
 
 Write-Host "$(get-date) - Testing choco pkg is valid"
-choco install kaytu --source .
+choco install kaytu -dv --source .
 
 # $out = (kaytu --version)
 # if ("kaytu $($version)" -ne $out) {
