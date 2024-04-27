@@ -22,7 +22,7 @@ brew tap kaytu-io/cli-tap && brew install kaytu
 
 **Windows w/Chocolatey**
 ```shell
-choco install infracost
+choco install kaytu
 ```
 
 **Linux**
