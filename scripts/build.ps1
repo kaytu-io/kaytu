@@ -48,9 +48,9 @@ Write-Host "$(get-date) - Pushing to Chocolatey"
 
 choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
 choco push -s https://push.chocolatey.org/ -k="'$env:CHOCO_API_KEY'"
-choco push kaytu.$version.nupkg -s https://push.chocolatey.org/ -k="'$env:CHOCO_API_KEY'"
-choco push kaytu.$version.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
+choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ -k="'$env:CHOCO_API_KEY'"
+choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
 # choco apikey --api-key $env:CHOCO_API_KEY -source https://push.chocolatey.org/
-choco push kaytu.$version.nupkg --source https://push.chocolatey.org/
+choco push kaytu.$chocoVersion.nupkg --source https://push.chocolatey.org/
 choco push -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
 choco push --source https://push.chocolatey.org/
