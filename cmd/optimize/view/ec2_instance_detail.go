@@ -141,7 +141,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				bold.Render("Memory"),
+				"  Memory",
 				fmt.Sprintf("%.1f GiB", item.Wastage.RightSizing.Current.Memory),
 				Percentage(item.Wastage.RightSizing.Memory.Avg),
 				Percentage(item.Wastage.RightSizing.Memory.Max),
