@@ -1,3 +1,5 @@
+![Kaytu Gif](.github/assets/kaytu.gif)
+
 ## Overview
 
 The Kaytu CLI helps you save on cloud costs by finding the perfect server sizes. Kaytu analyzes historical usage and provides tailored recommendations, ensuring you only pay for the resources you **actually need**.
