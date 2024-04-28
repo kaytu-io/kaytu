@@ -1,8 +1,6 @@
 # this script updates powershell and nuspec files found in the the templates folder to the latest version of Kaytu.
 
-# $version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/kaytu/releases/latest | convertfrom-json).name
-# $versionNumber = $version.Substring(1)
-$version = "v$($env:APP_VERSION)"
+$version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/kaytu/releases/latest | convertfrom-json).name
 $versionNumber = $version.Substring(1)
 $zip = "kaytu_${versionNumber}_windows_amd64.zip"
 

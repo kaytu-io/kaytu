@@ -224,16 +224,7 @@ jobs:
       - release
     steps:
       - uses: actions/checkout@v2
-      - name: Download new tag
-        uses: actions/download-artifact@v2
-        with:
-          name: new_tag
-      - name: Set new tag
-        id: set_new_tag
-        run: |
-          echo "::set-output name=new_tag::$(cat new_tag.txt)"
       - name: Generate & push
         run: scripts/build.ps1
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_APIKEY }}
-          APP_VERSION: ${{ steps.set_new_tag.outputs.new_tag }}
