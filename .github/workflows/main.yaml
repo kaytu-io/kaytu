@@ -157,6 +157,8 @@ jobs:
           mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           mv kaytu.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           zip -r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+          sha256sum kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip > kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+          
           export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}"  | jq -r .upload_url)
           echo "$UPLOAD_URL"
           echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
@@ -204,6 +206,16 @@ jobs:
           asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
           asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
           asset_content_type: application/zip
+      - name: Upload Release Asset amd64 zip checksum
+        id: upload-release-asset-amd64-zip-checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
+          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+          asset_content_type: text/plain
   chocolatey-publish:
     name: Release Kaytu choco
     runs-on: windows-latest
@@ -216,90 +228,3 @@ jobs:
         run: scripts/build.ps1
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_APIKEY }}
-#      - name: Sign executable
-#        id: sign_executable
-#        env:
-#          CODESIGN_KEY: ${{ secrets.SELFSIGNED_KEY}}
-#          CODESIGN_CRT: ${{ secrets.SELFSIGNED_CRT}}
-#        run: |
-#          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
-#          sudo apt-get update -y
-#          sudo apt-get -y install osslsigncode
-#          echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
-#          echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt
-#          osslsigncode sign -certs cert.crt -key cert.key -n "kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
-#          zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_signed.zip kaytu.exe
-#          export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" | jq -r .upload_url)
-#          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
-#          release_id=$(curl --request GET \
-#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
-#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}' | jq '.id')
-#          echo $release_id
-#          assets=$(curl --request GET \
-#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/$release_id/assets \
-#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}')
-#          echo $assets
-#          amd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe") | .id')
-#          curl --request DELETE \
-#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$amd64 \
-#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-#          linuxarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_arm64") | .id')
-#                    curl --request DELETE \
-#                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxarm64 \
-#                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-#          linuxamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_amd64") | .id')
-#                    curl --request DELETE \
-#                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxamd64 \
-#                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-#          darwinarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_arm64") | .id')
-#                    curl --request DELETE \
-#                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinarm64 \
-#                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-#          darwinamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_amd64") | .id')
-#                    curl --request DELETE \
-#                      --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
-#                      --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
-#      - name: Upload Release Asset amd64 zip
-#        id: upload-release-asset-amd64-zip
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.sign_executable.outputs.upload_url }}
-#          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_signed.zip
-#          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
-#          asset_content_type: application/zip
-#
-#      - name: update cli version in homebrew
-#        run: |
-#          sed -i "s+VERSION_HOMEBREW+$(echo "${{ steps.tag_version.outputs.new_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
-#
-#          sha256sum build/ktucli-macos-amd64 | awk '{print $1}' > newHash
-#          sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
-#
-#          sha256sum build/ktucli-macos-arm64 | awk '{print $1}' > newHash
-#          sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
-#
-#          sha256sum build/ktucli-linux-arm64 | awk '{print $1}' > newHash
-#          sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
-#
-#          sha256sum build/ktucli-linux-amd64 | awk '{print $1}' > newHash
-#          sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
-#
-#          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
-#
-#          cd homebrew-cli-tap
-#
-#          git remote add homebrew-cli-tap-origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
-#          git config user.name 'Kaytu Developer'
-#          git config user.email 'dev@kaytu.io'
-#
-#          cp ../homebrew/kaytu.rb kaytu.rb
-#
-#          git checkout main
-#          git add .
-#          git commit -a -m "update cli version"
-#          git push homebrew-cli-tap-origin
-#
-#          cd ..
-#          rm -rf homebrew-cli-tap
