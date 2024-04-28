@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $version = "{PLACEHOLDER_VERSION}"
 $version = $version.TrimStart('v')
 $url64 = "https://github.com/kaytu-io/kaytu/releases/download/{PLACEHOLDER_VERSION}/kaytu_$($version)_windows_amd64.zip"
-$checksum64 = "https://github.com/kaytu-io/kaytu/releases/download/{PLACEHOLDER_VERSION}/kaytu_$($version)_checksums.txt"
+$checksum64 = "https://github.com/kaytu-io/kaytu/releases/download/{PLACEHOLDER_VERSION}/kaytu_$($version)_windows_amd64_checksum.txt"
 $unzipLocation = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 $packageParams = @{
