@@ -3,10 +3,19 @@
 $version = (Invoke-Webrequest https://api.github.com/repos/kaytu-io/kaytu/releases/latest | convertfrom-json).name
 $versionNumber = $version.Substring(1)
 $zip = "kaytu_${versionNumber}_windows_amd64.zip"
+$shafile = "kaytu_${versionNumber}_windows_amd64_checksum.txt"
 
 Write-Host "$(get-date) - downloading release $version"
 Write-Host "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)"
 Invoke-WebRequest -uri "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($zip)" -OutFile $zip
+Invoke-WebRequest -uri "https://github.com/kaytu-io/kaytu/releases/download/$($version)/$($shafile)" -OutFile $shafile
+
+$sha = (Get-FileHash $zip).Hash
+$contents = (Get-Content $shafile)
+if ("$($sha)  $($zip)" -ne $contents) {
+  Write-Host "sha of $($sha) mismatched for downloaded artefact contents: $($contents)"
+  exit 1
+}
 
 # $sha = (Get-FileHash $zip).Hash
 # $contents = (Get-Content $shafile)
@@ -27,7 +36,7 @@ $chocoVersion = "0.3.9"
 function Get-ScriptDirectory { Split-Path $MyInvocation.ScriptName }
 $templatePath = Join-Path (Get-ScriptDirectory) ".\templates"
 
-Get-Content "$($templatePath)\chocolateyinstall.ps1" | %{$_ -replace "{PLACEHOLDER_VERSION}",$version} | Out-File .\tools\chocolateyinstall.ps1
+Get-Content "$($templatePath)\chocolateyinstall.ps1" | %{$_ -replace "{PLACEHOLDER_VERSION}",$version} | %{$_ -replace "{PLACEHOLDER_SHA}", $sha} | Out-File .\tools\chocolateyinstall.ps1
 Get-Content "$($templatePath)\kaytu.nuspec" | %{$_ -replace "{PLACEHOLDER_VERSION}",$chocoVersion} | Out-File .\kaytu.nuspec
 
 Write-Host "$(get-date) - Building choco pkg"
