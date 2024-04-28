@@ -21,7 +21,8 @@ if (Test-Path -Path ".\tools") {
 New-Item .\tools -ItemType "directory"
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 # removing the first v as chocolatey doesnt like this version
-$chocoVersion = $version.Substring(1, ($version.Length-1));
+# $chocoVersion = $version.Substring(1, ($version.Length-1));
+$chocoVersion = "0.3.9"
 # choco new -h
 function Get-ScriptDirectory { Split-Path $MyInvocation.ScriptName }
 $templatePath = Join-Path (Get-ScriptDirectory) ".\templates"

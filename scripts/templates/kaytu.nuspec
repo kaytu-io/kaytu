@@ -6,7 +6,8 @@
                 <packageSourceUrl>https://github.com/kaytu-io/kaytu</packageSourceUrl>
                 <owners>kaytu</owners>
                 <title>Kaytu</title>
-                <authors>Kaytu</authors>
+                <authors>kaytu</authors>
+                <iconUrl>https://raw.githubusercontent.com/kaytu-io/kaytu/main/.github/assets/kaytuIcon.svg</iconUrl>
                 <projectUrl>https://kaytu.io</projectUrl>
                 <licenseUrl>https://github.com/kaytu-io/kaytu/blob/master/LICENSE</licenseUrl>
                 <projectSourceUrl>https://github.com/kaytu-io/kaytu</projectSourceUrl>
