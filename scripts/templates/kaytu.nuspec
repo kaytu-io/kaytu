@@ -13,10 +13,10 @@
                 <projectSourceUrl>https://github.com/kaytu-io/kaytu</projectSourceUrl>
                 <docsUrl>https://docs.kaytu.io/</docsUrl>
                 <bugTrackerUrl>https://github.com/kaytu-io/kaytu/issues</bugTrackerUrl>
-    <tags>finops cloud workload optimization iac openstack azure aws cost cost-estimate</tags>
+                <tags>finops cloud workload optimization iac openstack azure aws cost cost-estimate</tags>
                 <summary>Optimize your cloud workload.</summary>
                 <description>
-                        Kaytu helps engineering, Operations, DevOps and SREs otpimize workload by identifying waste.
+                        Kaytu reduces cloud costs by recommending optimal workload configurations based on actual usage, ensuring savings without compromise.
                 </description>
                 <releaseNotes>https://github.com/kaytu-io/kaytu/releases</releaseNotes>
         </metadata>
