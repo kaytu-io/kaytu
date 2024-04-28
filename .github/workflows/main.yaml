@@ -222,6 +222,7 @@ jobs:
     needs:
       - tag
       - release
+      - sign-windows
     steps:
       - uses: actions/checkout@v2
       - name: Generate & push
