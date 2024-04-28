@@ -1,12 +1,13 @@
+
 ![Kaytu Gif](.github/assets/kaytu.gif)
 
 ## Overview
 
-The Kaytu CLI helps you save on cloud costs by finding the perfect server sizes. Kaytu analyzes historical usage and provides tailored recommendations, ensuring you only pay for the resources you **actually need**.
+Kaytu CLI enables engineering, DevOps, and SRE teams to reduce cloud costs by recommending optimal workload configurations based on **actual-usage**, ensuring savings without compromise.
 
-- **Ease of use**: Doesn't touch the workload or require configuration changes to be made
-- **Historical Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch), including advanced AWS CloudWatch metrics (where available).
-- **Optimize as needed**: Optimize based on Region, CPU, memory, network performance, storage, and licenses.
+- **Ease of use**: One-line command. Use without modifying workloads or making configuration changes.
+- **Base on actual Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch), including advanced AWS CloudWatch metrics (where available).
+- **Customize**: Optimize for region, CPU, memory, network performance, storage, licenses, and more to match your specific requirements.
 - **Secure** - no credentials to share; extracts required metrics from the client side
 - **Open-core philosophy** Use without fear of lock-in. The CLI is open-sourced, and the Server side will be open-sourced soon.
 - **Coming Soon**: Non-Interactive mode, Azure support, GPU Optimization, Credit utilization for Burst instances, and Observability data from Prometheus
@@ -29,14 +30,25 @@ choco install kaytu
 ```shell
 curl -fsSL https://raw.githubusercontent.com/kaytu-io/kaytu/main/scripts/install.sh | sh
 ```
-***Binary Download***
+
+**Binary Download**
+
 Download and install Windows, MacOS, and Linux binaries manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
-### 2. Ensure you have AWS CLI
+### 2. Login to AWS CLI
 
-Ensure you are logged in to AWS CLI
+Kaytu works with your existing AWS CLI profile (read-only access required) to gather metrics.  
 
-### 3. Run
+To confirm your AWS CLI login is working correctly:
+
+```
+aws sts get-caller-identity
+```
+[Click here to see how to log in to AWS CLI.](https://docs.aws.amazon.com/signin/latest/userguide/command-line-sign-in.html)
+
+We respect your privacy. Our open-source code guarantees that we never collect sensitive information like AWS credentials, IPs, tags, etc.
+
+### 3. Run Kaytu CLI
 
 ```shell
 kaytu
