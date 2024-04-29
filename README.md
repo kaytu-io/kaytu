@@ -1,9 +1,13 @@
+<p align="center">
+<a href="https://www.kaytu.io"><img src=".github/assets/Kaytu-New-Logo.svg" alt="Kaytu Logo" width="300" /></a>
+
+<p align="center">Kaytu enables engineering, DevOps, and SRE teams to reduce cloud costs by recommending optimal workload configurations based on <b>actual-usage</b>, ensuring savings without compromise.
+</p>
 
 ![Kaytu Gif](.github/assets/kaytu.gif)
 
 ## Overview
 
-Kaytu CLI enables engineering, DevOps, and SRE teams to reduce cloud costs by recommending optimal workload configurations based on **actual-usage**, ensuring savings without compromise.
 
 - **Ease of use**: One-line command. Use without modifying workloads or making configuration changes.
 - **Base on actual Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch), including advanced AWS CloudWatch metrics (where available).
@@ -21,19 +25,14 @@ Kaytu CLI enables engineering, DevOps, and SRE teams to reduce cloud costs by re
 brew tap kaytu-io/cli-tap && brew install kaytu
 ```
 
-**Windows w/Chocolatey**
-```shell
-choco install kaytu
-```
-
 **Linux**
 ```shell
 curl -fsSL https://raw.githubusercontent.com/kaytu-io/kaytu/main/scripts/install.sh | sh
 ```
 
-**Binary Download**
+**Windows (and all Binaries)**
+Download Windows (Linux, and MacOS) binary from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
-Download and install Windows, MacOS, and Linux binaries manually from [releases](https://github.com/kaytu-io/kaytu/releases) 
 
 ### 2. Login to AWS CLI
 
