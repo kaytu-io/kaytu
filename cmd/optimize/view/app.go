@@ -247,7 +247,9 @@ func (m *App) ProcessRegion(cfg aws.Config) {
 					} else if isAutoScaling {
 						reason = "auto-scaling group instance"
 					}
-					oi.SkipReason = &reason
+					if len(reason) > 0 {
+						oi.SkipReason = &reason
+					}
 				}
 				m.optimizationsTable.SendItem(oi)
 				if !oi.Skipped {
