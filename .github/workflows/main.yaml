@@ -5,8 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch:
-    jobs:
-      - chocolatey-publish
+    inputs:
+      publishChocolatey:
+        type: choice
+        description: "Publish to chocolatey"
+        options:
+          - "true"
+          - "false"
+        default: "false"
 
 jobs:
   tag:
@@ -221,6 +227,7 @@ jobs:
           asset_content_type: text/plain
   chocolatey-publish:
     name: Release Kaytu choco
+    if: github.event.inputs.publishChocolatey == 'true'
     runs-on: windows-latest
     needs:
       - tag
