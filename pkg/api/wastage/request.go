@@ -49,6 +49,10 @@ func Ec2InstanceWastageRequest(reqBody EC2InstanceWastageRequest) (*EC2InstanceW
 		return nil, ErrLogin
 	}
 
+	if res.StatusCode >= 300 || res.StatusCode < 200 {
+		return nil, fmt.Errorf("server returned status code %d, [requestAbout] : %s", res.StatusCode, string(body))
+	}
+
 	response := EC2InstanceWastageResponse{}
 	err = json.Unmarshal(body, &response)
 	if err != nil {
