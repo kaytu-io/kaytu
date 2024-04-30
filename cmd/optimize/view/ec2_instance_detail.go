@@ -141,7 +141,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
-				"  License Price",
+				"  License Cost",
 				fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Current.LicensePrice),
 				"",
 				"",
