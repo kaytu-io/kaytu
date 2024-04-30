@@ -8,14 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 )
 
-var baseStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
 var costStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 var savingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 
@@ -50,31 +47,19 @@ type Ec2InstanceOptimizations struct {
 
 func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2InstanceOptimizations {
 	columns := []table.Column{
-		{Title: "Instance Id", Width: 23},
-		{Title: "Instance Name", Width: 23},
-		{Title: "Instance Type", Width: 15},
-		{Title: "Region", Width: 15},
-		{Title: "Platform", Width: 15},
-		{Title: "Total Saving (Monthly)", Width: 25},
-		{Title: "", Width: 1},
+		table.NewColumn("0", "Instance Id", 23),
+		table.NewColumn("1", "Instance Name", 23),
+		table.NewColumn("2", "Instance Type", 15),
+		table.NewColumn("3", "Region", 15),
+		table.NewColumn("4", "Platform", 15),
+		table.NewColumn("5", "Total Saving (Monthly)", 25),
+		table.NewColumn("6", "", 1),
 	}
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows(nil),
-		table.WithFocused(true),
-		table.WithHeight(10),
-	)
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
-	t.SetStyles(s)
+	t := table.New(columns).
+		Focused(true).
+		WithPageSize(10).
+		WithBaseStyle(activeStyleBase).
+		BorderRounded()
 
 	return &Ec2InstanceOptimizations{
 		itemsChan: make(chan OptimizationItem, 1000),
@@ -132,7 +117,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.items = append(m.items, newItem)
 				}
 
-				var rows []table.Row
+				var rows Rows
 				for _, i := range m.items {
 					platform := ""
 					if i.Instance.PlatformDetails != nil {
@@ -159,7 +144,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						name = *i.Instance.InstanceId
 					}
 
-					row := table.Row{
+					row := Row{
 						*i.Instance.InstanceId,
 						name,
 						string(i.Instance.InstanceType),
@@ -173,7 +158,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					row = append(row, "→")
 					rows = append(rows, row)
 				}
-				m.table.SetRows(rows)
+				m.table = m.table.WithRows(rows.ToTableRows())
 			default:
 				nothingToAdd = true
 			}
@@ -187,10 +172,10 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q":
 			return m, tea.Quit
 		case "p":
-			if len(m.table.SelectedRow()) == 0 {
+			if m.table.TotalRows() == 0 {
 				break
 			}
-			selectedInstanceID := m.table.SelectedRow()[0]
+			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
 				if selectedInstanceID == *i.Instance.InstanceId {
 					m.prefConf = NewPreferencesConfiguration(i.Preferences, func(items []preferences2.PreferenceItem) {
@@ -209,7 +194,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.UpdateResponsive()
 		case "P":
-			if len(m.table.SelectedRow()) == 0 {
+			if m.table.TotalRows() == 0 {
 				break
 			}
 
@@ -227,11 +212,11 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			initCmd = m.prefConf.Init()
 			m.UpdateResponsive()
 		case "enter", "right":
-			if len(m.table.SelectedRow()) == 0 {
+			if m.table.TotalRows() == 0 {
 				break
 			}
 
-			selectedInstanceID := m.table.SelectedRow()[0]
+			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
 				if selectedInstanceID == *i.Instance.InstanceId {
 					m.detailsPage = NewEc2InstanceDetail(i, func() {
@@ -286,7 +271,7 @@ func (m *Ec2InstanceOptimizations) View() string {
 	}
 	return "Current runtime cost: " + costStyle.Render(fmt.Sprintf("$%.2f", totalCost)) +
 		", Savings: " + savingStyle.Render(fmt.Sprintf("$%.2f", savings)) + "\n" +
-		baseStyle.Render(m.table.View()) + "\n" +
+		m.table.View() + "\n" +
 		m.help.String()
 }
 
@@ -296,7 +281,7 @@ func (m *Ec2InstanceOptimizations) SendItem(item OptimizationItem) {
 
 func (m *Ec2InstanceOptimizations) UpdateResponsive() {
 	defer func() {
-		m.table.SetHeight(m.tableHeight - 5)
+		m.table = m.table.WithPageSize(m.tableHeight - 7)
 		if m.prefConf != nil {
 			m.prefConf.SetHeight(m.tableHeight)
 		}
@@ -310,18 +295,18 @@ func (m *Ec2InstanceOptimizations) UpdateResponsive() {
 		return
 	}
 
-	m.tableHeight = 6
+	m.tableHeight = 8
 	m.help.SetHeight(m.help.MinHeight())
 
 	checkResponsive := func() bool {
-		return m.height >= m.help.height+m.tableHeight && m.help.IsResponsive() && m.tableHeight >= 5
+		return m.height >= m.help.height+m.tableHeight && m.help.IsResponsive() && m.tableHeight >= 7
 	}
 
 	if !checkResponsive() {
 		return // nothing to do
 	}
 
-	for m.tableHeight < 9 {
+	for m.tableHeight < 11 {
 		m.tableHeight++
 		if !checkResponsive() {
 			m.tableHeight--
@@ -358,11 +343,11 @@ func (m *Ec2InstanceOptimizations) MinHeight() int {
 	if m.detailsPage != nil {
 		return m.detailsPage.MinHeight()
 	}
-	return m.help.MinHeight() + 5 + 1
+	return m.help.MinHeight() + 7 + 1
 }
 
 func (m *Ec2InstanceOptimizations) PreferredMinHeight() int {
-	return 10
+	return 15
 }
 
 func (m *Ec2InstanceOptimizations) MaxHeight() int {
