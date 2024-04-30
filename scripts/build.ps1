@@ -61,4 +61,4 @@ Write-Host "AK=$ak"
 
 choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
 
-#choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
+choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
