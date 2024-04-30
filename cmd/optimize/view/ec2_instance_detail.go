@@ -141,6 +141,15 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				}),
 			},
 			{
+				"  License Cost",
+				fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Current.LicensePrice),
+				"",
+				"",
+				ifRecommendationExists(func() string {
+					return fmt.Sprintf("$%.2f", item.Wastage.RightSizing.Recommended.LicensePrice)
+				}),
+			},
+			{
 				"  Memory",
 				fmt.Sprintf("%.1f GiB", item.Wastage.RightSizing.Current.Memory),
 				Percentage(item.Wastage.RightSizing.Memory.Avg),
