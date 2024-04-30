@@ -30,8 +30,8 @@ if (Test-Path -Path ".\tools") {
 New-Item .\tools -ItemType "directory"
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 # removing the first v as chocolatey doesnt like this version
-# $chocoVersion = $version.Substring(1, ($version.Length-1));
-$chocoVersion = "0.3.9"
+$chocoVersion = $version.Substring(1, ($version.Length-1));
+# $chocoVersion = "0.3.9"
 # choco new -h
 function Get-ScriptDirectory { Split-Path $MyInvocation.ScriptName }
 $templatePath = Join-Path (Get-ScriptDirectory) ".\templates"
@@ -60,11 +60,5 @@ $ak = $ak.Substring(8)
 Write-Host "AK=$ak"
 
 choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
-# choco push -s https://push.chocolatey.org/ -k="'$env:CHOCO_API_KEY'"
-# choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ -k="'$env:CHOCO_API_KEY'"
-# choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ -k=$env:CHOCO_API_KEY
-choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
-# choco apikey --api-key $env:CHOCO_API_KEY -source https://push.chocolatey.org/
-# choco push kaytu.$chocoVersion.nupkg --source https://push.chocolatey.org/
-# choco push -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
-# choco push --source https://push.chocolatey.org/
+
+#choco push kaytu.$chocoVersion.nupkg -s https://push.chocolatey.org/ --api-key=$env:CHOCO_API_KEY
