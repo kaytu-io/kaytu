@@ -2,26 +2,58 @@ package view
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/muesli/reflow/wordwrap"
 	"strings"
 )
 
 var bold = lipgloss.NewStyle().Bold(true)
+var changeFrom = lipgloss.NewStyle().Background(lipgloss.Color("88"))
+var changeTo = lipgloss.NewStyle().Background(lipgloss.Color("28"))
+
+var (
+	styleBase = lipgloss.NewStyle().
+			BorderForeground(lipgloss.Color("238")).
+			Align(lipgloss.Left)
+	activeStyleBase = lipgloss.NewStyle().
+			BorderForeground(lipgloss.Color("248")).
+			Align(lipgloss.Left)
+)
+
+type Row []string
+type Rows []Row
+
+func (r Row) ToTableRow() table.Row {
+	data := table.RowData{}
+	for idx, d := range r {
+		data[fmt.Sprintf("%d", idx)] = d
+	}
+	return table.NewRow(data)
+}
+
+func (r Rows) ToTableRows() []table.Row {
+	var rows []table.Row
+	for _, row := range r {
+		rows = append(rows, row.ToTableRow())
+	}
+	return rows
+}
 
 type Ec2InstanceDetail struct {
 	item             OptimizationItem
 	close            func()
 	deviceTable      table.Model
 	detailTable      table.Model
-	deviceProperties map[string][]table.Row
+	deviceProperties map[string]Rows
 	width            int
 	height           int
 	selectedDevice   string
 	help             HelpView
+
+	detailTableHasFocus bool
 }
 
 func PFloat64ToString(v *float64) string {
@@ -73,7 +105,7 @@ func SizeByteToGB(v *int32) string {
 	return fmt.Sprintf("%d GB", vv)
 }
 
-func ExtractProperties(item OptimizationItem) map[string][]table.Row {
+func ExtractProperties(item OptimizationItem) map[string]Rows {
 	ifRecommendationExists := func(f func() string) string {
 		if item.Wastage.RightSizing.Recommended != nil {
 			return f()
@@ -81,7 +113,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 		return ""
 	}
 
-	res := map[string][]table.Row{
+	res := map[string]Rows{
 		*item.Instance.InstanceId: {
 			{
 				"",
@@ -213,7 +245,7 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 			return ""
 		}
 
-		res[*v.VolumeId] = []table.Row{
+		res[*v.VolumeId] = Rows{
 			{
 				"",
 				"",
@@ -296,6 +328,16 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 		}
 	}
 
+	for deviceID, rows := range res {
+		for idx, row := range rows {
+			if row[1] != row[4] {
+				row[1] = changeFrom.Render(row[1])
+				row[4] = changeTo.Render(row[4])
+			}
+			rows[idx] = row
+		}
+		res[deviceID] = rows
+	}
 	return res
 }
 
@@ -308,14 +350,15 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 	}
 
 	deviceColumns := []table.Column{
-		{Title: "DeviceID", Width: 30},
-		{Title: "ResourceType", Width: 20},
-		{Title: "Runtime", Width: 13},
-		{Title: "Current Cost", Width: 20},
-		{Title: "Right sized Cost", Width: 20},
-		{Title: "Savings", Width: 20},
+		table.NewColumn("0", "DeviceID", 30),
+		table.NewColumn("1", "ResourceType", 20),
+		table.NewColumn("2", "Runtime", 13),
+		table.NewColumn("3", "Current Cost", 20),
+		table.NewColumn("4", "Right sized Cost", 20),
+		table.NewColumn("5", "Savings", 20),
 	}
-	deviceRows := []table.Row{
+
+	deviceRows := Rows{
 		{
 			*item.Instance.InstanceId,
 			"EC2 Instance",
@@ -341,7 +384,7 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		if item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended != nil {
 			saving = item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Current.Cost - item.Wastage.VolumeRightSizing[hash.HashString(*v.Ebs.VolumeId)].Recommended.Cost
 		}
-		deviceRows = append(deviceRows, table.Row{
+		deviceRows = append(deviceRows, Row{
 			*v.Ebs.VolumeId,
 			"EBS Volume",
 			"730 hours",
@@ -360,50 +403,28 @@ func NewEc2InstanceDetail(item OptimizationItem, close func()) *Ec2InstanceDetai
 		}
 	}
 	detailColumns := []table.Column{
-		{Title: "", Width: 30},
-		{Title: "Current", Width: 20},
-		{Title: fmt.Sprintf("%s day usage", days), Width: 15},
-		{Title: "", Width: 15},
-		{Title: "Recommendation", Width: 30},
+		table.NewColumn("0", "", 30),
+		table.NewColumn("1", "Current", 30),
+		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
+		table.NewColumn("3", "", 15),
+		table.NewColumn("4", "Recommendation", 30),
 	}
 
 	model := Ec2InstanceDetail{
 		item:  item,
 		close: close,
-		detailTable: table.New(
-			table.WithColumns(detailColumns),
-			table.WithFocused(false),
-			table.WithHeight(1),
-		),
-		deviceTable: table.New(
-			table.WithColumns(deviceColumns),
-			table.WithRows(deviceRows),
-			table.WithFocused(true),
-			table.WithHeight(len(deviceRows)),
-		),
+		detailTable: table.New(detailColumns).
+			WithFooterVisibility(false).
+			WithPageSize(1).
+			WithBaseStyle(styleBase).BorderRounded(),
+		deviceTable: table.New(deviceColumns).
+			WithFooterVisibility(false).
+			WithRows(deviceRows.ToTableRows()).
+			Focused(true).
+			WithPageSize(len(deviceRows)).
+			WithBaseStyle(activeStyleBase).BorderRounded(),
 	}
 
-	detailStyle := table.DefaultStyles()
-	detailStyle.Header = detailStyle.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	detailStyle.Selected = lipgloss.NewStyle()
-
-	deviceStyle := table.DefaultStyles()
-	deviceStyle.Header = deviceStyle.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	deviceStyle.Selected = deviceStyle.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
-
-	model.detailTable.SetStyles(detailStyle)
-	model.deviceTable.SetStyles(deviceStyle)
 	model.deviceProperties = ExtractProperties(item)
 	model.help = HelpView{
 		lines: []string{
@@ -423,34 +444,46 @@ func (m *Ec2InstanceDetail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
-		m.deviceTable.SetWidth(m.width)
-		m.detailTable.SetWidth(m.width)
+		m.detailTable = m.detailTable.WithMaxTotalWidth(m.width)
+		m.deviceTable = m.deviceTable.WithMaxTotalWidth(m.width)
 		m.SetHeight(m.height)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
 			return m, tea.Quit
+		case "enter":
+			m.detailTableHasFocus = true
+			m.deviceTable = m.deviceTable.WithBaseStyle(styleBase)
+			m.detailTable = m.detailTable.WithBaseStyle(activeStyleBase).Focused(true).WithHighlightedRow(0)
 		case "esc", "left":
-			m.close()
+			if m.detailTableHasFocus {
+				m.detailTableHasFocus = false
+				m.detailTable = m.detailTable.Focused(false).WithBaseStyle(styleBase)
+				m.deviceTable = m.deviceTable.Focused(true).WithBaseStyle(activeStyleBase)
+			} else {
+				m.close()
+			}
 		}
 	}
-	m.deviceTable, cmd = m.deviceTable.Update(msg)
-	if m.deviceTable.SelectedRow() != nil {
-		if m.selectedDevice != m.deviceTable.SelectedRow()[0] {
-			m.selectedDevice = m.deviceTable.SelectedRow()[0]
-			m.detailTable.SetRows(m.deviceProperties[m.selectedDevice])
-			m.detailTable.SetHeight(len(m.deviceProperties[m.selectedDevice]))
-			m.SetHeight(m.height)
-		}
+	if m.detailTableHasFocus {
+		m.detailTable, cmd = m.detailTable.Update(msg)
+	} else {
+		m.deviceTable, cmd = m.deviceTable.Update(msg)
 	}
-	//m.detailTable, detailCMD = m.detailTable.Update(msg)
+
+	if m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
+		m.selectedDevice = m.deviceTable.HighlightedRow().Data["0"].(string)
+
+		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows()).WithPageSize(len(m.deviceProperties[m.selectedDevice]))
+		m.SetHeight(m.height)
+	}
 	return m, tea.Batch(detailCMD, cmd)
 }
 
 func (m *Ec2InstanceDetail) View() string {
-	return baseStyle.Render(m.deviceTable.View()) + "\n" +
+	return m.deviceTable.View() + "\n" +
 		wordwrap.String(m.item.Wastage.RightSizing.Description, m.width) + "\n" +
-		baseStyle.Render(m.detailTable.View()) + "\n" +
+		m.detailTable.View() + "\n" +
 		m.help.String()
 }
 
@@ -459,12 +492,12 @@ func (m *Ec2InstanceDetail) IsResponsive() bool {
 }
 
 func (m *Ec2InstanceDetail) SetHeight(height int) {
-	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n")
+	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n") + 1
 	m.height = height
-	m.help.SetHeight(m.height - (len(m.detailTable.Rows()) + 4 + len(m.deviceTable.Rows()) + 4 + l))
+	m.help.SetHeight(m.height - (m.detailTable.TotalRows() + 4 + m.deviceTable.TotalRows() + 4 + l))
 }
 
 func (m *Ec2InstanceDetail) MinHeight() int {
-	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n")
-	return len(m.detailTable.Rows()) + 4 + len(m.deviceTable.Rows()) + 4 + m.help.MinHeight() + l
+	l := strings.Count(wordwrap.String(m.item.Wastage.RightSizing.Description, m.width), "\n") + 1
+	return m.detailTable.TotalRows() + 4 + m.deviceTable.TotalRows() + 4 + m.help.MinHeight() + l
 }
