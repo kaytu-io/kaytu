@@ -155,7 +155,16 @@ func ExtractProperties(item OptimizationItem) map[string][]table.Row {
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Avg),
 				PNetworkThroughputMbps(item.Wastage.RightSizing.EBSBandwidth.Max),
 				ifRecommendationExists(func() string {
-					return fmt.Sprintf("%s", item.Wastage.RightSizing.Recommended.EBSBandwidth)
+					return item.Wastage.RightSizing.Recommended.EBSBandwidth
+				}),
+			},
+			{
+				bold.Render("EBS IOPS"),
+				fmt.Sprintf("%s", item.Wastage.RightSizing.Current.EBSIops),
+				fmt.Sprintf("%s io/s", PFloat64ToString(item.Wastage.RightSizing.EBSIops.Avg)),
+				fmt.Sprintf("%s io/s", PFloat64ToString(item.Wastage.RightSizing.EBSIops.Max)),
+				ifRecommendationExists(func() string {
+					return item.Wastage.RightSizing.Recommended.EBSIops
 				}),
 			},
 			{

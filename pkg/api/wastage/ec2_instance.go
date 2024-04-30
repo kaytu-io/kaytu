@@ -53,6 +53,7 @@ type RightsizingEC2Instance struct {
 	VCPU              int64   `json:"vCPU"`
 	Memory            float64 `json:"memory"`
 	EBSBandwidth      string  `json:"ebsBandwidth"`
+	EBSIops           string  `json:"ebsIops"`
 	NetworkThroughput string  `json:"networkThroughput"`
 	ENASupported      string  `json:"enaSupported"`
 }
@@ -70,6 +71,7 @@ type RightSizingRecommendation struct {
 	VCPU              Usage `json:"vCPU"`
 	Memory            Usage `json:"memory"`
 	EBSBandwidth      Usage `json:"ebsBandwidth"`
+	EBSIops           Usage `json:"ebsIops"`
 	NetworkThroughput Usage `json:"networkThroughput"`
 
 	Description string `json:"description"`
