@@ -11,8 +11,8 @@ import (
 )
 
 var bold = lipgloss.NewStyle().Bold(true)
-var changeFrom = lipgloss.NewStyle().Background(lipgloss.Color("88"))
-var changeTo = lipgloss.NewStyle().Background(lipgloss.Color("28"))
+var changeFrom = lipgloss.NewStyle().Background(lipgloss.Color("88")).Foreground(lipgloss.Color("#ffffff"))
+var changeTo = lipgloss.NewStyle().Background(lipgloss.Color("28")).Foreground(lipgloss.Color("#ffffff"))
 
 var (
 	styleBase = lipgloss.NewStyle().

@@ -247,13 +247,13 @@ func (m *App) ProcessRegion(region string) {
 		}
 		m.optimizationsTable.SendItem(oi)
 		if !oi.Skipped {
-			m.processInstanceChan <- oi
+			m.processWastageChan <- oi
 		}
 	}
 }
 
 func (m *App) ProcessWastages() {
-	for item := range m.processInstanceChan {
+	for item := range m.processWastageChan {
 		go m.WastageWorker(item)
 	}
 }

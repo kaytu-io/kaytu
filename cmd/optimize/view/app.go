@@ -13,9 +13,9 @@ type App struct {
 	metricProvider metrics.MetricProvider
 	identification map[string]string
 
-	processInstanceChan chan OptimizationItem
-	optimizationsTable  *Ec2InstanceOptimizations
-	jobs                *JobsView
+	processWastageChan chan OptimizationItem
+	optimizationsTable *Ec2InstanceOptimizations
+	jobs               *JobsView
 
 	width  int
 	height int
@@ -29,12 +29,12 @@ var (
 func NewApp(prv provider.Provider, metric metrics.MetricProvider, identification map[string]string) *App {
 	pi := make(chan OptimizationItem, 1000)
 	r := &App{
-		processInstanceChan: pi,
-		optimizationsTable:  NewEC2InstanceOptimizations(pi),
-		jobs:                NewJobsView(),
-		provider:            prv,
-		metricProvider:      metric,
-		identification:      identification,
+		processWastageChan: pi,
+		optimizationsTable: NewEC2InstanceOptimizations(pi),
+		jobs:               NewJobsView(),
+		provider:           prv,
+		metricProvider:     metric,
+		identification:     identification,
 	}
 	go r.ProcessWastages()
 	go r.ProcessAllRegions()
