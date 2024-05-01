@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	types2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
@@ -24,8 +25,10 @@ type OptimizationItem struct {
 	Skipped             bool
 	SkipReason          *string
 
-	Preferences []preferences2.PreferenceItem
-	Wastage     wastage.EC2InstanceWastageResponse
+	Preferences   []preferences2.PreferenceItem
+	Wastage       wastage.EC2InstanceWastageResponse
+	Metrics       map[string][]types2.Datapoint
+	VolumeMetrics map[string]map[string][]types2.Datapoint
 }
 
 type Ec2InstanceOptimizations struct {
@@ -277,7 +280,7 @@ func (m *Ec2InstanceOptimizations) View() string {
 		}
 	}
 
-	return fmt.Sprintf("Current runtime cost: $%s, Savings: $%s\n%s\n%s",
+	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
 		costStyle.Render(fmt.Sprintf("$%.2f", totalCost)), savingStyle.Render(fmt.Sprintf("$%.2f", savings)),
 		m.table.View(),
 		m.help.String())

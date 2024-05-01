@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
-	"github.com/aws/aws-sdk-go-v2/service/organizations"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/flags"
 	"github.com/kaytu-io/kaytu/cmd/optimize/preferences"
@@ -12,6 +9,8 @@ import (
 	"github.com/kaytu-io/kaytu/cmd/predef"
 	awsConfig "github.com/kaytu-io/kaytu/pkg/aws"
 	"github.com/kaytu-io/kaytu/pkg/hash"
+	"github.com/kaytu-io/kaytu/pkg/metrics"
+	"github.com/kaytu-io/kaytu/pkg/provider"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -43,45 +42,29 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		client := sts.NewFromConfig(cfg)
-		out, err := client.GetCallerIdentity(context.Background(), &sts.GetCallerIdentityInput{})
+		prv, err := provider.NewAWS(cfg)
 		if err != nil {
-			return errors.New("unable to retrieve AWS account details, please check your AWS cli and ensure that you are logged-in.")
+			return err
 		}
 
-		orgClient := organizations.NewFromConfig(cfg)
-		orgOut, _ := orgClient.DescribeOrganization(context.Background(), &organizations.DescribeOrganizationInput{})
+		metricPrv, err := metrics.NewCloudWatch(cfg)
+		if err != nil {
+			return err
+		}
+
+		identification, err := prv.Identify()
 		config, err := server.GetConfig()
 		if err != nil {
 			return err
 		}
 
-		identification := map[string]string{}
 		if config != nil && config.AccessToken != "" {
-			identification["account"] = hash.HashString(*out.Account)
-			identification["user_id"] = hash.HashString(*out.UserId)
-			identification["sts_arn"] = hash.HashString(*out.Arn)
-
-			if orgOut != nil && orgOut.Organization != nil {
-				identification["org_id"] = hash.HashString(*orgOut.Organization.Id)
-				identification["org_m_arn"] = hash.HashString(*orgOut.Organization.MasterAccountArn)
-				identification["org_m_email"] = hash.HashString(*orgOut.Organization.MasterAccountEmail)
-				identification["org_m_account"] = hash.HashString(*orgOut.Organization.MasterAccountId)
-			}
-		} else {
-			identification["account"] = *out.Account
-			identification["user_id"] = *out.UserId
-			identification["sts_arn"] = *out.Arn
-
-			if orgOut != nil && orgOut.Organization != nil {
-				identification["org_id"] = *orgOut.Organization.Id
-				identification["org_m_arn"] = *orgOut.Organization.MasterAccountArn
-				identification["org_m_email"] = *orgOut.Organization.MasterAccountEmail
-				identification["org_m_account"] = *orgOut.Organization.MasterAccountId
+			for k, v := range identification {
+				identification[k] = hash.HashString(v)
 			}
 		}
 
-		p := tea.NewProgram(view.NewApp(cfg, identification))
+		p := tea.NewProgram(view.NewApp(prv, metricPrv, identification))
 		if _, err := p.Run(); err != nil {
 			return err
 		}
