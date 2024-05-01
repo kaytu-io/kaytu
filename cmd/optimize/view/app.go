@@ -220,20 +220,11 @@ func (m *App) ProcessRegion(cfg aws.Config) {
 
 		for _, r := range page.Reservations {
 			for _, v := range r.Instances {
-				if v.State.Name != types.InstanceStateNameRunning {
-					continue
-				}
-				if v.InstanceLifecycle == types.InstanceLifecycleTypeSpot {
-					continue
-				}
 				isAutoScaling := false
 				for _, tag := range v.Tags {
 					if *tag.Key == "aws:autoscaling:groupName" && tag.Value != nil && *tag.Value != "" {
 						isAutoScaling = true
 					}
-				}
-				if isAutoScaling {
-					continue
 				}
 
 				preferences := preferences2.DefaultPreferences()
@@ -243,8 +234,27 @@ func (m *App) ProcessRegion(cfg aws.Config) {
 					OptimizationLoading: true,
 					Preferences:         preferences,
 				}
+				if v.State.Name != types.InstanceStateNameRunning ||
+					v.InstanceLifecycle == types.InstanceLifecycleTypeSpot ||
+					isAutoScaling {
+					oi.OptimizationLoading = false
+					oi.Skipped = true
+					reason := ""
+					if v.State.Name != types.InstanceStateNameRunning {
+						reason = "not running"
+					} else if v.InstanceLifecycle == types.InstanceLifecycleTypeSpot {
+						reason = "spot instance"
+					} else if isAutoScaling {
+						reason = "auto-scaling group instance"
+					}
+					if len(reason) > 0 {
+						oi.SkipReason = &reason
+					}
+				}
 				m.optimizationsTable.SendItem(oi)
-				m.processInstanceChan <- oi
+				if !oi.Skipped {
+					m.processInstanceChan <- oi
+				}
 			}
 		}
 	}
