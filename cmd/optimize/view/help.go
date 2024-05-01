@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"github.com/kaytu-io/kaytu/cmd/optimize/style"
 	"math"
 	"strings"
 )
@@ -35,7 +36,7 @@ func (h *HelpView) String() string {
 			prefix = "\n"
 		}
 	}
-	return prefix + helpStyle.Render(strings.Join(hlines, "\n")) + suffix + "\n"
+	return prefix + style.HelpStyle.Render(strings.Join(hlines, "\n")) + suffix + "\n"
 }
 
 func (h *HelpView) joinLines(lines []string, n int) []string {

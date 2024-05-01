@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
+	"github.com/kaytu-io/kaytu/cmd/optimize/style"
 	"strconv"
 	"strings"
 )
@@ -139,11 +140,11 @@ func (m *PreferenceItem) View() string {
 		key = fmt.Sprintf("%s (%s)", key, m.pref.Unit)
 	}
 	builder.WriteString(" ")
-	builder.WriteString(inputStyle.Width(45).Render(key))
+	builder.WriteString(style.InputStyle.Width(45).Render(key))
 	builder.WriteString(" ")
 	builder.WriteString(m.input.View())
 	if len(m.pref.PossibleValues) > 1 && m.input.Focused() && !m.pref.Pinned {
-		builder.WriteString(continueStyle.Render(" ←/→ to change value"))
+		builder.WriteString(style.ContinueStyle.Render(" ←/→ to change value"))
 	}
 	builder.WriteString("\n")
 

@@ -10,6 +10,7 @@ import (
 	awsConfig "github.com/kaytu-io/kaytu/pkg/aws"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/kaytu-io/kaytu/pkg/metrics"
+	processor2 "github.com/kaytu-io/kaytu/pkg/processor"
 	"github.com/kaytu-io/kaytu/pkg/provider"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/spf13/cobra"
@@ -64,7 +65,12 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		p := tea.NewProgram(view.NewApp(prv, metricPrv, identification))
+		jobs := view.NewJobsView()
+		optimizations := view.NewOptimizationsView()
+		processor := processor2.NewEC2InstanceProcessor(prv, metricPrv, identification, jobs, optimizations)
+		optimizations.SetReEvaluateFunc(processor.ReEvaluate)
+
+		p := tea.NewProgram(view.NewApp(optimizations, jobs))
 		if _, err := p.Run(); err != nil {
 			return err
 		}

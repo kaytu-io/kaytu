@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/kaytu-io/kaytu/cmd/optimize/style"
 	"github.com/muesli/reflow/wordwrap"
 	"sort"
 	"strings"
@@ -215,17 +216,17 @@ func (m *JobsView) View() string {
 			if idx == 0 {
 				line = fmt.Sprintf(" failures: - %s", v)
 			}
-			lines = append(lines, errorStyle.Render(wordwrap.String(line, m.width)))
+			lines = append(lines, style.ErrorStyle.Render(wordwrap.String(line, m.width)))
 			failedShowCount--
 		}
 		if m.moreFailedJobs && failedShowCount > 0 {
-			lines = append(lines, errorStyle.Render("       ..."))
+			lines = append(lines, style.ErrorStyle.Render("       ..."))
 		}
 	}
 
 	statusErr := ""
 	if len(m.statusErr) > 0 {
-		statusErr = errorStyle.Render(wordwrap.String("  error: "+m.statusErr, m.width)) + "\n"
+		statusErr = style.ErrorStyle.Render(wordwrap.String("  error: "+m.statusErr, m.width)) + "\n"
 	}
 
 	return statusErr + strings.Join(lines, "\n")
