@@ -1,4 +1,4 @@
-package view
+package processor
 
 import (
 	"fmt"
@@ -6,22 +6,58 @@ import (
 	types2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
+	"github.com/kaytu-io/kaytu/cmd/optimize/view"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
 	"github.com/kaytu-io/kaytu/pkg/hash"
+	"github.com/kaytu-io/kaytu/pkg/metrics"
+	"github.com/kaytu-io/kaytu/pkg/provider"
 	"os"
 	"strings"
 	"sync"
 	"time"
 )
 
-func (m *App) ProcessAllRegions() {
+type EC2InstanceProcessor struct {
+	jobs              *view.JobsView
+	optimizationsView *view.OptimizationsView
+
+	provider       provider.Provider
+	metricProvider metrics.MetricProvider
+	identification map[string]string
+
+	processWastageChan chan EC2InstanceItem
+	items              map[string]EC2InstanceItem
+}
+
+func NewEC2InstanceProcessor(
+	prv provider.Provider,
+	metric metrics.MetricProvider,
+	identification map[string]string,
+	jobs *view.JobsView,
+	optimizationsView *view.OptimizationsView,
+) *EC2InstanceProcessor {
+	r := &EC2InstanceProcessor{
+		processWastageChan: make(chan EC2InstanceItem, 1000),
+		optimizationsView:  optimizationsView,
+		jobs:               jobs,
+		provider:           prv,
+		metricProvider:     metric,
+		identification:     identification,
+		items:              map[string]EC2InstanceItem{},
+	}
+	go r.ProcessWastages()
+	go r.ProcessAllRegions()
+	return r
+}
+
+func (m *EC2InstanceProcessor) ProcessAllRegions() {
 	defer func() {
 		if r := recover(); r != nil {
 			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 
-	job := m.jobs.Publish(Job{ID: "list_all_regions", Descrption: "Listing all available regions"})
+	job := m.jobs.Publish(view.Job{ID: "list_all_regions", Descrption: "Listing all available regions"})
 	job.Done = true
 	regions, err := m.provider.ListAllRegions()
 	if err != nil {
@@ -43,14 +79,14 @@ func (m *App) ProcessAllRegions() {
 	wg.Wait()
 }
 
-func (m *App) ProcessRegion(region string) {
+func (m *EC2InstanceProcessor) ProcessRegion(region string) {
 	defer func() {
 		if r := recover(); r != nil {
 			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 
-	job := m.jobs.Publish(Job{ID: fmt.Sprintf("region_ec2_instances_%s", region), Descrption: "Listing all ec2 instances in " + region})
+	job := m.jobs.Publish(view.Job{ID: fmt.Sprintf("region_ec2_instances_%s", region), Descrption: "Listing all ec2 instances in " + region})
 	job.Done = true
 
 	instances, err := m.provider.ListInstances(region)
@@ -62,7 +98,7 @@ func (m *App) ProcessRegion(region string) {
 	m.jobs.Publish(job)
 
 	for _, instance := range instances {
-		oi := OptimizationItem{
+		oi := EC2InstanceItem{
 			Instance:            instance,
 			Region:              region,
 			OptimizationLoading: true,
@@ -94,7 +130,8 @@ func (m *App) ProcessRegion(region string) {
 		}
 
 		// just to show the loading
-		m.optimizationsTable.SendItem(oi)
+		m.items[*oi.Instance.InstanceId] = oi
+		m.optimizationsView.SendItem(oi.ToOptimizationItem())
 	}
 
 	for _, instance := range instances {
@@ -110,7 +147,7 @@ func (m *App) ProcessRegion(region string) {
 			continue
 		}
 
-		vjob := m.jobs.Publish(Job{ID: fmt.Sprintf("volumes_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting volumes of %s", *instance.InstanceId)})
+		vjob := m.jobs.Publish(view.Job{ID: fmt.Sprintf("volumes_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting volumes of %s", *instance.InstanceId)})
 		vjob.Done = true
 
 		volumes, err := m.provider.ListAttachedVolumes(region, instance)
@@ -121,7 +158,7 @@ func (m *App) ProcessRegion(region string) {
 		}
 		m.jobs.Publish(vjob)
 
-		imjob := m.jobs.Publish(Job{ID: fmt.Sprintf("instance_%s_metrics", *instance.InstanceId), Descrption: fmt.Sprintf("getting metrics of %s", *instance.InstanceId)})
+		imjob := m.jobs.Publish(view.Job{ID: fmt.Sprintf("instance_%s_metrics", *instance.InstanceId), Descrption: fmt.Sprintf("getting metrics of %s", *instance.InstanceId)})
 		imjob.Done = true
 		startTime := time.Now().Add(-24 * 7 * time.Hour)
 		endTime := time.Now()
@@ -179,7 +216,7 @@ func (m *App) ProcessRegion(region string) {
 		}
 		m.jobs.Publish(imjob)
 
-		ivjob := m.jobs.Publish(Job{ID: fmt.Sprintf("volume_%s_metrics", *instance.InstanceId), Descrption: fmt.Sprintf("getting volume metrics of %s", *instance.InstanceId)})
+		ivjob := m.jobs.Publish(view.Job{ID: fmt.Sprintf("volume_%s_metrics", *instance.InstanceId), Descrption: fmt.Sprintf("getting volume metrics of %s", *instance.InstanceId)})
 		ivjob.Done = true
 
 		var volumeIDs []string
@@ -219,7 +256,7 @@ func (m *App) ProcessRegion(region string) {
 		}
 		m.jobs.Publish(ivjob)
 
-		oi := OptimizationItem{
+		oi := EC2InstanceItem{
 			Instance:            instance,
 			Volumes:             volumes,
 			Metrics:             instanceMetrics,
@@ -245,27 +282,28 @@ func (m *App) ProcessRegion(region string) {
 				oi.SkipReason = &reason
 			}
 		}
-		m.optimizationsTable.SendItem(oi)
+		m.items[*oi.Instance.InstanceId] = oi
+		m.optimizationsView.SendItem(oi.ToOptimizationItem())
 		if !oi.Skipped {
-			m.processInstanceChan <- oi
+			m.processWastageChan <- oi
 		}
 	}
 }
 
-func (m *App) ProcessWastages() {
-	for item := range m.processInstanceChan {
+func (m *EC2InstanceProcessor) ProcessWastages() {
+	for item := range m.processWastageChan {
 		go m.WastageWorker(item)
 	}
 }
 
-func (m *App) WastageWorker(item OptimizationItem) {
+func (m *EC2InstanceProcessor) WastageWorker(item EC2InstanceItem) {
 	defer func() {
 		if r := recover(); r != nil {
 			m.jobs.PublishError(fmt.Errorf("%v", r))
 		}
 	}()
 
-	job := m.jobs.Publish(Job{ID: fmt.Sprintf("wastage_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("Evaluating usage data for %s", *item.Instance.InstanceId)})
+	job := m.jobs.Publish(view.Job{ID: fmt.Sprintf("wastage_%s", *item.Instance.InstanceId), Descrption: fmt.Sprintf("Evaluating usage data for %s", *item.Instance.InstanceId)})
 	job.Done = true
 
 	var monitoring *types.MonitoringState
@@ -330,18 +368,32 @@ func (m *App) WastageWorker(item OptimizationItem) {
 
 	if res.RightSizing.Current.InstanceType == "" {
 		item.OptimizationLoading = false
-		m.optimizationsTable.SendItem(item)
+		m.items[*item.Instance.InstanceId] = item
+		m.optimizationsView.SendItem(item.ToOptimizationItem())
 		return
 	}
 
-	m.optimizationsTable.SendItem(OptimizationItem{
+	item = EC2InstanceItem{
 		Instance:            item.Instance,
-		Volumes:             item.Volumes,
 		Region:              item.Region,
 		OptimizationLoading: false,
-		Wastage:             *res,
 		Preferences:         item.Preferences,
-	})
+		Skipped:             false,
+		SkipReason:          nil,
+		Volumes:             item.Volumes,
+		Metrics:             item.Metrics,
+		VolumeMetrics:       item.VolumeMetrics,
+		Wastage:             *res,
+	}
+	m.items[*item.Instance.InstanceId] = item
+	m.optimizationsView.SendItem(item.ToOptimizationItem())
+}
+
+func (m *EC2InstanceProcessor) ReEvaluate(id string, items []preferences2.PreferenceItem) {
+	v := m.items[id]
+	v.Preferences = items
+	m.items[id] = v
+	m.processWastageChan <- m.items[id]
 }
 
 func toEBSVolume(v types.Volume) wastage.EC2Volume {

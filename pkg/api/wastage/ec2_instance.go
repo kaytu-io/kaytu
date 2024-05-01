@@ -47,6 +47,7 @@ type EC2InstanceWastageRequest struct {
 
 type RightsizingEC2Instance struct {
 	InstanceType      string  `json:"instanceType"`
+	Region            string  `json:"region"`
 	Cost              float64 `json:"cost"`
 	Processor         string  `json:"processor"`
 	Architecture      string  `json:"architecture"`

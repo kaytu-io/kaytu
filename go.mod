@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.38.0
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.156.0
 	github.com/aws/aws-sdk-go-v2/service/organizations v1.27.3
+	github.com/aws/aws-sdk-go-v2/service/rds v1.78.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6
 	github.com/charmbracelet/bubbles v0.17.1
 	github.com/charmbracelet/bubbletea v0.25.0
