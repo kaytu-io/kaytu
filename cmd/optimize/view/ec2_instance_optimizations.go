@@ -277,7 +277,10 @@ func (m *Ec2InstanceOptimizations) View() string {
 		}
 	}
 
-	return fmt.Sprintf("Current runtime cost: $%.2f, Savings: $%.2f\n%s\n%s", totalCost, savings, m.table.View(), m.help.String())
+	return fmt.Sprintf("Current runtime cost: $%s, Savings: $%s\n%s\n%s",
+		costStyle.Render(fmt.Sprintf("$%.2f", totalCost)), savingStyle.Render(fmt.Sprintf("$%.2f", savings)),
+		m.table.View(),
+		m.help.String())
 }
 
 func (m *Ec2InstanceOptimizations) SendItem(item OptimizationItem) {
