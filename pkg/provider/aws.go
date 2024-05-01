@@ -71,22 +71,6 @@ func (s *AWS) ListInstances(region string) ([]types.Instance, error) {
 
 		for _, r := range page.Reservations {
 			for _, v := range r.Instances {
-				if v.State.Name != types.InstanceStateNameRunning {
-					continue
-				}
-				if v.InstanceLifecycle == types.InstanceLifecycleTypeSpot {
-					continue
-				}
-				isAutoScaling := false
-				for _, tag := range v.Tags {
-					if *tag.Key == "aws:autoscaling:groupName" && tag.Value != nil && *tag.Value != "" {
-						isAutoScaling = true
-					}
-				}
-				if isAutoScaling {
-					continue
-				}
-
 				vms = append(vms, v)
 			}
 		}

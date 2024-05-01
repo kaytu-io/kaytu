@@ -62,16 +62,54 @@ func (m *App) ProcessRegion(region string) {
 	m.jobs.Publish(job)
 
 	for _, instance := range instances {
-		// just to show the loading
-		m.optimizationsTable.SendItem(OptimizationItem{
+		oi := OptimizationItem{
 			Instance:            instance,
 			Region:              region,
 			OptimizationLoading: true,
 			Preferences:         preferences2.DefaultPreferences(),
-		})
+		}
+
+		isAutoScaling := false
+		for _, tag := range instance.Tags {
+			if *tag.Key == "aws:autoscaling:groupName" && tag.Value != nil && *tag.Value != "" {
+				isAutoScaling = true
+			}
+		}
+		if instance.State.Name != types.InstanceStateNameRunning ||
+			instance.InstanceLifecycle == types.InstanceLifecycleTypeSpot ||
+			isAutoScaling {
+			oi.OptimizationLoading = false
+			oi.Skipped = true
+			reason := ""
+			if instance.State.Name != types.InstanceStateNameRunning {
+				reason = "not running"
+			} else if instance.InstanceLifecycle == types.InstanceLifecycleTypeSpot {
+				reason = "spot instance"
+			} else if isAutoScaling {
+				reason = "auto-scaling group instance"
+			}
+			if len(reason) > 0 {
+				oi.SkipReason = &reason
+			}
+		}
+
+		// just to show the loading
+		m.optimizationsTable.SendItem(oi)
 	}
 
 	for _, instance := range instances {
+		isAutoScaling := false
+		for _, tag := range instance.Tags {
+			if *tag.Key == "aws:autoscaling:groupName" && tag.Value != nil && *tag.Value != "" {
+				isAutoScaling = true
+			}
+		}
+		if instance.State.Name != types.InstanceStateNameRunning ||
+			instance.InstanceLifecycle == types.InstanceLifecycleTypeSpot ||
+			isAutoScaling {
+			continue
+		}
+
 		vjob := m.jobs.Publish(Job{ID: fmt.Sprintf("volumes_%s", *instance.InstanceId), Descrption: fmt.Sprintf("getting volumes of %s", *instance.InstanceId)})
 		vjob.Done = true
 
@@ -180,13 +218,6 @@ func (m *App) ProcessRegion(region string) {
 			volumeMetrics[v] = volumeMetric
 		}
 		m.jobs.Publish(ivjob)
-
-		isAutoScaling := false
-		for _, tag := range instance.Tags {
-			if *tag.Key == "aws:autoscaling:groupName" && tag.Value != nil && *tag.Value != "" {
-				isAutoScaling = true
-			}
-		}
 
 		oi := OptimizationItem{
 			Instance:            instance,
