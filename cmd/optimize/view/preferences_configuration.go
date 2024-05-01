@@ -5,26 +5,14 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
+	"github.com/kaytu-io/kaytu/cmd/optimize/style"
 	"strconv"
 	"strings"
 )
 
 type (
 	errMsg error
-)
-
-const (
-	hotPink  = lipgloss.Color("#FF06B7")
-	darkGray = lipgloss.Color("#767676")
-)
-
-var (
-	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
-	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
-	svcDisable    = lipgloss.NewStyle().Background(lipgloss.Color("#222222"))
-	svcEnable     = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222"))
 )
 
 type PreferencesConfiguration struct {
@@ -129,15 +117,15 @@ func (m *PreferencesConfiguration) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *PreferencesConfiguration) View() string {
 	builder := strings.Builder{}
 
-	builder.WriteString(svcDisable.Render("Configure your preferences: "))
+	builder.WriteString(style.SvcDisable.Render("Configure your preferences: "))
 	for idx, svc := range m.serviceList {
 		if idx == m.serviceIdx {
-			builder.WriteString(svcEnable.Render(fmt.Sprintf(" %s ", svc)))
+			builder.WriteString(style.SvcEnable.Render(fmt.Sprintf(" %s ", svc)))
 		} else {
-			builder.WriteString(svcDisable.Render(fmt.Sprintf(" %s ", svc)))
+			builder.WriteString(style.SvcDisable.Render(fmt.Sprintf(" %s ", svc)))
 		}
 	}
-	builder.WriteString(svcDisable.Render("    "))
+	builder.WriteString(style.SvcDisable.Render("    "))
 	builder.WriteString("\n\n")
 
 	for _, pref := range m.items {
