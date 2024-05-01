@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/organizations"
+	"github.com/aws/aws-sdk-go-v2/service/rds"
+	rdstype "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -98,4 +100,25 @@ func (s *AWS) ListAttachedVolumes(region string, instance types.Instance) ([]typ
 	}
 
 	return volumesResp.Volumes, nil
+}
+
+func (s *AWS) ListRDSInstance(region string) ([]rdstype.DBInstance, error) {
+	localCfg := s.cfg
+	localCfg.Region = region
+
+	var dbs []rdstype.DBInstance
+	ctx := context.Background()
+	client := rds.NewFromConfig(localCfg)
+	paginator := rds.NewDescribeDBInstancesPaginator(client, &rds.DescribeDBInstancesInput{})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, r := range page.DBInstances {
+			dbs = append(dbs, r)
+		}
+	}
+	return dbs, nil
 }

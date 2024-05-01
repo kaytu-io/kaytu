@@ -2,47 +2,61 @@ package view
 
 import (
 	"fmt"
-	types2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
-	"github.com/kaytu-io/kaytu/pkg/api/wastage"
-	"strings"
+	"github.com/kaytu-io/kaytu/cmd/optimize/style"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
 )
 
-var costStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
-var savingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
+type Property struct {
+	Key string
 
-type OptimizationItem struct {
-	Instance            types.Instance
-	Volumes             []types.Volume
-	Region              string
-	OptimizationLoading bool
-	Skipped             bool
-	SkipReason          *string
-
-	Preferences   []preferences2.PreferenceItem
-	Wastage       wastage.EC2InstanceWastageResponse
-	Metrics       map[string][]types2.Datapoint
-	VolumeMetrics map[string]map[string][]types2.Datapoint
+	Current     string
+	Average     string
+	Max         string
+	Recommended string
 }
 
-type Ec2InstanceOptimizations struct {
+type Device struct {
+	Properties []Property
+
+	DeviceID       string
+	ResourceType   string
+	Runtime        string
+	CurrentCost    float64
+	RightSizedCost float64
+}
+
+type OptimizationItem struct {
+	ID           string
+	Name         string
+	ResourceType string
+	Region       string
+	Platform     string
+
+	Devices     []Device
+	Preferences []preferences2.PreferenceItem
+	Description string
+
+	Loading    bool
+	Skipped    bool
+	SkipReason *string
+}
+
+type OptimizationsView struct {
 	itemsChan chan OptimizationItem
 
 	table table.Model
 	items []OptimizationItem
 	help  HelpView
 
-	detailsPage *Ec2InstanceDetail
+	detailsPage *OptimizationDetailsView
 	prefConf    *PreferencesConfiguration
 
-	clearScreen  bool
-	instanceChan chan OptimizationItem
+	clearScreen    bool
+	reEvaluateFunc func(id string, items []preferences2.PreferenceItem)
 
 	Width  int
 	height int
@@ -50,11 +64,11 @@ type Ec2InstanceOptimizations struct {
 	tableHeight int
 }
 
-func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2InstanceOptimizations {
+func NewOptimizationsView() *OptimizationsView {
 	columns := []table.Column{
-		table.NewColumn("0", "Instance Id", 23),
-		table.NewColumn("1", "Instance Name", 23),
-		table.NewColumn("2", "Instance Type", 15),
+		table.NewColumn("0", "Resource Id", 23),
+		table.NewColumn("1", "Resource Name", 23),
+		table.NewColumn("2", "Resource Type", 15),
 		table.NewColumn("3", "Region", 15),
 		table.NewColumn("4", "Platform", 15),
 		table.NewColumn("5", "Total Saving (Monthly)", 40),
@@ -63,10 +77,10 @@ func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2Instanc
 	t := table.New(columns).
 		Focused(true).
 		WithPageSize(10).
-		WithBaseStyle(activeStyleBase).
+		WithBaseStyle(style.ActiveStyleBase).
 		BorderRounded()
 
-	return &Ec2InstanceOptimizations{
+	return &OptimizationsView{
 		itemsChan: make(chan OptimizationItem, 1000),
 		table:     t,
 		items:     nil,
@@ -79,13 +93,16 @@ func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2Instanc
 				"q/ctrl+c: exit",
 			},
 		},
-		instanceChan: instanceChan,
 	}
 }
 
-func (m *Ec2InstanceOptimizations) Init() tea.Cmd { return tickCmdWithDuration(time.Millisecond * 50) }
+func (m *OptimizationsView) SetReEvaluateFunc(f func(id string, items []preferences2.PreferenceItem)) {
+	m.reEvaluateFunc = f
+}
 
-func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *OptimizationsView) Init() tea.Cmd { return tickCmdWithDuration(time.Millisecond * 50) }
+
+func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
@@ -112,7 +129,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case newItem := <-m.itemsChan:
 				updated := false
 				for idx, i := range m.items {
-					if *newItem.Instance.InstanceId == *i.Instance.InstanceId {
+					if newItem.ID == i.ID {
 						m.items[idx] = newItem
 						updated = true
 						break
@@ -124,40 +141,22 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				var rows Rows
 				for _, i := range m.items {
-					platform := ""
-					if i.Instance.PlatformDetails != nil {
-						platform = *i.Instance.PlatformDetails
-					}
-
 					totalSaving := 0.0
-					if i.Wastage.RightSizing.Recommended != nil {
-						totalSaving = i.Wastage.RightSizing.Current.Cost - i.Wastage.RightSizing.Recommended.Cost
-						for _, s := range i.Wastage.VolumeRightSizing {
-							if s.Recommended != nil {
-								totalSaving += s.Current.Cost - s.Recommended.Cost
-							}
+					if !i.Loading && !i.Skipped {
+						for _, dev := range i.Devices {
+							totalSaving += dev.CurrentCost - dev.RightSizedCost
 						}
-					}
-
-					name := ""
-					for _, t := range i.Instance.Tags {
-						if t.Key != nil && strings.ToLower(*t.Key) == "name" && t.Value != nil {
-							name = *t.Value
-						}
-					}
-					if name == "" {
-						name = *i.Instance.InstanceId
 					}
 
 					row := Row{
-						*i.Instance.InstanceId,
-						name,
-						string(i.Instance.InstanceType),
+						i.ID,
+						i.Name,
+						i.ResourceType,
 						i.Region,
-						platform,
+						i.Platform,
 						fmt.Sprintf("$%.2f", totalSaving),
 					}
-					if i.OptimizationLoading {
+					if i.Loading {
 						row[5] = "loading"
 					} else if i.Skipped {
 						row[5] = "skipped"
@@ -178,7 +177,8 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.KeyMsg:
-		switch msg.String() {
+		key := msg.String()
+		switch key {
 		case "q":
 			return m, tea.Quit
 		case "p":
@@ -187,15 +187,15 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == *i.Instance.InstanceId {
+				if selectedInstanceID == i.ID {
 					m.prefConf = NewPreferencesConfiguration(i.Preferences, func(items []preferences2.PreferenceItem) {
 						i.Preferences = items
-						i.OptimizationLoading = true
+						i.Loading = true
 						m.itemsChan <- i
 						m.prefConf = nil
 						m.clearScreen = true
 						// re-evaluate
-						m.instanceChan <- i
+						m.reEvaluateFunc(i.ID, items)
 						m.UpdateResponsive()
 					}, m.Width)
 					initCmd = m.prefConf.Init()
@@ -211,9 +211,9 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.prefConf = NewPreferencesConfiguration(preferences2.DefaultPreferences(), func(items []preferences2.PreferenceItem) {
 				for _, i := range m.items {
 					i.Preferences = items
-					i.OptimizationLoading = true
+					i.Loading = true
 					m.itemsChan <- i
-					m.instanceChan <- i
+					m.reEvaluateFunc(i.ID, items)
 				}
 				m.prefConf = nil
 				m.clearScreen = true
@@ -228,8 +228,8 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == *i.Instance.InstanceId {
-					m.detailsPage = NewEc2InstanceDetail(i, func() {
+				if selectedInstanceID == i.ID {
+					m.detailsPage = NewOptimizationDetailsView(i, func() {
 						m.detailsPage = nil
 						m.UpdateResponsive()
 					})
@@ -250,7 +250,7 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *Ec2InstanceOptimizations) View() string {
+func (m *OptimizationsView) View() string {
 	if m.clearScreen {
 		m.clearScreen = false
 		return ""
@@ -265,32 +265,23 @@ func (m *Ec2InstanceOptimizations) View() string {
 	totalCost := 0.0
 	savings := 0.0
 	for _, i := range m.items {
-		totalCost += i.Wastage.RightSizing.Current.Cost
-		if i.Wastage.RightSizing.Recommended != nil {
-			savings += i.Wastage.RightSizing.Current.Cost - i.Wastage.RightSizing.Recommended.Cost
-		}
-
-		for _, v := range i.Wastage.VolumeRightSizing {
-			totalCost += v.Current.Cost
-		}
-		for _, v := range i.Wastage.VolumeRightSizing {
-			if v.Recommended != nil {
-				savings += v.Current.Cost - v.Recommended.Cost
-			}
+		for _, dev := range i.Devices {
+			totalCost += dev.CurrentCost
+			savings += dev.CurrentCost - dev.RightSizedCost
 		}
 	}
 
 	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		costStyle.Render(fmt.Sprintf("$%.2f", totalCost)), savingStyle.Render(fmt.Sprintf("$%.2f", savings)),
+		style.CostStyle.Render(fmt.Sprintf("$%.2f", totalCost)), style.SavingStyle.Render(fmt.Sprintf("$%.2f", savings)),
 		m.table.View(),
 		m.help.String())
 }
 
-func (m *Ec2InstanceOptimizations) SendItem(item OptimizationItem) {
+func (m *OptimizationsView) SendItem(item OptimizationItem) {
 	m.itemsChan <- item
 }
 
-func (m *Ec2InstanceOptimizations) UpdateResponsive() {
+func (m *OptimizationsView) UpdateResponsive() {
 	defer func() {
 		m.table = m.table.WithPageSize(m.tableHeight - 7)
 		if m.prefConf != nil {
@@ -342,12 +333,12 @@ func (m *Ec2InstanceOptimizations) UpdateResponsive() {
 	}
 }
 
-func (m *Ec2InstanceOptimizations) SetHeight(height int) {
+func (m *OptimizationsView) SetHeight(height int) {
 	m.height = height
 	m.UpdateResponsive()
 }
 
-func (m *Ec2InstanceOptimizations) MinHeight() int {
+func (m *OptimizationsView) MinHeight() int {
 	if m.prefConf != nil {
 		return m.prefConf.MinHeight()
 	}
@@ -357,15 +348,15 @@ func (m *Ec2InstanceOptimizations) MinHeight() int {
 	return m.help.MinHeight() + 7 + 1
 }
 
-func (m *Ec2InstanceOptimizations) PreferredMinHeight() int {
+func (m *OptimizationsView) PreferredMinHeight() int {
 	return 15
 }
 
-func (m *Ec2InstanceOptimizations) MaxHeight() int {
+func (m *OptimizationsView) MaxHeight() int {
 	return m.help.MaxHeight() + 30
 }
 
-func (m *Ec2InstanceOptimizations) IsResponsive() bool {
+func (m *OptimizationsView) IsResponsive() bool {
 	if m.prefConf != nil && !m.prefConf.IsResponsive() {
 		return false
 	}
