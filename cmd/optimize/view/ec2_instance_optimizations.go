@@ -21,6 +21,8 @@ type OptimizationItem struct {
 	Volumes             []types.Volume
 	Region              string
 	OptimizationLoading bool
+	Skipped             bool
+	SkipReason          *string
 
 	Preferences []preferences2.PreferenceItem
 	Wastage     wastage.EC2InstanceWastageResponse
@@ -52,7 +54,7 @@ func NewEC2InstanceOptimizations(instanceChan chan OptimizationItem) *Ec2Instanc
 		table.NewColumn("2", "Instance Type", 15),
 		table.NewColumn("3", "Region", 15),
 		table.NewColumn("4", "Platform", 15),
-		table.NewColumn("5", "Total Saving (Monthly)", 25),
+		table.NewColumn("5", "Total Saving (Monthly)", 40),
 		table.NewColumn("6", "", 1),
 	}
 	t := table.New(columns).
@@ -154,6 +156,11 @@ func (m *Ec2InstanceOptimizations) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					if i.OptimizationLoading {
 						row[5] = "loading"
+					} else if i.Skipped {
+						row[5] = "skipped"
+						if i.SkipReason != nil {
+							row[5] += " - " + *i.SkipReason
+						}
 					}
 					row = append(row, "→")
 					rows = append(rows, row)
@@ -269,10 +276,11 @@ func (m *Ec2InstanceOptimizations) View() string {
 			}
 		}
 	}
-	return "Current runtime cost: " + costStyle.Render(fmt.Sprintf("$%.2f", totalCost)) +
-		", Savings: " + savingStyle.Render(fmt.Sprintf("$%.2f", savings)) + "\n" +
-		m.table.View() + "\n" +
-		m.help.String()
+
+	return fmt.Sprintf("Current runtime cost: $%s, Savings: $%s\n%s\n%s",
+		costStyle.Render(fmt.Sprintf("$%.2f", totalCost)), savingStyle.Render(fmt.Sprintf("$%.2f", savings)),
+		m.table.View(),
+		m.help.String())
 }
 
 func (m *Ec2InstanceOptimizations) SendItem(item OptimizationItem) {
