@@ -55,8 +55,9 @@ type OptimizationsView struct {
 	detailsPage *OptimizationDetailsView
 	prefConf    *PreferencesConfiguration
 
-	clearScreen    bool
-	reEvaluateFunc func(id string, items []preferences2.PreferenceItem)
+	clearScreen       bool
+	ec2ReEvaluateFunc func(id string, items []preferences2.PreferenceItem)
+	rdsReEvaluateFunc func(id string, items []preferences2.PreferenceItem)
 
 	Width  int
 	height int
@@ -96,8 +97,9 @@ func NewOptimizationsView() *OptimizationsView {
 	}
 }
 
-func (m *OptimizationsView) SetReEvaluateFunc(f func(id string, items []preferences2.PreferenceItem)) {
-	m.reEvaluateFunc = f
+func (m *OptimizationsView) SetReEvaluateFunc(ec2Evaluate func(id string, items []preferences2.PreferenceItem), rdsEvaluate func(id string, items []preferences2.PreferenceItem)) {
+	m.ec2ReEvaluateFunc = ec2Evaluate
+	m.rdsReEvaluateFunc = rdsEvaluate
 }
 
 func (m *OptimizationsView) Init() tea.Cmd { return tickCmdWithDuration(time.Millisecond * 50) }
@@ -195,7 +197,13 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.prefConf = nil
 						m.clearScreen = true
 						// re-evaluate
-						m.reEvaluateFunc(i.ID, items)
+						switch i.ResourceType {
+						case "EC2 Instance":
+							m.ec2ReEvaluateFunc(i.ID, items)
+						case "RDS Instance":
+							m.rdsReEvaluateFunc(i.ID, items)
+						}
+
 						m.UpdateResponsive()
 					}, m.Width)
 					initCmd = m.prefConf.Init()
@@ -213,7 +221,13 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					i.Preferences = items
 					i.Loading = true
 					m.itemsChan <- i
-					m.reEvaluateFunc(i.ID, items)
+
+					switch i.ResourceType {
+					case "EC2 Instance":
+						m.ec2ReEvaluateFunc(i.ID, items)
+					case "RDS Instance":
+						m.rdsReEvaluateFunc(i.ID, items)
+					}
 				}
 				m.prefConf = nil
 				m.clearScreen = true

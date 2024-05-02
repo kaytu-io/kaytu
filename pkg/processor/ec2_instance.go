@@ -46,7 +46,7 @@ func NewEC2InstanceProcessor(
 		items:              map[string]EC2InstanceItem{},
 	}
 	go r.ProcessWastages()
-	go r.ProcessAllRegions()
+	//go r.ProcessAllRegions()
 	return r
 }
 

@@ -67,8 +67,9 @@ var rootCmd = &cobra.Command{
 
 		jobs := view.NewJobsView()
 		optimizations := view.NewOptimizationsView()
-		processor := processor2.NewEC2InstanceProcessor(prv, metricPrv, identification, jobs, optimizations)
-		optimizations.SetReEvaluateFunc(processor.ReEvaluate)
+		ec2Processor := processor2.NewEC2InstanceProcessor(prv, metricPrv, identification, jobs, optimizations)
+		rdsProcessor := processor2.NewRDSInstanceProcessor(prv, metricPrv, identification, jobs, optimizations)
+		optimizations.SetReEvaluateFunc(ec2Processor.ReEvaluate, rdsProcessor.ReEvaluate)
 
 		p := tea.NewProgram(view.NewApp(optimizations, jobs))
 		if _, err := p.Run(); err != nil {
