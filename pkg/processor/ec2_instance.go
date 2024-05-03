@@ -5,8 +5,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	types2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/google/uuid"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/cmd/optimize/view"
+	"github.com/kaytu-io/kaytu/cmd/predef"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/kaytu-io/kaytu/pkg/metrics"
@@ -332,7 +334,11 @@ func (m *EC2InstanceProcessor) WastageWorker(item EC2InstanceItem) {
 		volumes = append(volumes, toEBSVolume(v))
 	}
 
+	id := uuid.New()
+	requestId := id.String()
 	res, err := wastage.Ec2InstanceWastageRequest(wastage.EC2InstanceWastageRequest{
+		RequestId:      requestId,
+		CliVersion:     predef.GetVersion(),
 		Identification: m.identification,
 		Instance: wastage.EC2Instance{
 			HashedInstanceId:  hash.HashString(*item.Instance.InstanceId),

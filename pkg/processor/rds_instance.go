@@ -4,8 +4,10 @@ import (
 	"fmt"
 	types2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/rds/types"
+	"github.com/google/uuid"
 	preferences2 "github.com/kaytu-io/kaytu/cmd/optimize/preferences"
 	"github.com/kaytu-io/kaytu/cmd/optimize/view"
+	"github.com/kaytu-io/kaytu/cmd/predef"
 	"github.com/kaytu-io/kaytu/pkg/api/wastage"
 	"github.com/kaytu-io/kaytu/pkg/hash"
 	"github.com/kaytu-io/kaytu/pkg/metrics"
@@ -199,7 +201,11 @@ func (m *RDSInstanceProcessor) WastageWorker(item RDSInstanceItem) {
 	//item.Instance.ReadReplicaSourceDBInstanceIdentifier
 	//item.Instance.ReplicaMode
 
+	id := uuid.New()
+	requestId := id.String()
 	res, err := wastage.RDSInstanceWastageRequest(wastage.AwsRdsWastageRequest{
+		RequestId:  requestId,
+		CliVersion: predef.GetVersion(),
 		Instance: wastage.AwsRds{
 			HashedInstanceId:                   hash.HashString(*item.Instance.DBInstanceIdentifier),
 			AvailabilityZone:                   *item.Instance.AvailabilityZone,

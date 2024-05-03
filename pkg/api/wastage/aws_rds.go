@@ -54,6 +54,8 @@ type AwsRdsRightsizingRecommendation struct {
 }
 
 type AwsRdsWastageRequest struct {
+	RequestId   string                        `json:"requestId"`
+	CliVersion  string                        `json:"cliVersion"`
 	Instance    AwsRds                        `json:"instance"`
 	Metrics     map[string][]types2.Datapoint `json:"metrics"`
 	Region      string                        `json:"region"`

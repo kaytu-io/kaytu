@@ -16,6 +16,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/evertras/bubble-table v0.15.7
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/cobra v1.8.0

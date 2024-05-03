@@ -36,6 +36,8 @@ type EC2Volume struct {
 }
 
 type EC2InstanceWastageRequest struct {
+	RequestId      string                                   `json:"requestId"`
+	CliVersion     string                                   `json:"cliVersion"`
 	Identification map[string]string                        `json:"identification"`
 	Instance       EC2Instance                              `json:"instance"`
 	Volumes        []EC2Volume                              `json:"volumes"`
