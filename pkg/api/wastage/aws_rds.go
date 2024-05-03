@@ -61,12 +61,13 @@ type AwsRdsRightsizingRecommendation struct {
 }
 
 type AwsRdsWastageRequest struct {
-	RequestId   string                        `json:"requestId"`
-	CliVersion  string                        `json:"cliVersion"`
-	Instance    AwsRds                        `json:"instance"`
-	Metrics     map[string][]types2.Datapoint `json:"metrics"`
-	Region      string                        `json:"region"`
-	Preferences map[string]*string            `json:"preferences"`
+	RequestId      string                        `json:"requestId"`
+	CliVersion     string                        `json:"cliVersion"`
+	Identification map[string]string             `json:"identification"`
+	Instance       AwsRds                        `json:"instance"`
+	Metrics        map[string][]types2.Datapoint `json:"metrics"`
+	Region         string                        `json:"region"`
+	Preferences    map[string]*string            `json:"preferences"`
 }
 
 type AwsRdsWastageResponse struct {

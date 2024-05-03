@@ -204,8 +204,9 @@ func (m *RDSInstanceProcessor) WastageWorker(item RDSInstanceItem) {
 	id := uuid.New()
 	requestId := id.String()
 	res, err := wastage.RDSInstanceWastageRequest(wastage.AwsRdsWastageRequest{
-		RequestId:  requestId,
-		CliVersion: predef.GetVersion(),
+		RequestId:      requestId,
+		CliVersion:     predef.GetVersion(),
+		Identification: m.identification,
 		Instance: wastage.AwsRds{
 			HashedInstanceId:                   hash.HashString(*item.Instance.DBInstanceIdentifier),
 			AvailabilityZone:                   *item.Instance.AvailabilityZone,
