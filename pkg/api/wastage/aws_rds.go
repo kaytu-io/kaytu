@@ -50,6 +50,13 @@ type AwsRdsRightsizingRecommendation struct {
 	Current     RightsizingAwsRds  `json:"current"`
 	Recommended *RightsizingAwsRds `json:"recommended"`
 
+	VCPU                   Usage `json:"vCPU"`
+	FreeMemoryBytes        Usage `json:"freeMemoryBytes"`
+	FreeStorageBytes       Usage `json:"freeStorageBytes"`
+	NetworkThroughputBytes Usage `json:"networkThroughputBytes"`
+	StorageIops            Usage `json:"storageIops"`
+	StorageThroughputBytes Usage `json:"storageThroughputBytes"`
+
 	Description string `json:"description"`
 }
 

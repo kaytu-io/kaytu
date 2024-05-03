@@ -72,7 +72,6 @@ func RDSInstanceWastageRequest(reqBody AwsRdsWastageRequest) (*AwsRdsWastageResp
 		return nil, err
 	}
 	req, err := http.NewRequest("POST", "https://api.kaytu.io/kaytu/wastage/api/v1/wastage/aws-rds", bytes.NewBuffer(payloadEncoded))
-	//req, err := http.NewRequest("POST", "http://localhost:8000/api/v1/wastage/ec2-instance", bytes.NewBuffer(payloadEncoded))
 	if err != nil {
 		return nil, fmt.Errorf("[requestAbout] : %v", err)
 	}
