@@ -64,6 +64,14 @@ func PNetworkThroughputMbps(v *float64) string {
 	return fmt.Sprintf("%.2f Mbps", vv)
 }
 
+func PStorageThroughputMbps(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	vv := float64(*v) / 1000000.0 * 8.0
+	return fmt.Sprintf("%.2f Mbps", vv)
+}
+
 func NetworkThroughputMbps(v float64) string {
 	return fmt.Sprintf("%.2f Mbps", v/1000000.0)
 }
@@ -75,6 +83,12 @@ func PInt32ToString(v *int32) string {
 	return fmt.Sprintf("%d", *v)
 }
 
+func PString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
 func SizeByteToGB(v *int32) string {
 	if v == nil {
 		return ""

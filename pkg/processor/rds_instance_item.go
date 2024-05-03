@@ -38,23 +38,23 @@ func (i RDSInstanceItem) RDSInstanceDevice() view.Device {
 		Key:     style.Bold.Render("Instance Size"),
 		Current: i.Wastage.RightSizing.Current.InstanceType,
 	}
+	engineProperty := view.Property{
+		Key:     style.Bold.Render("Engine"),
+		Current: i.Wastage.RightSizing.Current.Engine,
+	}
+	engineVerProperty := view.Property{
+		Key:     style.Bold.Render("Engine Version"),
+		Current: i.Wastage.RightSizing.Current.EngineVersion,
+	}
+	clusterTypeProperty := view.Property{
+		Key:     style.Bold.Render("Cluster Type"),
+		Current: string(i.Wastage.RightSizing.Current.ClusterType),
+	}
 	vCPUProperty := view.Property{
 		Key:     "  vCPU",
 		Current: fmt.Sprintf("%d", i.Wastage.RightSizing.Current.VCPU),
 		//Average: view.Percentage(i.Wastage.RightSizing.VCPU.Avg),
 		//Max:     view.Percentage(i.Wastage.RightSizing.VCPU.Max),
-	}
-	processorProperty := view.Property{
-		Key: "  Processor(s)",
-		//Current: i.Wastage.RightSizing.Current.Processor,
-	}
-	architectureProperty := view.Property{
-		Key: "  Architecture",
-		//Current: i.Wastage.RightSizing.Current.Architecture,
-	}
-	licenseCostProperty := view.Property{
-		Key: "  License Cost",
-		//Current: fmt.Sprintf("$%.2f", i.Wastage.RightSizing.Current.LicensePrice),
 	}
 	memoryProperty := view.Property{
 		Key:     "  Memory",
@@ -62,60 +62,62 @@ func (i RDSInstanceItem) RDSInstanceDevice() view.Device {
 		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
 		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
-	ebsProperty := view.Property{
-		Key: "EBS Bandwidth",
-		//Current: fmt.Sprintf("%s", i.Wastage.RightSizing.Current.EBSBandwidth),
-		//Average: view.PNetworkThroughputMbps(i.Wastage.RightSizing.EBSBandwidth.Avg),
-		//Max:     view.PNetworkThroughputMbps(i.Wastage.RightSizing.EBSBandwidth.Max),
+	storageTypeProperty := view.Property{
+		Key:     "  Type",
+		Current: view.PString(i.Wastage.RightSizing.Current.StorageType),
+		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
+		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
-	iopsProperty := view.Property{
-		Key: "EBS IOPS",
-		//Current: fmt.Sprintf("%s", i.Wastage.RightSizing.Current.EBSIops),
-		//Average: fmt.Sprintf("%s io/s", view.PFloat64ToString(i.Wastage.RightSizing.EBSIops.Avg)),
-		//Max:     fmt.Sprintf("%s io/s", view.PFloat64ToString(i.Wastage.RightSizing.EBSIops.Max)),
+	storageSizeProperty := view.Property{
+		Key:     "  Size",
+		Current: view.SizeByteToGB(i.Wastage.RightSizing.Current.StorageSize),
+		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
+		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
-	netThroughputProperty := view.Property{
-		Key: "  Throughput",
-		//Current: fmt.Sprintf("%s", i.Wastage.RightSizing.Current.NetworkThroughput),
-		//Average: view.PNetworkThroughputMbps(i.Wastage.RightSizing.NetworkThroughput.Avg),
-		//Max:     view.PNetworkThroughputMbps(i.Wastage.RightSizing.NetworkThroughput.Max),
+	storageIOPSProperty := view.Property{
+		Key:     "  IOPS",
+		Current: fmt.Sprintf("%d", i.Wastage.RightSizing.Current.StorageIops),
+		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
+		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
-	enaProperty := view.Property{
-		Key: "  ENA",
-		//Current: fmt.Sprintf("%s", i.Wastage.RightSizing.Current.ENASupported),
+	storageThroughputProperty := view.Property{
+		Key:     "  Throughput",
+		Current: view.PStorageThroughputMbps(i.Wastage.RightSizing.Current.StorageThroughput),
+		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
+		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
 
 	if i.Wastage.RightSizing.Recommended != nil {
 		ec2Instance.RightSizedCost = i.Wastage.RightSizing.Recommended.Cost
 		regionProperty.Recommended = i.Wastage.RightSizing.Recommended.Region
 		instanceSizeProperty.Recommended = i.Wastage.RightSizing.Recommended.InstanceType
+		engineProperty.Recommended = i.Wastage.RightSizing.Recommended.Engine
+		engineVerProperty.Recommended = i.Wastage.RightSizing.Recommended.EngineVersion
+		clusterTypeProperty.Recommended = string(i.Wastage.RightSizing.Recommended.ClusterType)
 		vCPUProperty.Recommended = fmt.Sprintf("%d", i.Wastage.RightSizing.Recommended.VCPU)
-		//processorProperty.Recommended = i.Wastage.RightSizing.Recommended.Processor
-		//architectureProperty.Recommended = i.Wastage.RightSizing.Recommended.Architecture
-		//licenseCostProperty.Recommended = fmt.Sprintf("$%.2f", i.Wastage.RightSizing.Recommended.LicensePrice)
 		memoryProperty.Recommended = fmt.Sprintf("%d GiB", i.Wastage.RightSizing.Recommended.MemoryGb)
-		//ebsProperty.Recommended = i.Wastage.RightSizing.Recommended.EBSBandwidth
-		//iopsProperty.Recommended = i.Wastage.RightSizing.Recommended.EBSIops
-		//netThroughputProperty.Recommended = i.Wastage.RightSizing.Recommended.NetworkThroughput
-		//enaProperty.Recommended = i.Wastage.RightSizing.Recommended.ENASupported
+		storageTypeProperty.Recommended = view.PString(i.Wastage.RightSizing.Recommended.StorageType)
+		storageSizeProperty.Recommended = view.SizeByteToGB(i.Wastage.RightSizing.Recommended.StorageSize)
+		storageIOPSProperty.Recommended = fmt.Sprintf("%d", i.Wastage.RightSizing.Recommended.StorageIops)
+		storageThroughputProperty.Recommended = view.PStorageThroughputMbps(i.Wastage.RightSizing.Recommended.StorageThroughput)
 	}
 	ec2Instance.Properties = append(ec2Instance.Properties, regionProperty)
 	ec2Instance.Properties = append(ec2Instance.Properties, instanceSizeProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, engineProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, engineVerProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, clusterTypeProperty)
 	ec2Instance.Properties = append(ec2Instance.Properties, view.Property{
 		Key: style.Bold.Render("Compute"),
 	})
 	ec2Instance.Properties = append(ec2Instance.Properties, vCPUProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, processorProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, architectureProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, licenseCostProperty)
 	ec2Instance.Properties = append(ec2Instance.Properties, memoryProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, ebsProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, iopsProperty)
 	ec2Instance.Properties = append(ec2Instance.Properties, view.Property{
-		Key: style.Bold.Render("Network Performance"),
+		Key: style.Bold.Render("Storage"),
 	})
-	ec2Instance.Properties = append(ec2Instance.Properties, netThroughputProperty)
-	ec2Instance.Properties = append(ec2Instance.Properties, enaProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, storageTypeProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, storageSizeProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, storageIOPSProperty)
+	ec2Instance.Properties = append(ec2Instance.Properties, storageThroughputProperty)
 
 	return ec2Instance
 }
