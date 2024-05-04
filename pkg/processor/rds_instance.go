@@ -203,7 +203,7 @@ func (m *RDSInstanceProcessor) WastageWorker(item RDSInstanceItem) {
 
 	id := uuid.New()
 	requestId := id.String()
-	res, err := wastage.RDSInstanceWastageRequest(wastage.AwsRdsWastageRequest{
+	req := wastage.AwsRdsWastageRequest{
 		RequestId:      requestId,
 		CliVersion:     predef.GetVersion(),
 		Identification: m.identification,
@@ -221,12 +221,16 @@ func (m *RDSInstanceProcessor) WastageWorker(item RDSInstanceItem) {
 			StorageType:                        item.Instance.StorageType,
 			StorageSize:                        item.Instance.AllocatedStorage,
 			StorageIops:                        item.Instance.Iops,
-			StorageThroughput:                  item.Instance.StorageThroughput,
 		},
 		Metrics:     item.Metrics,
 		Region:      item.Region,
 		Preferences: preferences2.Export(item.Preferences),
-	})
+	}
+	if item.Instance.StorageThroughput != nil {
+		floatThroughput := float64(*item.Instance.StorageThroughput)
+		req.Instance.StorageThroughput = &floatThroughput
+	}
+	res, err := wastage.RDSInstanceWastageRequest(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "please login") {
 			fmt.Println(err.Error())

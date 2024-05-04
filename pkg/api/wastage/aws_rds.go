@@ -22,10 +22,10 @@ type AwsRds struct {
 	PerformanceInsightsEnabled         bool              `json:"performanceInsightsEnabled"`
 	PerformanceInsightsRetentionPeriod *int32            `json:"performanceInsightsRetentionPeriod"`
 
-	StorageType       *string `json:"storageType"`
-	StorageSize       *int32  `json:"storageSize"`
-	StorageIops       *int32  `json:"storageIops"`
-	StorageThroughput *int32  `json:"storageThroughput"`
+	StorageType       *string  `json:"storageType"`
+	StorageSize       *int32   `json:"storageSize"`
+	StorageIops       *int32   `json:"storageIops"`
+	StorageThroughput *float64 `json:"storageThroughput"`
 }
 
 type RightsizingAwsRds struct {
@@ -38,10 +38,10 @@ type RightsizingAwsRds struct {
 	VCPU     int64 `json:"vCPU"`
 	MemoryGb int64 `json:"memoryGb"`
 
-	StorageType       *string `json:"storageType"`
-	StorageSize       *int32  `json:"storageSize"`
-	StorageIops       *int32  `json:"storageIops"`
-	StorageThroughput *int32  `json:"storageThroughput"`
+	StorageType       *string  `json:"storageType"`
+	StorageSize       *int32   `json:"storageSize"`
+	StorageIops       *int32   `json:"storageIops"`
+	StorageThroughput *float64 `json:"storageThroughput"`
 
 	Cost float64 `json:"cost"`
 }

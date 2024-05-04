@@ -64,11 +64,11 @@ func PNetworkThroughputMbps(v *float64) string {
 	return fmt.Sprintf("%.2f Mbps", vv)
 }
 
-func PStorageThroughputMbps(v *int32) string {
+func PStorageThroughputMbps(v *float64) string {
 	if v == nil {
 		return ""
 	}
-	vv := float64(*v) / 1000000.0 * 8.0
+	vv := *v / 1000000.0 * 8.0
 	return fmt.Sprintf("%.2f Mbps", vv)
 }
 
