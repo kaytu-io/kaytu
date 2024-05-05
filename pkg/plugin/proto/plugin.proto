@@ -15,6 +15,7 @@ message Command {
   string name = 1;
   string description = 2;
   repeated Flag flags = 3;
+  repeated PreferenceItem default_preferences = 4;
 }
 
 message RegisterConfig {
@@ -22,7 +23,6 @@ message RegisterConfig {
   string version = 2;
   string provider = 3;
   repeated Command commands = 4;
-  repeated PreferenceItem default_preferences = 5;
 }
 
 message Error {

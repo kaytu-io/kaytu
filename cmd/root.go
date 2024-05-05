@@ -90,7 +90,12 @@ func Execute() {
 						flagValues[flag.Name] = value
 					}
 
-					preferences.Update(runningPlg.Plugin.Config.DefaultPreferences)
+					for _, rcmd := range runningPlg.Plugin.Config.Commands {
+						if rcmd.Name == cmd.Name {
+							preferences.Update(rcmd.DefaultPreferences)
+						}
+					}
+
 					preferencesFlag := utils.ReadStringFlag(c, "preferences")
 					if len(preferencesFlag) > 0 {
 						cnt, err := os.ReadFile(preferencesFlag)
