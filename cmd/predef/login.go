@@ -9,7 +9,6 @@ import (
 )
 
 const RetrySleep = 3
-const DefaultWorkspace = "kaytu"
 
 var LoginCmd = &cobra.Command{
 	Use: "login",
@@ -33,8 +32,7 @@ var LoginCmd = &cobra.Command{
 		}
 
 		err = server.SetConfig(server.Config{
-			AccessToken:      accessToken,
-			DefaultWorkspace: DefaultWorkspace,
+			AccessToken: accessToken,
 		})
 		if err != nil {
 			return fmt.Errorf("[login-setConfig]: %v", err)
