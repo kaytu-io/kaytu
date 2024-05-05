@@ -33,7 +33,7 @@ func Update(pis []PreferenceItem) {
 	}
 }
 
-func DefaultPreferences() []PreferenceItem {
+func DefaultPreferences(services map[string]bool) []PreferenceItem {
 	defaultPrefSync.Do(func() {
 		defaultPref = []PreferenceItem{
 			{Service: "EC2Instance", Key: "Tenancy", Pinned: true, PossibleValues: []string{"", "Host", "Shared", "Dedicated"}},
@@ -77,17 +77,32 @@ func DefaultPreferences() []PreferenceItem {
 			{Service: "RDSInstance", Key: "CpuBreathingRoom", IsNumber: true, Value: aws.String("10"), PreventPinning: true, Unit: "%"},
 		}
 	})
-	return defaultPref
+	return FilterServices(defaultPref, services)
 }
 
-func Export(pref []PreferenceItem) map[string]*string {
+func FilterServices(prefItems []PreferenceItem, services map[string]bool) []PreferenceItem {
+	if exists, ok := services["all"]; exists && ok {
+		return prefItems
+	}
+	var pref []PreferenceItem
+	for _, p := range prefItems {
+		if exists, ok := services[p.Service]; exists && ok {
+			pref = append(pref, p)
+		}
+	}
+	return pref
+}
+
+func Export(pref []PreferenceItem, services map[string]bool) map[string]*string {
 	ex := map[string]*string{}
 	for _, p := range pref {
-		if p.Pinned {
-			ex[p.Key] = nil
-		} else {
-			if p.Value != nil {
-				ex[p.Key] = p.Value
+		if exists, ok := services[p.Service]; exists && ok {
+			if p.Pinned {
+				ex[p.Key] = nil
+			} else {
+				if p.Value != nil {
+					ex[p.Key] = p.Value
+				}
 			}
 		}
 	}

@@ -190,7 +190,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
 				if selectedInstanceID == i.ID {
-					m.prefConf = NewPreferencesConfiguration(i.Preferences, func(items []preferences2.PreferenceItem) {
+					m.prefConf = NewPreferencesConfiguration(preferences2.FilterServices(i.Preferences, map[string]bool{"all": true}), func(items []preferences2.PreferenceItem) {
 						i.Preferences = items
 						i.Loading = true
 						m.itemsChan <- i
@@ -216,7 +216,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-			m.prefConf = NewPreferencesConfiguration(preferences2.DefaultPreferences(), func(items []preferences2.PreferenceItem) {
+			m.prefConf = NewPreferencesConfiguration(preferences2.DefaultPreferences(map[string]bool{"all": true}), func(items []preferences2.PreferenceItem) {
 				for _, i := range m.items {
 					i.Preferences = items
 					i.Loading = true
