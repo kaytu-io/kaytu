@@ -57,21 +57,22 @@ func Percentage(v *float64) string {
 }
 
 func MemoryUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGb float64) string {
-	if freeSpaceBytes == nil {
+	if freeSpaceBytes == nil || *freeSpaceBytes == 0 {
 		return ""
 	}
-	storageSizeBytes := storageSizeGb * 1e9
+	storageSizeBytes := storageSizeGb * (1024 * 1024 * 1024)
 	usage := storageSizeBytes - *freeSpaceBytes
-	usagePercentage := usage / storageSizeBytes
+	usagePercentage := (usage / storageSizeBytes) * 100
 	return Percentage(&usagePercentage)
 }
 
-func StorageUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeBytes *int32) string {
-	if freeSpaceBytes == nil || storageSizeBytes == nil {
+func StorageUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGb *int32) string {
+	if freeSpaceBytes == nil || storageSizeGb == nil || *freeSpaceBytes == 0 {
 		return ""
 	}
-	usage := float64(*storageSizeBytes) - *freeSpaceBytes
-	usagePercentage := usage / float64(*storageSizeBytes)
+	storageSizeBytes := float64(*storageSizeGb) * (1024 * 1024 * 1024)
+	usage := storageSizeBytes - *freeSpaceBytes
+	usagePercentage := (usage / storageSizeBytes) * 100
 	return Percentage(&usagePercentage)
 }
 
