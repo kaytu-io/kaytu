@@ -22,6 +22,7 @@ message RegisterConfig {
   string version = 2;
   string provider = 3;
   repeated Command commands = 4;
+  repeated PreferenceItem default_preferences = 5;
 }
 
 message Error {

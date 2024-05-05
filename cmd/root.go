@@ -61,21 +61,6 @@ func Execute() {
 						return err
 					}
 
-					preferencesFlag := utils.ReadStringFlag(c, "preferences")
-					if len(preferencesFlag) > 0 {
-						cnt, err := os.ReadFile(preferencesFlag)
-						if err != nil {
-							return err
-						}
-						var p []*golang.PreferenceItem
-						err = yaml.Unmarshal(cnt, &p)
-						if err != nil {
-							return err
-						}
-						preferences.DefaultPreferences()
-						preferences.Update(p)
-					}
-
 					manager := plugin2.New()
 					err = manager.StartServer()
 					if err != nil {
@@ -103,6 +88,21 @@ func Execute() {
 					for _, flag := range cmd.GetFlags() {
 						value := utils.ReadStringFlag(c, flag.Name)
 						flagValues[flag.Name] = value
+					}
+
+					preferences.Update(runningPlg.Plugin.Config.DefaultPreferences)
+					preferencesFlag := utils.ReadStringFlag(c, "preferences")
+					if len(preferencesFlag) > 0 {
+						cnt, err := os.ReadFile(preferencesFlag)
+						if err != nil {
+							return err
+						}
+						var p []*golang.PreferenceItem
+						err = yaml.Unmarshal(cnt, &p)
+						if err != nil {
+							return err
+						}
+						preferences.Update(p)
 					}
 
 					err = runningPlg.Stream.Send(&golang.ServerMessage{
