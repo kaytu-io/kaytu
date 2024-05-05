@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			preferences.DefaultPreferences(map[string]bool{"all": true})
+			preferences.DefaultPreferences()
 			preferences.Update(p)
 		}
 

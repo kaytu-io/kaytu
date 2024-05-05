@@ -104,7 +104,7 @@ func (m *EC2InstanceProcessor) ProcessRegion(region string) {
 			Instance:            instance,
 			Region:              region,
 			OptimizationLoading: true,
-			Preferences:         preferences2.DefaultPreferences(map[string]bool{"EBSVolume": true, "EC2Instance": true}),
+			Preferences:         preferences2.DefaultPreferences(),
 		}
 
 		isAutoScaling := false
@@ -265,7 +265,7 @@ func (m *EC2InstanceProcessor) ProcessRegion(region string) {
 			VolumeMetrics:       volumeMetrics,
 			Region:              region,
 			OptimizationLoading: true,
-			Preferences:         preferences2.DefaultPreferences(map[string]bool{"EBSVolume": true, "EC2Instance": true}),
+			Preferences:         preferences2.DefaultPreferences(),
 		}
 		if instance.State.Name != types.InstanceStateNameRunning ||
 			instance.InstanceLifecycle == types.InstanceLifecycleTypeSpot ||
@@ -358,7 +358,7 @@ func (m *EC2InstanceProcessor) WastageWorker(item EC2InstanceItem) {
 		Metrics:       item.Metrics,
 		VolumeMetrics: item.VolumeMetrics,
 		Region:        item.Region,
-		Preferences:   preferences2.Export(item.Preferences, map[string]bool{"EBSVolume": true, "EC2Instance": true}),
+		Preferences:   preferences2.Export(item.Preferences),
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "please login") {

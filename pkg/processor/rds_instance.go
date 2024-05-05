@@ -103,7 +103,7 @@ func (m *RDSInstanceProcessor) ProcessRegion(region string) {
 			Instance:            instance,
 			Region:              region,
 			OptimizationLoading: true,
-			Preferences:         preferences2.DefaultPreferences(map[string]bool{"RDSInstance": true}),
+			Preferences:         preferences2.DefaultPreferences(),
 		}
 
 		// just to show the loading
@@ -156,7 +156,7 @@ func (m *RDSInstanceProcessor) ProcessRegion(region string) {
 			Metrics:             instanceMetrics,
 			Region:              region,
 			OptimizationLoading: true,
-			Preferences:         preferences2.DefaultPreferences(map[string]bool{"RDSInstance": true}),
+			Preferences:         preferences2.DefaultPreferences(),
 		}
 
 		m.items[*oi.Instance.DBInstanceIdentifier] = oi
@@ -224,7 +224,7 @@ func (m *RDSInstanceProcessor) WastageWorker(item RDSInstanceItem) {
 		},
 		Metrics:     item.Metrics,
 		Region:      item.Region,
-		Preferences: preferences2.Export(item.Preferences, map[string]bool{"RDSInstance": true}),
+		Preferences: preferences2.Export(item.Preferences),
 	}
 	if item.Instance.StorageThroughput != nil {
 		floatThroughput := float64(*item.Instance.StorageThroughput)
