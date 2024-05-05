@@ -57,6 +57,9 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 		}
 
 		for _, prop := range dev.Properties {
+			if !strings.HasPrefix(prop.Key, " ") {
+				prop.Key = style.Bold.Render(prop.Key)
+			}
 			rows = append(rows, Row{
 				prop.Key,
 				prop.Current,
@@ -117,7 +120,7 @@ func NewOptimizationDetailsView(item *golang.OptimizationItem, close func()) *Op
 	days := "7"
 	for _, p := range item.Preferences {
 		if p.Key == "ObservabilityTimePeriod" && p.Value != nil {
-			days = p.Value.String()
+			days = p.Value.Value
 		}
 	}
 	detailColumns := []table.Column{

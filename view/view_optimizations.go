@@ -194,7 +194,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == i.Id {
+				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading {
 					m.detailsPage = NewOptimizationDetailsView(i, func() {
 						m.detailsPage = nil
 						m.UpdateResponsive()
