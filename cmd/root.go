@@ -50,7 +50,8 @@ func Execute() {
 		os.Exit(1)
 	}
 	for _, plg := range plugins {
-		for _, cmd := range plg.Config.Commands {
+		for _, loopCmd := range plg.Config.Commands {
+			cmd := loopCmd
 			theCmd := &cobra.Command{
 				Use:  cmd.Name,
 				Long: cmd.Description,

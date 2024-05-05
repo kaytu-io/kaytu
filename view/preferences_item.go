@@ -42,7 +42,7 @@ func (m *PreferenceItem) ReconfigureInput() {
 		m.input.Placeholder = "Any"
 		m.input.Validate = nil
 		if m.pref.Value != nil {
-			m.input.SetValue(m.pref.Value.String())
+			m.input.SetValue(m.pref.Value.Value)
 		}
 		m.input.ShowSuggestions = true
 		m.input.SetSuggestions(m.pref.PossibleValues)
