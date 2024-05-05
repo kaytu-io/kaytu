@@ -96,7 +96,7 @@ func (i RDSInstanceItem) RDSInstanceDevice() view.Device {
 		memoryProperty.Recommended = fmt.Sprintf("%d GiB", i.Wastage.RightSizing.Recommended.MemoryGb)
 		storageTypeProperty.Recommended = view.PString(i.Wastage.RightSizing.Recommended.StorageType)
 		storageSizeProperty.Recommended = view.SizeByteToGB(i.Wastage.RightSizing.Recommended.StorageSize)
-		storageIOPSProperty.Recommended = fmt.Sprintf("%d", i.Wastage.RightSizing.Recommended.StorageIops)
+		storageIOPSProperty.Recommended = fmt.Sprintf("%s io/s", view.PInt32ToString(i.Wastage.RightSizing.Recommended.StorageIops))
 		storageThroughputProperty.Recommended = view.PStorageThroughputMbps(i.Wastage.RightSizing.Recommended.StorageThroughput)
 	}
 	ec2Instance.Properties = append(ec2Instance.Properties, regionProperty)
