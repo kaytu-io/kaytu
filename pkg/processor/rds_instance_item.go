@@ -53,38 +53,36 @@ func (i RDSInstanceItem) RDSInstanceDevice() view.Device {
 	vCPUProperty := view.Property{
 		Key:     "  vCPU",
 		Current: fmt.Sprintf("%d", i.Wastage.RightSizing.Current.VCPU),
-		//Average: view.Percentage(i.Wastage.RightSizing.VCPU.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.VCPU.Max),
+		Average: view.Percentage(i.Wastage.RightSizing.VCPU.Avg),
+		Max:     view.Percentage(i.Wastage.RightSizing.VCPU.Max),
 	}
 	memoryProperty := view.Property{
 		Key:     "  Memory",
 		Current: fmt.Sprintf("%d GiB", i.Wastage.RightSizing.Current.MemoryGb),
-		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
+		Average: view.MemoryUsagePercentageByFreeSpace(i.Wastage.RightSizing.FreeMemoryBytes.Avg, float64(i.Wastage.RightSizing.Current.MemoryGb)),
+		Max:     view.MemoryUsagePercentageByFreeSpace(i.Wastage.RightSizing.FreeMemoryBytes.Min, float64(i.Wastage.RightSizing.Current.MemoryGb)),
 	}
 	storageTypeProperty := view.Property{
 		Key:     "  Type",
 		Current: view.PString(i.Wastage.RightSizing.Current.StorageType),
-		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
 	}
 	storageSizeProperty := view.Property{
 		Key:     "  Size",
 		Current: view.SizeByteToGB(i.Wastage.RightSizing.Current.StorageSize),
-		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
+		Average: view.StorageUsagePercentageByFreeSpace(i.Wastage.RightSizing.FreeStorageBytes.Avg, i.Wastage.RightSizing.Current.StorageSize),
+		Max:     view.StorageUsagePercentageByFreeSpace(i.Wastage.RightSizing.FreeStorageBytes.Min, i.Wastage.RightSizing.Current.StorageSize),
 	}
 	storageIOPSProperty := view.Property{
 		Key:     "  IOPS",
 		Current: fmt.Sprintf("%d", i.Wastage.RightSizing.Current.StorageIops),
-		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
+		Average: fmt.Sprintf("%s io/s", view.PFloat64ToString(i.Wastage.RightSizing.StorageIops.Avg)),
+		Max:     fmt.Sprintf("%s io/s", view.PFloat64ToString(i.Wastage.RightSizing.StorageIops.Max)),
 	}
 	storageThroughputProperty := view.Property{
 		Key:     "  Throughput",
 		Current: view.PStorageThroughputMbps(i.Wastage.RightSizing.Current.StorageThroughput),
-		//Average: view.Percentage(i.Wastage.RightSizing.Memory.Avg),
-		//Max:     view.Percentage(i.Wastage.RightSizing.Memory.Max),
+		Average: view.PStorageThroughputMbps(i.Wastage.RightSizing.StorageThroughputBytes.Avg),
+		Max:     view.PStorageThroughputMbps(i.Wastage.RightSizing.StorageThroughputBytes.Max),
 	}
 
 	if i.Wastage.RightSizing.Recommended != nil {
