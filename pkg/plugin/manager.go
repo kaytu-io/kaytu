@@ -86,6 +86,7 @@ func (m *Manager) StartServer() error {
 }
 
 func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
+	m.stream = stream
 	for {
 		receivedMsg, err := stream.Recv()
 		if err != nil {
@@ -99,11 +100,13 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				Plugin: server.Plugin{Config: conf},
 				Stream: stream,
 			})
+
 		case receivedMsg.GetJob() != nil:
 			m.jobs.Publish(receivedMsg.GetJob())
 
 		case receivedMsg.GetOi() != nil:
 			m.optimizations.SendItem(receivedMsg.GetOi())
+
 		case receivedMsg.GetErr() != nil:
 			m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 		}
@@ -226,4 +229,15 @@ func (m *Manager) Install(addr string) error {
 func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsView) {
 	m.jobs = jobs
 	m.optimizations = optimizations
+
+	optimizations.SetReEvaluateFunc(func(id string, items []*golang.PreferenceItem) {
+		m.stream.Send(&golang.ServerMessage{
+			ServerMessage: &golang.ServerMessage_ReEvaluate{
+				ReEvaluate: &golang.ReEvaluate{
+					Id:          id,
+					Preferences: items,
+				},
+			},
+		})
+	})
 }
