@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 type JobsView struct {
@@ -114,6 +115,7 @@ func (m *JobsView) UpdateStatus() {
 		case err := <-m.errorChan:
 			m.statusErr = fmt.Sprintf("Failed due to %v", err)
 		}
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 

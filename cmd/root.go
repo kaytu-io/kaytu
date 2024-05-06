@@ -49,6 +49,25 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	if len(plugins) == 0 {
+		manager := plugin2.New()
+		err := manager.StartServer()
+		if err != nil {
+			panic(err)
+		}
+
+		err = manager.Install("aws")
+		if err != nil {
+			panic(err)
+		}
+
+		plugins, err = server.GetPlugins()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	for _, plg := range plugins {
 		for _, loopCmd := range plg.Config.Commands {
 			cmd := loopCmd
@@ -127,7 +146,7 @@ func Execute() {
 					optimizations := view.NewOptimizationsView()
 					manager.SetUI(jobs, optimizations)
 
-					p := tea.NewProgram(view.NewApp(optimizations, jobs))
+					p := tea.NewProgram(view.NewApp(optimizations, jobs), tea.WithFPS(10))
 					if _, err := p.Run(); err != nil {
 						return err
 					}
