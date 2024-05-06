@@ -20,7 +20,7 @@ func MemoryUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGb flo
 	if freeSpaceBytes == nil {
 		return ""
 	}
-	storageSizeBytes := storageSizeGb * 1e9
+	storageSizeBytes := storageSizeGb * (1024 * 1024 * 1024)
 	usage := storageSizeBytes - *freeSpaceBytes
 	usagePercentage := usage / storageSizeBytes
 	return Percentage(&usagePercentage)
@@ -39,7 +39,7 @@ func PNetworkThroughputMbps(v *float64) string {
 	if v == nil {
 		return ""
 	}
-	vv := *v / 1000000 * 8
+	vv := *v / (1024 * 1024) * 8
 	return fmt.Sprintf("%.2f Mbps", vv)
 }
 
@@ -47,12 +47,12 @@ func PStorageThroughputMbps(v *float64) string {
 	if v == nil {
 		return ""
 	}
-	vv := *v / 1000000.0 * 8.0
+	vv := *v / (1024.0 * 1024.0) * 8.0
 	return fmt.Sprintf("%.2f Mbps", vv)
 }
 
 func NetworkThroughputMbps(v float64) string {
-	return fmt.Sprintf("%.2f Mbps", v/1000000.0)
+	return fmt.Sprintf("%.2f Mbps", v/(1024.0*1024.0))
 }
 
 func PInt32ToString(v *int32) string {
