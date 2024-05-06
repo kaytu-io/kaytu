@@ -30,7 +30,7 @@ func StorageUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGB *i
 	if freeSpaceBytes == nil || storageSizeGB == nil {
 		return ""
 	}
-	storageSizeBytes := *storageSizeGB * (1024 * 1024 * 1024)
+	storageSizeBytes := float64(*storageSizeGB) * (1024 * 1024 * 1024)
 	usage := float64(storageSizeBytes) - *freeSpaceBytes
 	usagePercentage := usage / float64(storageSizeBytes)
 	return Percentage(&usagePercentage)
