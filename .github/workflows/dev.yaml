@@ -76,8 +76,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 #          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-#          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
-#          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
+          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
+          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
 #
 #      - uses: robinraju/release-downloader@v1.10
 #        id: download_release_amd64
