@@ -13,7 +13,7 @@ func Percentage(v *float64) string {
 	if v == nil {
 		return ""
 	}
-	return fmt.Sprintf("%.2f%%", *v)
+	return fmt.Sprintf("%.2f%%", *v*100)
 }
 
 func MemoryUsagePercentageByFreeSpace(freeSpaceBytes *float64, memorySizeGB float64) string {
