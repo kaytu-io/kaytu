@@ -1,0 +1,234 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      latest_tag: ${{ steps.set_latest_tag.outputs.latest_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      - name: Tag version
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          release_branches: main
+          pre_release_branches: dev
+          append_to_pre_release_tag: dev
+          tag_prefix: v
+      - name: Set latest tag output
+        id: set_latest_tag
+        run: |
+          if [[ -z "${{ steps.tag_version.outputs.new_tag }}" ]]; then
+            echo "latest_tag=${{ steps.tag_version.outputs.previous_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest_tag=${{ steps.tag_version.outputs.new_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save new tag
+        id: save_new_tag
+        run: |
+          version=${{ steps.tag_version.outputs.new_tag }}
+          version=${version#v}
+          echo $version > new_tag.txt
+      - name: Upload new tag
+        uses: actions/upload-artifact@v2
+        with:
+          name: new_tag
+          path: new_tag.txt
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - tag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
+#      - name: Install cosign
+#        run: |
+#          curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+#          sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+#          sudo chmod +x /usr/local/bin/cosign
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+#          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
+#          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
+#
+#      - uses: robinraju/release-downloader@v1.10
+#        id: download_release_amd64
+#        with:
+#          repository: "kaytu-io/kaytu"
+#          fileName: '*'
+#          latest: true
+#          tarBall: true
+#          zipBall: true
+#
+#      - name: update cli version in homebrew
+#        run: |
+#          sed -i "s+VERSION_HOMEBREW+$(echo "${{ needs.tag.outputs.latest_tag }}" | sed 's/^.//')+g" homebrew/kaytu.rb
+#
+#          ls
+#          export VERSION=${{ needs.tag.outputs.latest_tag }}
+#          export VERSION=${VERSION#v}
+#          echo "version=$VERSION"
+#          echo "kaytu_$VERSION_darwin_amd64"
+#
+#          sha256sum "kaytu_${VERSION}_darwin_amd64.tar.gz" | awk '{print $1}' > newHash
+#          sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
+#
+#          sha256sum "kaytu_${VERSION}_darwin_arm64.tar.gz" | awk '{print $1}' > newHash
+#          sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
+#
+#          sha256sum "kaytu_${VERSION}_linux_arm64.tar.gz" | awk '{print $1}' > newHash
+#          sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
+#
+#          sha256sum "kaytu_${VERSION}_linux_amd64.tar.gz" | awk '{print $1}' > newHash
+#          sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
+#
+#          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
+#
+#          cd homebrew-cli-tap
+#
+#          git remote add homebrew-cli-tap-origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kaytu-io/homebrew-cli-tap.git
+#          git config user.name 'Kaytu Developer'
+#          git config user.email 'dev@kaytu.io'
+#
+#          cp ../homebrew/kaytu.rb kaytu.rb
+#
+#          git checkout main
+#          git add .
+#          git commit -a -m "update cli version"
+#          git push homebrew-cli-tap-origin
+#
+#          cd ..
+#          rm -rf homebrew-cli-tap
+#  sign-windows:
+#    runs-on: ubuntu-latest
+#    needs:
+#      - tag
+#      - release
+#    steps:
+#      - name: Download new tag
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: new_tag
+#      - name: Set new tag
+#        id: set_new_tag
+#        run: |
+#          echo "::set-output name=new_tag::$(cat new_tag.txt)"
+#      - uses: robinraju/release-downloader@v1.10
+#        id: download_release_amd64
+#        with:
+#          repository: "kaytu-io/kaytu"
+#          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
+#          latest: true
+#      - name: Add windows zip
+#        id: add_windows_zip
+#        run: |
+#          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
+#          sudo apt-get update -y
+#          sudo apt-get -y install osslsigncode
+#          echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
+#          echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt
+#          osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
+#          mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+#          mv kaytu.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+#          zip -r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
+#          sha256sum kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip > kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+#
+#          export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}"  | jq -r .upload_url)
+#          echo "$UPLOAD_URL"
+#          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+#
+#          release_id=$(curl --request GET \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}' | jq '.id')
+#          echo $release_id
+#          assets=$(curl --request GET \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/$release_id/assets \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}')
+#          echo $assets
+#          amd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$amd64 \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#          linuxarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_arm64") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxarm64 \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#          linuxamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_linux_amd64") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$linuxamd64 \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#          darwinarm64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_arm64") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinarm64 \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#          darwinamd64=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_darwin_amd64") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$darwinamd64 \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#          windowszip=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip") | .id')
+#          curl --request DELETE \
+#            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$windowszip \
+#            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+#
+#      - name: Upload Release Asset amd64 zip
+#        id: upload-release-asset-amd64-zip
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
+#          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
+#          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip
+#          asset_content_type: application/zip
+#      - name: Upload Release Asset amd64 zip checksum
+#        id: upload-release-asset-amd64-zip-checksum
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
+#          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+#          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+#          asset_content_type: text/plain
+#  chocolatey-publish:
+#    name: Release Kaytu choco
+#    if: github.event.inputs.publishChocolatey == 'true'
+#    runs-on: windows-latest
+#    needs:
+#      - tag
+#      - release
+#      - sign-windows
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Generate & push
+#        run: scripts/build.ps1
+#        env:
+#          CHOCO_API_KEY: ${{ secrets.CHOCO_APIKEY }}
