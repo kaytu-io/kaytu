@@ -27,7 +27,6 @@ jobs:
           github_token: ${{ secrets.GH_TOKEN }}
           release_branches: main
           pre_release_branches: dev
-          append_to_pre_release_tag: dev
           tag_prefix: v
       - name: Set latest tag output
         id: set_latest_tag
