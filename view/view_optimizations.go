@@ -153,7 +153,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == i.Id {
+				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading {
 					m.prefConf = NewPreferencesConfiguration(i.Preferences, func(items []*golang.PreferenceItem) {
 						i.Preferences = items
 						i.Loading = true
@@ -176,6 +176,10 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.prefConf = NewPreferencesConfiguration(preferences.DefaultPreferences(), func(items []*golang.PreferenceItem) {
 				for _, i := range m.items {
+					if i.Skipped {
+						continue
+					}
+
 					i.Preferences = items
 					i.Loading = true
 					m.itemsChan <- i

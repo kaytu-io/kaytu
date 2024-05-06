@@ -69,6 +69,13 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 			startMsg := msg.GetStart()
 			err = p.prc.StartProcess(startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken())
 			if err != nil {
+				stream.Send(&golang.PluginMessage{
+					PluginMessage: &golang.PluginMessage_Err{
+						Err: &golang.Error{
+							Error: err.Error(),
+						},
+					},
+				})
 				return err
 			}
 		}
