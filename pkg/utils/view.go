@@ -16,22 +16,23 @@ func Percentage(v *float64) string {
 	return fmt.Sprintf("%.2f%%", *v)
 }
 
-func MemoryUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGb float64) string {
+func MemoryUsagePercentageByFreeSpace(freeSpaceBytes *float64, memorySizeGB float64) string {
 	if freeSpaceBytes == nil {
 		return ""
 	}
-	storageSizeBytes := storageSizeGb * (1024 * 1024 * 1024)
-	usage := storageSizeBytes - *freeSpaceBytes
-	usagePercentage := usage / storageSizeBytes
+	memorySizeBytes := memorySizeGB * (1024 * 1024 * 1024)
+	usage := memorySizeBytes - *freeSpaceBytes
+	usagePercentage := usage / memorySizeBytes
 	return Percentage(&usagePercentage)
 }
 
-func StorageUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeBytes *int32) string {
-	if freeSpaceBytes == nil || storageSizeBytes == nil {
+func StorageUsagePercentageByFreeSpace(freeSpaceBytes *float64, storageSizeGB *int32) string {
+	if freeSpaceBytes == nil || storageSizeGB == nil {
 		return ""
 	}
-	usage := float64(*storageSizeBytes) - *freeSpaceBytes
-	usagePercentage := usage / float64(*storageSizeBytes)
+	storageSizeBytes := *storageSizeGB * (1024 * 1024 * 1024)
+	usage := float64(storageSizeBytes) - *freeSpaceBytes
+	usagePercentage := usage / float64(storageSizeBytes)
 	return Percentage(&usagePercentage)
 }
 
