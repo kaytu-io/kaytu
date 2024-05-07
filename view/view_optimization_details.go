@@ -86,7 +86,7 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 
 func NewOptimizationDetailsView(item *golang.OptimizationItem, close func()) *OptimizationDetailsView {
 	ifRecommendationExists := func(f func() string) string {
-		if !item.Loading && !item.Skipped {
+		if !item.Loading && !item.Skipped && !item.LazyLoadingEnabled {
 			return f()
 		}
 		return ""

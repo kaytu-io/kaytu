@@ -108,7 +108,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var rows Rows
 				for _, i := range m.items {
 					totalSaving := 0.0
-					if !i.Loading && !i.Skipped {
+					if !i.Loading && !i.Skipped && !i.LazyLoadingEnabled {
 						for _, dev := range i.Devices {
 							totalSaving += dev.CurrentCost - dev.RightSizedCost
 						}
@@ -122,7 +122,9 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						i.Platform,
 						fmt.Sprintf("$%.2f", totalSaving),
 					}
-					if i.Loading {
+					if i.LazyLoadingEnabled {
+						row[5] = "press enter to load"
+					} else if i.Loading {
 						row[5] = "loading"
 					} else if i.Skipped {
 						row[5] = "skipped"
@@ -153,7 +155,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading {
+				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading && !i.LazyLoadingEnabled {
 					m.prefConf = NewPreferencesConfiguration(i.Preferences, func(items []*golang.PreferenceItem) {
 						i.Preferences = items
 						i.Loading = true
@@ -176,7 +178,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.prefConf = NewPreferencesConfiguration(preferences.DefaultPreferences(), func(items []*golang.PreferenceItem) {
 				for _, i := range m.items {
-					if i.Skipped {
+					if i.Skipped || i.LazyLoadingEnabled {
 						continue
 					}
 
@@ -198,7 +200,7 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			selectedInstanceID := m.table.HighlightedRow().Data["0"]
 			for _, i := range m.items {
-				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading {
+				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading && !i.LazyLoadingEnabled {
 					m.detailsPage = NewOptimizationDetailsView(i, func() {
 						m.detailsPage = nil
 						m.UpdateResponsive()
