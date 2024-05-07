@@ -122,15 +122,15 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						i.Platform,
 						fmt.Sprintf("$%.2f", totalSaving),
 					}
-					if i.LazyLoadingEnabled {
-						row[5] = "press enter to load"
-					} else if i.Loading {
-						row[5] = "loading"
-					} else if i.Skipped {
+					if i.Skipped {
 						row[5] = "skipped"
 						if len(i.SkipReason) > 0 {
 							row[5] += " - " + i.SkipReason
 						}
+					} else if i.LazyLoadingEnabled {
+						row[5] = "press enter to load"
+					} else if i.Loading {
+						row[5] = "loading"
 					}
 					row = append(row, "→")
 					rows = append(rows, row)
@@ -208,6 +208,11 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					initCmd = m.detailsPage.Init()
 					m.detailsPage.width = m.Width
 					break
+				} else if selectedInstanceID == i.Id && !i.Skipped && i.LazyLoadingEnabled {
+					i.LazyLoadingEnabled = false
+					i.Loading = true
+					m.itemsChan <- i
+					m.reEvaluateFunc(i.Id, i.Preferences)
 				}
 			}
 			m.UpdateResponsive()
