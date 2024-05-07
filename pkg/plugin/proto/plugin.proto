@@ -77,6 +77,7 @@ message OptimizationItem {
   bool loading = 9;
   bool skipped = 10;
   string skip_reason = 11;
+  bool lazy_loading_enabled = 12;
 }
 
 message PluginMessage {
