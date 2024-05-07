@@ -86,10 +86,10 @@ func Execute() {
 						return err
 					}
 
-					//err = manager.StartPlugin(cmd.Name)
-					//if err != nil {
-					//	return err
-					//}
+					err = manager.StartPlugin(cmd.Name)
+					if err != nil {
+						return err
+					}
 
 					for i := 0; i < 100; i++ {
 						runningPlg := manager.GetPlugin(plg.Config.Name)
