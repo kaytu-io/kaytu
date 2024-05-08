@@ -34,7 +34,7 @@ func NewPreferenceItem(pref *golang.PreferenceItem) *PreferenceItem {
 
 func (m *PreferenceItem) ReconfigureInput() {
 	if m.pref.Pinned {
-		m.input.Placeholder = "Pinned to current EC2 Instance"
+		m.input.Placeholder = "Pinned to current resource"
 		m.input.Validate = pinnedValidator
 		m.input.SetValue("")
 		m.pref.Value = nil
