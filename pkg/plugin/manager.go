@@ -38,7 +38,7 @@ type Manager struct {
 
 func New() *Manager {
 	return &Manager{
-		port:    30422,
+		port:    0,
 		started: false,
 	}
 }
@@ -74,6 +74,8 @@ func (m *Manager) StartServer() error {
 	if err != nil {
 		return err
 	}
+
+	m.port = lis.Addr().(*net.TCPAddr).Port
 
 	grpcServer := grpc.NewServer()
 	golang.RegisterPluginServer(grpcServer, m)
