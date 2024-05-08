@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package kaytu.plugin.v1;
+option go_package="github.com/kaytu-io/kaytu/proto/src/golang";
+import "google/protobuf/wrappers.proto";
+
+message Flag {
+  string name = 1;
+  string default = 2;
+  string description = 3;
+  bool required = 4;
+}
+
+message Command {
+  string name = 1;
+  string description = 2;
+  repeated Flag flags = 3;
+  repeated PreferenceItem default_preferences = 4;
+}
+
+message RegisterConfig {
+  string name = 1;
+  string version = 2;
+  string provider = 3;
+  repeated Command commands = 4;
+}
+
+message Error {
+  string error = 1;
+}
+
+message JobResult {
+  string id = 1;
+  string description = 2;
+  string failure_message = 3;
+  bool done = 4;
+}
+
+message Property {
+  string key = 1;
+  string current = 2;
+  string average = 3;
+  string max = 4;
+  string recommended = 5;
+}
+
+message Device {
+  string device_id = 1;
+  string resource_type = 2;
+  string runtime = 3;
+  double current_cost = 4;
+  double right_sized_cost = 5;
+  repeated Property properties = 6;
+}
+
+message PreferenceItem {
+  string service = 1;
+  string key = 2;
+  string alias = 3;
+  bool is_number = 4;
+  google.protobuf.StringValue value = 5;
+  repeated  string possible_values = 6;
+  bool pinned = 7;
+  bool prevent_pinning = 8;
+  string unit = 9;
+}
+
+message OptimizationItem {
+  string id = 1;
+  string name = 2;
+  string resource_type = 3;
+  string region = 4;
+  string platform = 5;
+  repeated Device devices = 6;
+  repeated PreferenceItem preferences = 7;
+  string description = 8;
+  bool loading = 9;
+  bool skipped = 10;
+  string skip_reason = 11;
+  bool lazy_loading_enabled = 12;
+}
+
+message PluginMessage {
+  oneof plugin_message {
+    JobResult job = 1;
+    OptimizationItem oi = 2;
+    RegisterConfig conf = 3;
+    Error err = 4;
+  }
+}
+
+message ReEvaluate {
+  string id = 1;
+  repeated PreferenceItem preferences = 2;
+}
+
+message StartProcess {
+  string command = 1;
+  map<string,string> flags = 2;
+  string kaytu_access_token = 3;
+}
+
+message ServerMessage {
+  oneof server_message {
+    ReEvaluate re_evaluate = 1;
+    StartProcess start = 2;
+  }
+}
+
+service Plugin {
+  rpc Register(stream PluginMessage) returns (stream ServerMessage) {}
+}
