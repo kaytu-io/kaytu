@@ -58,7 +58,7 @@ func NewPreferencesConfiguration(preferences []*golang.PreferenceItem, close fun
 				"←/→: prev/next value (for fields with specific values)",
 				"ctrl + ←/→: prev/next change service filter",
 				"esc: apply and exit",
-				"tab: pin/unpin value to current ec2 instance",
+				"tab: pin/unpin value to current resource",
 				"ctrl+c: exit",
 			},
 			height: 0,
