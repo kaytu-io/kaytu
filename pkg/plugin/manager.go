@@ -33,6 +33,8 @@ type Manager struct {
 
 	jobs          *view.JobsView
 	optimizations *view.OptimizationsView
+
+	NonInteractiveView *view.NonInteractiveView
 }
 
 func New() *Manager {
@@ -87,30 +89,58 @@ func (m *Manager) StartServer() error {
 
 func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	m.stream = stream
-	for {
-		receivedMsg, err := stream.Recv()
-		if err != nil {
-			return err
+	if m.NonInteractiveView != nil {
+		for {
+			receivedMsg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case receivedMsg.GetConf() != nil:
+				conf := receivedMsg.GetConf()
+				m.plugins = append(m.plugins, RunningPlugin{
+					Plugin: server.Plugin{Config: conf},
+					Stream: stream,
+				})
+
+			case receivedMsg.GetJob() != nil:
+				m.NonInteractiveView.PublishJob(receivedMsg.GetJob())
+
+			case receivedMsg.GetOi() != nil:
+				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+
+			case receivedMsg.GetErr() != nil:
+				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			}
 		}
+	} else {
+		for {
+			receivedMsg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
 
-		switch {
-		case receivedMsg.GetConf() != nil:
-			conf := receivedMsg.GetConf()
-			m.plugins = append(m.plugins, RunningPlugin{
-				Plugin: server.Plugin{Config: conf},
-				Stream: stream,
-			})
+			switch {
+			case receivedMsg.GetConf() != nil:
+				conf := receivedMsg.GetConf()
+				m.plugins = append(m.plugins, RunningPlugin{
+					Plugin: server.Plugin{Config: conf},
+					Stream: stream,
+				})
 
-		case receivedMsg.GetJob() != nil:
-			m.jobs.Publish(receivedMsg.GetJob())
+			case receivedMsg.GetJob() != nil:
+				m.jobs.Publish(receivedMsg.GetJob())
 
-		case receivedMsg.GetOi() != nil:
-			m.optimizations.SendItem(receivedMsg.GetOi())
+			case receivedMsg.GetOi() != nil:
+				m.optimizations.SendItem(receivedMsg.GetOi())
 
-		case receivedMsg.GetErr() != nil:
-			m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetErr() != nil:
+				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			}
 		}
 	}
+	return nil
 }
 
 func (m *Manager) Install(addr string) error {
@@ -240,4 +270,8 @@ func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsVi
 			},
 		})
 	})
+}
+
+func (m *Manager) SetNonInteractiveView() {
+	m.NonInteractiveView = view.NewNonInteractiveView()
 }
