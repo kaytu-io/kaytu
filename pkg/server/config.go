@@ -32,9 +32,21 @@ var (
 	configErr error
 )
 
+func Home() string {
+	home := os.Getenv("HOME")
+	if home == "" {
+		home = os.Getenv("USERPROFILE")
+		if home == "" {
+			home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		}
+	}
+	return home
+}
+
 func GetPlugins() ([]*Plugin, error) {
 	var cfg Config
-	home := os.Getenv("HOME")
+
+	home := Home()
 	data, err := os.ReadFile(home + "/.kaytu/kaytu-config.json")
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
@@ -60,7 +72,7 @@ func GetConfig() (*Config, error) {
 
 func loadConfig() (*Config, error) {
 	var config Config
-	home := os.Getenv("HOME")
+	home := Home()
 	data, err := os.ReadFile(home + "/.kaytu/kaytu-config.json")
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
@@ -88,7 +100,7 @@ func loadConfig() (*Config, error) {
 }
 
 func RemoveConfig() error {
-	home := os.Getenv("HOME")
+	home := Home()
 	err := os.Remove(home + "/.kaytu/kaytu-config.json")
 	if err != nil {
 		return fmt.Errorf("[removeConfig] : %v", err)
@@ -101,7 +113,7 @@ func SetConfig(data Config) error {
 	if err != nil {
 		return fmt.Errorf("[addConfig] : %v", err)
 	}
-	home := os.Getenv("HOME")
+	home := Home()
 	_, err = os.Stat(home + "/.kaytu")
 	if err != nil {
 		err = os.Mkdir(home+"/.kaytu", os.ModePerm)
