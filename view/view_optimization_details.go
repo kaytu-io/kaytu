@@ -150,7 +150,7 @@ func NewOptimizationDetailsView(item *golang.OptimizationItem, close func()) *Op
 	model.help = HelpView{
 		lines: []string{
 			"↑/↓: move",
-			"esc/←: back to ec2 instance list",
+			"esc/←: back to optimizations list",
 			"q/ctrl+c: exit",
 		},
 		height: 0,
