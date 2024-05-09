@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -16,7 +17,7 @@ type Plugin struct {
 }
 
 func (p *Plugin) Path() string {
-	return PluginDir() + p.Config.Name
+	return filepath.Join(PluginDir(), p.Config.Name)
 }
 
 type Config struct {
@@ -34,8 +35,11 @@ var (
 
 func GetPlugins() ([]*Plugin, error) {
 	var cfg Config
-	home := os.Getenv("HOME")
-	data, err := os.ReadFile(home + "/.kaytu/kaytu-config.json")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("[GetPlugins] : %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(home, ".kaytu", "kaytu-config.json"))
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			return nil, nil
@@ -60,8 +64,11 @@ func GetConfig() (*Config, error) {
 
 func loadConfig() (*Config, error) {
 	var config Config
-	home := os.Getenv("HOME")
-	data, err := os.ReadFile(home + "/.kaytu/kaytu-config.json")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("[loadConfig] : %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(home, ".kaytu", "kaytu-config.json"))
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			return &config, nil
@@ -88,8 +95,11 @@ func loadConfig() (*Config, error) {
 }
 
 func RemoveConfig() error {
-	home := os.Getenv("HOME")
-	err := os.Remove(home + "/.kaytu/kaytu-config.json")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("[removeConfig] : %v", err)
+	}
+	err = os.Remove(filepath.Join(home, ".kaytu", "kaytu-config.json"))
 	if err != nil {
 		return fmt.Errorf("[removeConfig] : %v", err)
 	}
@@ -101,16 +111,19 @@ func SetConfig(data Config) error {
 	if err != nil {
 		return fmt.Errorf("[addConfig] : %v", err)
 	}
-	home := os.Getenv("HOME")
-	_, err = os.Stat(home + "/.kaytu")
+	home, err := os.UserHomeDir()
 	if err != nil {
-		err = os.Mkdir(home+"/.kaytu", os.ModePerm)
+		return fmt.Errorf("[addConfig] : %v", err)
+	}
+	_, err = os.Stat(filepath.Join(home, ".kaytu"))
+	if err != nil {
+		err = os.Mkdir(filepath.Join(home, ".kaytu"), os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("[addConfig] : %v", err)
 		}
 	}
 
-	err = os.WriteFile(home+"/.kaytu/kaytu-config.json", configs, os.ModePerm)
+	err = os.WriteFile(filepath.Join(home, ".kaytu", "kaytu-config.json"), configs, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("[addConfig] : %v", err)
 	}
