@@ -139,6 +139,7 @@ func Execute() {
 								Command:          cmd.Name,
 								Flags:            flagValues,
 								KaytuAccessToken: cfg.AccessToken,
+								NonInteractive:   nonInteractiveFlag,
 							},
 						},
 					})

@@ -23,17 +23,22 @@ type NonInteractiveView struct {
 	jobChan  chan *golang.JobResult
 	jobs     []*golang.JobResult
 	jobMutex sync.RWMutex
+
+	resultsReady chan bool
 }
 
 func NewNonInteractiveView() *NonInteractiveView {
-	return &NonInteractiveView{
+	v := &NonInteractiveView{
 		itemsChan:      make(chan *golang.OptimizationItem, 1000),
 		runningJobsMap: map[string]string{},
 		failedJobsMap:  map[string]string{},
 		jobMutex:       sync.RWMutex{},
 		jobChan:        make(chan *golang.JobResult, 10000),
 		errorChan:      make(chan error, 10000),
+		resultsReady:   make(chan bool),
 	}
+	v.resultsReady <- false
+	return v
 }
 
 var primary = color.New(color.FgHiCyan)
@@ -130,6 +135,10 @@ func (v *NonInteractiveView) PublishJob(job *golang.JobResult) {
 
 func (v *NonInteractiveView) PublishError(err error) {
 	v.errorChan <- err
+}
+
+func (v *NonInteractiveView) PublishResultsReady(ready *golang.ResultsReady) {
+	v.resultsReady <- ready.Ready
 }
 
 func (v *NonInteractiveView) WaitAndShowResults() error {
