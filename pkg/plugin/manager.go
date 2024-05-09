@@ -7,6 +7,7 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/view"
+	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 	"io"
 	"net"
@@ -39,7 +40,7 @@ type Manager struct {
 
 func New() *Manager {
 	return &Manager{
-		port:    30422,
+		port:    0,
 		started: false,
 	}
 }
@@ -75,6 +76,8 @@ func (m *Manager) StartServer() error {
 	if err != nil {
 		return err
 	}
+
+	m.port = lis.Addr().(*net.TCPAddr).Port
 
 	grpcServer := grpc.NewServer()
 	golang.RegisterPluginServer(grpcServer, m)
@@ -189,6 +192,7 @@ func (m *Manager) Install(addr string) error {
 			if err != nil {
 				return err
 			}
+			defer resp.Body.Close()
 
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
@@ -197,7 +201,8 @@ func (m *Manager) Install(addr string) error {
 				return err
 			}
 
-			_, err = io.Copy(f, resp.Body)
+			bar := progressbar.DefaultBytes(resp.ContentLength)
+			_, err = io.Copy(io.MultiWriter(f, bar), resp.Body)
 			if err != nil {
 				return err
 			}
