@@ -141,7 +141,6 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (m *Manager) Install(addr string) error {

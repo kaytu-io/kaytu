@@ -1,11 +1,13 @@
 package view
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"os"
 	"time"
 )
 
@@ -261,17 +263,47 @@ func (v *NonInteractiveView) PublishResultsReady(ready *golang.ResultsReady) {
 	v.resultsReady <- ready.Ready
 }
 
-func (v *NonInteractiveView) WaitAndShowResults() error {
+func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool, jsonExport bool) error {
 	go v.WaitForAllItems()
 	for {
 		select {
 		case ready := <-v.resultsReady:
 			if ready == true {
-				str, err := v.OptimizationsString()
-				if err != nil {
-					return err
+				if showResults {
+					str, err := v.OptimizationsString()
+					if err != nil {
+						return err
+					}
+					fmt.Println(str)
 				}
-				fmt.Println(str)
+				if csvExport {
+
+				}
+				if jsonExport {
+					jsonValue := struct {
+						Items []*golang.OptimizationItem
+					}{
+						Items: v.items,
+					}
+					jsonData, err := json.Marshal(jsonValue)
+					if err != nil {
+						return err
+					}
+
+					file, err := os.Create("json-export.json")
+					if err != nil {
+						return err
+					}
+
+					_, err = file.Write(jsonData)
+					if err != nil {
+						return err
+					}
+					err = file.Close()
+					if err != nil {
+						return err
+					}
+				}
 				return nil
 			}
 		case err := <-v.errorChan:
