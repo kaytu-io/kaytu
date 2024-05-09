@@ -3,12 +3,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 )
 
 type Plugin struct {
@@ -16,7 +19,19 @@ type Plugin struct {
 }
 
 func (p *Plugin) Path() string {
-	return filepath.Join(PluginDir(), p.Config.Name)
+	executableName := p.Config.Name
+	_ = filepath.WalkDir(PluginDir(), func(path string, info fs.DirEntry, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) == p.Config.Name {
+			executableName = info.Name()
+			return nil
+		}
+		return fmt.Errorf("plugin not found")
+	})
+
+	return filepath.Join(PluginDir(), executableName)
 }
 
 type Config struct {
