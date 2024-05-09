@@ -5,20 +5,20 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 )
 
 func startPlugin(plg *server.Plugin, serverAddr string) error {
 	logsDir := server.LogsDir()
 	cmd := exec.Command(plg.Path(), "--server", serverAddr)
 
-	errLogs, err := os.OpenFile(path.Join(logsDir, fmt.Sprintf("%s.err.logs", plg.Config.Name)), os.O_CREATE|os.O_APPEND, os.ModePerm)
+	errLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.err.logs", plg.Config.Name)), os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	cmd.Stderr = errLogs
 
-	outLogs, err := os.OpenFile(path.Join(logsDir, fmt.Sprintf("%s.out.logs", plg.Config.Name)), os.O_CREATE|os.O_APPEND, os.ModePerm)
+	outLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.out.logs", plg.Config.Name)), os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		return err
 	}
