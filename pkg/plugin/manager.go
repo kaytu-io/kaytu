@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -166,7 +167,7 @@ func (m *Manager) Install(addr string) error {
 
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
-			f, err := os.OpenFile(server.PluginDir()+name, os.O_CREATE|os.O_RDWR, os.ModePerm)
+			f, err := os.OpenFile(filepath.Join(server.PluginDir(), name), os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				return err
 			}
