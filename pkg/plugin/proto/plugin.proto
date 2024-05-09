@@ -80,12 +80,17 @@ message OptimizationItem {
   bool lazy_loading_enabled = 12;
 }
 
+message ResultsReady {
+  bool ready = 1;
+}
+
 message PluginMessage {
   oneof plugin_message {
     JobResult job = 1;
     OptimizationItem oi = 2;
     RegisterConfig conf = 3;
     Error err = 4;
+    ResultsReady ready = 5;
   }
 }
 

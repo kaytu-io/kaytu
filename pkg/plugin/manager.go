@@ -3,20 +3,22 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/kaytu-io/kaytu/pkg/api/github"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/view"
 	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
-	"io"
-	"net"
-	"net/http"
-	"os"
-	"regexp"
-	"runtime"
-	"strings"
-	"time"
 )
 
 type RunningPlugin struct {
@@ -34,6 +36,8 @@ type Manager struct {
 
 	jobs          *view.JobsView
 	optimizations *view.OptimizationsView
+
+	NonInteractiveView *view.NonInteractiveView
 }
 
 func New() *Manager {
@@ -90,28 +94,52 @@ func (m *Manager) StartServer() error {
 
 func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	m.stream = stream
-	for {
-		receivedMsg, err := stream.Recv()
-		if err != nil {
-			return err
+	if m.NonInteractiveView != nil {
+		for {
+			receivedMsg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case receivedMsg.GetConf() != nil:
+				conf := receivedMsg.GetConf()
+				m.plugins = append(m.plugins, RunningPlugin{
+					Plugin: server.Plugin{Config: conf},
+					Stream: stream,
+				})
+			case receivedMsg.GetOi() != nil:
+				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+			case receivedMsg.GetErr() != nil:
+				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetReady() != nil:
+				m.NonInteractiveView.PublishResultsReady(receivedMsg.GetReady())
+			}
 		}
+	} else {
+		for {
+			receivedMsg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
 
-		switch {
-		case receivedMsg.GetConf() != nil:
-			conf := receivedMsg.GetConf()
-			m.plugins = append(m.plugins, RunningPlugin{
-				Plugin: server.Plugin{Config: conf},
-				Stream: stream,
-			})
+			switch {
+			case receivedMsg.GetConf() != nil:
+				conf := receivedMsg.GetConf()
+				m.plugins = append(m.plugins, RunningPlugin{
+					Plugin: server.Plugin{Config: conf},
+					Stream: stream,
+				})
 
-		case receivedMsg.GetJob() != nil:
-			m.jobs.Publish(receivedMsg.GetJob())
+			case receivedMsg.GetJob() != nil:
+				m.jobs.Publish(receivedMsg.GetJob())
 
-		case receivedMsg.GetOi() != nil:
-			m.optimizations.SendItem(receivedMsg.GetOi())
+			case receivedMsg.GetOi() != nil:
+				m.optimizations.SendItem(receivedMsg.GetOi())
 
-		case receivedMsg.GetErr() != nil:
-			m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetErr() != nil:
+				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			}
 		}
 	}
 }
@@ -166,7 +194,9 @@ func (m *Manager) Install(addr string) error {
 
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
-			f, err := os.OpenFile(server.PluginDir()+name, os.O_CREATE|os.O_RDWR, os.ModePerm)
+			pluginExt := filepath.Ext(asset.Name)
+
+			f, err := os.OpenFile(filepath.Join(server.PluginDir(), name+pluginExt), os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				return err
 			}
@@ -245,4 +275,8 @@ func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsVi
 			},
 		})
 	})
+}
+
+func (m *Manager) SetNonInteractiveView() {
+	m.NonInteractiveView = view.NewNonInteractiveView()
 }
