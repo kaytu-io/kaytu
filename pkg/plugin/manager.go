@@ -3,12 +3,6 @@ package plugin
 import (
 	"errors"
 	"fmt"
-	"github.com/kaytu-io/kaytu/pkg/api/github"
-	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
-	"github.com/kaytu-io/kaytu/pkg/server"
-	"github.com/kaytu-io/kaytu/view"
-	"github.com/schollz/progressbar/v3"
-	"google.golang.org/grpc"
 	"io"
 	"net"
 	"net/http"
@@ -18,6 +12,13 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/kaytu-io/kaytu/pkg/api/github"
+	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"github.com/kaytu-io/kaytu/pkg/server"
+	"github.com/kaytu-io/kaytu/view"
+	"github.com/schollz/progressbar/v3"
+	"google.golang.org/grpc"
 )
 
 type RunningPlugin struct {
@@ -197,7 +198,9 @@ func (m *Manager) Install(addr string) error {
 
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
-			f, err := os.OpenFile(filepath.Join(server.PluginDir(), name), os.O_CREATE|os.O_RDWR, os.ModePerm)
+			pluginExt := filepath.Ext(asset.Name)
+
+			f, err := os.OpenFile(filepath.Join(server.PluginDir(), name+pluginExt), os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				return err
 			}
