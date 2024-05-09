@@ -28,7 +28,7 @@ func (p *Plugin) Path() string {
 			executableName = info.Name()
 			return nil
 		}
-		return fmt.Errorf("plugin not found")
+		return nil
 	})
 
 	return filepath.Join(PluginDir(), executableName)
