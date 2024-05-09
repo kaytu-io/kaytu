@@ -193,6 +193,14 @@ func (m *OptimizationsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}, m.Width)
 			initCmd = m.prefConf.Init()
 			m.UpdateResponsive()
+		case "pgdown":
+			m.table.PageDown()
+		case "pgup":
+			m.table.PageUp()
+		case "home":
+			m.table.PageFirst()
+		case "end":
+			m.table.PageLast()
 		case "enter", "right":
 			if m.table.TotalRows() == 0 {
 				break
