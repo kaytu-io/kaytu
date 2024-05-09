@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
@@ -43,7 +42,7 @@ func GetPlugins() ([]*Plugin, error) {
 
 	_, err = os.Stat(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if os.IsNotExist(err) {
 			// if the file does not exist, return nil
 			return nil, nil
 		}
@@ -81,7 +80,7 @@ func loadConfig() (*Config, error) {
 
 	_, err = os.Stat(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if os.IsNotExist(err) {
 			// if the file does not exist, return nil
 			return &config, nil
 		}
