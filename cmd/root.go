@@ -41,6 +41,7 @@ func init() {
 	rootCmd.AddCommand(optimizeCmd)
 
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
+	optimizeCmd.PersistentFlags().Bool("non-interactive", false, "Show optimization results in non-interactive mode")
 }
 
 func Execute() {
@@ -79,8 +80,11 @@ func Execute() {
 					if err != nil {
 						return err
 					}
-
+					nonInteractiveFlag := utils.ReadBooleanFlag(c, "non-interactive")
 					manager := plugin2.New()
+					if nonInteractiveFlag {
+						manager.SetNonInteractiveView()
+					}
 					err = manager.StartServer()
 					if err != nil {
 						return err
@@ -142,13 +146,20 @@ func Execute() {
 						return err
 					}
 
-					jobs := view.NewJobsView()
-					optimizations := view.NewOptimizationsView()
-					manager.SetUI(jobs, optimizations)
-
-					p := tea.NewProgram(view.NewApp(optimizations, jobs), tea.WithFPS(10))
-					if _, err := p.Run(); err != nil {
+					if nonInteractiveFlag {
+						err := manager.NonInteractiveView.WaitAndShowResults()
 						return err
+					} else {
+						jobs := view.NewJobsView()
+						optimizations := view.NewOptimizationsView()
+						manager.SetUI(jobs, optimizations)
+
+						p := tea.NewProgram(view.NewApp(optimizations, jobs), tea.WithFPS(10))
+						if _, err := p.Run(); err != nil {
+							return err
+						}
+
+						return nil
 					}
 
 					return nil
