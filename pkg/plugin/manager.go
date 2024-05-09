@@ -106,12 +106,12 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 
 			case receivedMsg.GetJob() != nil:
 				m.NonInteractiveView.PublishJob(receivedMsg.GetJob())
-
 			case receivedMsg.GetOi() != nil:
 				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
-
 			case receivedMsg.GetErr() != nil:
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetReady() != nil:
+				m.NonInteractiveView.PublishResultsReady(receivedMsg.GetReady())
 			}
 		}
 	} else {
