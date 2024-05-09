@@ -107,9 +107,6 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					Plugin: server.Plugin{Config: conf},
 					Stream: stream,
 				})
-
-			case receivedMsg.GetJob() != nil:
-				m.NonInteractiveView.PublishJob(receivedMsg.GetJob())
 			case receivedMsg.GetOi() != nil:
 				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
 			case receivedMsg.GetErr() != nil:
