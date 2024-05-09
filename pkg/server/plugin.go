@@ -1,20 +1,20 @@
 package server
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func PluginDir() string {
-	home := os.Getenv("HOME")
-	dir := fmt.Sprintf("%s/.kaytu/plugins/", home)
+	home, _ := os.UserHomeDir()
+	dir := filepath.Join(home, ".kaytu", "plugins")
 	os.MkdirAll(dir, os.ModePerm)
 	return dir
 }
 
 func LogsDir() string {
-	home := os.Getenv("HOME")
-	dir := fmt.Sprintf("%s/.kaytu/logs", home)
+	home, _ := os.UserHomeDir()
+	dir := filepath.Join(home, ".kaytu", "logs")
 	os.MkdirAll(dir, os.ModePerm)
 	return dir
 }
