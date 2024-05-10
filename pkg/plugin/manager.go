@@ -110,6 +110,8 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				})
 			case receivedMsg.GetOi() != nil:
 				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+			case receivedMsg.GetJob() != nil:
+				m.NonInteractiveView.PublishJobs(receivedMsg.GetJob())
 			case receivedMsg.GetErr() != nil:
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
@@ -275,6 +277,10 @@ func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsVi
 			},
 		})
 	})
+}
+
+func (m *Manager) SetJobsView(jobs *view.JobsView) {
+	m.jobs = jobs
 }
 
 func (m *Manager) SetNonInteractiveView() {
