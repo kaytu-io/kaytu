@@ -1,6 +1,7 @@
 package view
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
@@ -277,7 +278,29 @@ func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool
 					fmt.Println(str)
 				}
 				if csvExport {
+					csvHeaders, csvRows := exportCsv(v.items)
+					file, err := os.Create("export.csv")
+					if err != nil {
+						return err
+					}
+					writer := csv.NewWriter(file)
 
+					err = writer.Write(csvHeaders)
+					if err != nil {
+						return err
+					}
+
+					for _, row := range csvRows {
+						err := writer.Write(row)
+						if err != nil {
+							return err
+						}
+					}
+					writer.Flush()
+					err = file.Close()
+					if err != nil {
+						return err
+					}
 				}
 				if jsonExport {
 					jsonValue := struct {
@@ -290,7 +313,7 @@ func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool
 						return err
 					}
 
-					file, err := os.Create("json-export.json")
+					file, err := os.Create("export.json")
 					if err != nil {
 						return err
 					}
@@ -343,4 +366,29 @@ func (v *NonInteractiveView) WaitForAllItems() {
 			}
 		}
 	}
+}
+
+func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
+	headers := []string{
+		"Item-ID", "Item-ResourceType", "Item-Region", "Item-Platform", "Item-TotalSave",
+		"Device-ID", "Device-ResourceType", "Device-Runtime", "Device-CurrentCost", "Device-RightSizedCost", "Device-Savings",
+		"Property-Name", "Property-Current", "Property-Average", "Property-Max", "Property-Recommendation",
+	}
+	var rows [][]string
+	for _, i := range items {
+		totalSaving := float64(0)
+		for _, d := range i.Devices {
+			totalSaving = totalSaving + (d.CurrentCost - d.RightSizedCost)
+		}
+		for _, d := range i.Devices {
+			for _, p := range d.Properties {
+				rows = append(rows, []string{
+					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("$%.2f", totalSaving),
+					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("$%.2f", d.CurrentCost), fmt.Sprintf("$%.2f", d.RightSizedCost), fmt.Sprintf("$%.2f", d.CurrentCost-d.RightSizedCost),
+					p.Key, p.Current, p.Average, p.Max, p.Recommended,
+				})
+			}
+		}
+	}
+	return headers, rows
 }
