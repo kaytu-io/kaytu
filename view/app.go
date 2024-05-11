@@ -32,6 +32,7 @@ type App struct {
 	history       []PageEnum
 	activePageIdx int
 	width, height int
+	ignoreESC     bool
 }
 
 func NewApp(
@@ -43,6 +44,7 @@ func NewApp(
 ) *App {
 	app := &App{}
 	optimizationsPage = optimizationsPage.SetApp(app)
+	optimizationDetailsPage = optimizationDetailsPage.SetApp(app)
 	app.pages = []Page{
 		optimizationsPage,
 		optimizationDetailsPage,
@@ -103,7 +105,7 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+j":
 			changePageCmd = m.ChangePage(Page_Jobs)
 		case "esc":
-			if len(m.history) > 0 {
+			if !m.ignoreESC && len(m.history) > 0 {
 				var page PageEnum
 				l := len(m.history)
 				m.history, page = m.history[:l-1], m.history[l-1]
@@ -138,4 +140,8 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *App) View() string {
 	return m.pages[m.activePageIdx].View()
+}
+
+func (m *App) SetIgnoreEsc(b bool) {
+	m.ignoreESC = b
 }
