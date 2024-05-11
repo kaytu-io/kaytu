@@ -71,6 +71,7 @@ func (m *App) ChangePage(id PageEnum) tea.Cmd {
 
 	newRV := m.pages[m.activePageIdx].SetSize(wsMsg)
 	m.pages[m.activePageIdx] = m.pages[m.activePageIdx].SetResponsiveView(newRV)
+	updateSizeCmd = tea.Batch(tea.ClearScreen, updateSizeCmd)
 
 	return updateSizeCmd
 }
@@ -93,6 +94,8 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		newRV := m.pages[m.activePageIdx].SetSize(msg)
 		m.pages[m.activePageIdx] = m.pages[m.activePageIdx].SetResponsiveView(newRV)
+
+		changePageCmd = tea.Batch(tea.ClearScreen, changePageCmd)
 	}
 
 	switch msg := msg.(type) {
@@ -101,9 +104,9 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "ctrl+h":
-			changePageCmd = m.ChangePage(Page_Help)
+			changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Help))
 		case "ctrl+j":
-			changePageCmd = m.ChangePage(Page_Jobs)
+			changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Jobs))
 		case "esc":
 			if !m.ignoreESC && len(m.history) > 0 {
 				var page PageEnum
@@ -119,10 +122,11 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				model, updateSizeCmd := m.pages[m.activePageIdx].Update(wsMsg)
 				m.pages[m.activePageIdx] = model.(Page)
-				changePageCmd = updateSizeCmd
+				changePageCmd = tea.Batch(changePageCmd, updateSizeCmd)
 
 				newRV := m.pages[m.activePageIdx].SetSize(wsMsg)
 				m.pages[m.activePageIdx] = m.pages[m.activePageIdx].SetResponsiveView(newRV)
+				changePageCmd = tea.Batch(tea.ClearScreen, changePageCmd)
 
 			}
 		}
