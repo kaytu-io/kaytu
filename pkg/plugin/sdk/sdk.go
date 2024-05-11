@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"os"
+	"time"
 )
 
 type Plugin struct {
@@ -76,6 +77,8 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 						},
 					},
 				})
+				stream.CloseSend()
+				time.Sleep(time.Second)
 				return err
 			}
 		}

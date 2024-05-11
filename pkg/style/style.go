@@ -25,4 +25,9 @@ var (
 	ContinueStyle = lipgloss.NewStyle().Foreground(darkGray)
 	SvcDisable    = lipgloss.NewStyle().Background(lipgloss.Color("#222222"))
 	SvcEnable     = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222"))
+
+	StatusBarStyle   = lipgloss.NewStyle().Background(lipgloss.Color("#222222")).Foreground(lipgloss.Color("#ffffff")).Width(9999)
+	JobsStatusStyle  = lipgloss.NewStyle().Background(lipgloss.Color("#dd5200")).Foreground(lipgloss.Color("#ffffff"))
+	ErrorStatusStyle = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222")).Foreground(lipgloss.Color("#ffffff"))
+	InfoStatusStyle  = lipgloss.NewStyle().Background(lipgloss.Color("#3a3835")).Foreground(lipgloss.Color("#ffffff"))
 )
