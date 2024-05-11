@@ -47,6 +47,17 @@ var (
 	configErr error
 )
 
+func Home() string {
+	home := os.Getenv("HOME")
+	if home == "" {
+		home = os.Getenv("USERPROFILE")
+		if home == "" {
+			home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		}
+	}
+	return home
+}
+
 func GetPlugins() ([]*Plugin, error) {
 	var cfg Config
 	home, err := os.UserHomeDir()
