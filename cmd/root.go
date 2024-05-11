@@ -45,6 +45,7 @@ func init() {
 	optimizeCmd.PersistentFlags().Bool("non-interactive-view", false, "Show optimization results in non-interactive mode")
 	optimizeCmd.PersistentFlags().Bool("csv-export", false, "Get CSV export")
 	optimizeCmd.PersistentFlags().Bool("json-export", false, "Get json export")
+	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
 }
 
 func Execute() {
@@ -90,14 +91,24 @@ func Execute() {
 					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
 						manager.SetNonInteractiveView()
 					}
-					err = manager.StartServer()
-					if err != nil {
-						return err
-					}
 
-					err = manager.StartPlugin(cmd.Name)
-					if err != nil {
-						return err
+					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
+					if !pluginDebugMode {
+						err = manager.StartServer()
+						if err != nil {
+							return err
+						}
+
+						err = manager.StartPlugin(cmd.Name)
+						if err != nil {
+							return err
+						}
+					} else {
+						manager.SetListenPort(30422)
+						err = manager.StartServer()
+						if err != nil {
+							return err
+						}
 					}
 
 					for i := 0; i < 100; i++ {
