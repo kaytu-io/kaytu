@@ -47,7 +47,9 @@ func New() *Manager {
 		started: false,
 	}
 }
-
+func (m *Manager) SetListenPort(port int) {
+	m.port = port
+}
 func (m *Manager) GetPlugin(name string) *RunningPlugin {
 	for _, plg := range m.plugins {
 		if plg.Plugin.Config.Name == name {

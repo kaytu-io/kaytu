@@ -59,9 +59,11 @@ func (m OptimizationsPage) OnOpen() Page {
 func (m OptimizationsPage) Init() tea.Cmd {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
-		"enter/→: see details",
+		"←/→: scroll right and left in the table",
+		"enter: see details",
 		"p: change preferences for one item",
 		"P: change preferences for all items",
+		"r: load all items in current page",
 		"q/ctrl+c: exit",
 	})
 	return nil
@@ -136,6 +138,16 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.optimizations.SelectItem(nil)
 			changePageCmd = m.app.ChangePage(Page_Preferences)
 			m.clearScreen = true
+		case "r":
+			start, end := m.table.VisibleIndices()
+			for _, i := range m.optimizations.Items()[start : end+1] {
+				if !i.Skipped && i.LazyLoadingEnabled {
+					i.LazyLoadingEnabled = false
+					i.Loading = true
+					m.optimizations.SendItem(i)
+					m.optimizations.ReEvaluate(i.Id, i.Preferences)
+				}
+			}
 
 		case "right":
 			m.table = m.table.ScrollRight()
