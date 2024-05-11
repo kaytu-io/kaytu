@@ -4,8 +4,10 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evertras/bubble-table/table"
+	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/style"
+	"github.com/kaytu-io/kaytu/view/responsive"
 	"github.com/muesli/reflow/wordwrap"
 	"strings"
 )
@@ -29,18 +31,18 @@ func (r Rows) ToTableRows() []table.Row {
 	return rows
 }
 
-type OptimizationDetailsView struct {
-	item             *golang.OptimizationItem
-	close            func()
-	deviceTable      table.Model
-	detailTable      table.Model
-	deviceProperties map[string]Rows
-	width            int
-	height           int
-	selectedDevice   string
-	help             HelpView
-
+type OptimizationDetailsPage struct {
+	item                *golang.OptimizationItem
+	deviceTable         table.Model
+	detailTable         table.Model
+	deviceProperties    map[string]Rows
+	selectedDevice      string
 	detailTableHasFocus bool
+
+	helpController          *controller.Help
+	optimizationsController *controller.Optimizations
+	statusBar               StatusBarView
+	responsive.ResponsiveView
 }
 
 func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
@@ -84,7 +86,21 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 	return res
 }
 
-func NewOptimizationDetailsView(item *golang.OptimizationItem, close func()) *OptimizationDetailsView {
+func NewOptimizationDetailsView(
+	optimizationsController *controller.Optimizations,
+	helpController *controller.Help,
+	statusBar StatusBarView,
+) OptimizationDetailsPage {
+	return OptimizationDetailsPage{
+		helpController:          helpController,
+		optimizationsController: optimizationsController,
+		statusBar:               statusBar,
+	}
+}
+
+func (m OptimizationDetailsPage) OnOpen() Page {
+	item := m.optimizationsController.SelectedItem()
+
 	ifRecommendationExists := func(f func() string) string {
 		if !item.Loading && !item.Skipped && !item.LazyLoadingEnabled {
 			return f()
@@ -131,43 +147,39 @@ func NewOptimizationDetailsView(item *golang.OptimizationItem, close func()) *Op
 		table.NewColumn("4", "Recommendation", 30),
 	}
 
-	model := OptimizationDetailsView{
-		item:  item,
-		close: close,
-		detailTable: table.New(detailColumns).
-			WithFooterVisibility(false).
-			WithPageSize(1).
-			WithBaseStyle(style.Base).BorderRounded(),
-		deviceTable: table.New(deviceColumns).
-			WithFooterVisibility(false).
-			WithRows(deviceRows.ToTableRows()).
-			Focused(true).
-			WithPageSize(len(deviceRows)).
-			WithBaseStyle(style.ActiveStyleBase).BorderRounded(),
-	}
-
-	model.deviceProperties = ExtractProperties(item)
-	model.help = HelpView{
-		lines: []string{
-			"↑/↓: move",
-			"esc/←: back to optimizations list",
-			"q/ctrl+c: exit",
-		},
-		height: 0,
-	}
-	return &model
+	m.item = item
+	m.detailTable = table.New(detailColumns).
+		WithPageSize(1).
+		WithBaseStyle(style.Base).BorderRounded()
+	m.deviceTable = table.New(deviceColumns).
+		WithRows(deviceRows.ToTableRows()).
+		WithHighlightedRow(0).
+		Focused(true).
+		WithPageSize(len(deviceRows)).
+		WithBaseStyle(style.ActiveStyleBase).BorderRounded()
+	m.deviceProperties = ExtractProperties(item)
+	m.detailTableHasFocus = false
+	m.selectedDevice = ""
+	m.helpController.SetKeyMap([]string{
+		"↑/↓: move",
+		"esc/←: back to optimizations list",
+		"q/ctrl+c: exit",
+	})
+	return m
+}
+func (m OptimizationDetailsPage) OnClose() Page {
+	return m
+}
+func (m OptimizationDetailsPage) Init() tea.Cmd {
+	return nil
 }
 
-func (m *OptimizationDetailsView) Init() tea.Cmd { return nil }
-
-func (m *OptimizationDetailsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd, detailCMD tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.detailTable = m.detailTable.WithMaxTotalWidth(m.width)
-		m.deviceTable = m.deviceTable.WithMaxTotalWidth(m.width)
-		m.SetHeight(m.height)
+		m.detailTable = m.detailTable.WithMaxTotalWidth(m.GetWidth())
+		m.deviceTable = m.deviceTable.WithMaxTotalWidth(m.GetWidth())
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
@@ -181,8 +193,6 @@ func (m *OptimizationDetailsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.detailTableHasFocus = false
 				m.detailTable = m.detailTable.Focused(false).WithBaseStyle(style.Base)
 				m.deviceTable = m.deviceTable.Focused(true).WithBaseStyle(style.ActiveStyleBase)
-			} else {
-				m.close()
 			}
 		}
 	}
@@ -192,33 +202,39 @@ func (m *OptimizationDetailsView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.deviceTable, cmd = m.deviceTable.Update(msg)
 	}
 
-	if m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
+	if m.deviceTable.HighlightedRow().Data["0"] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
 		m.selectedDevice = m.deviceTable.HighlightedRow().Data["0"].(string)
 
-		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows()).WithPageSize(len(m.deviceProperties[m.selectedDevice]))
-		m.SetHeight(m.height)
+		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows())
 	}
+
+	lineCount := strings.Count(wordwrap.String(m.item.Description, m.GetWidth()), "\n") + 1
+	deviceTableHeight := 7
+	detailsTableHeight := 7
+
+	for lineCount+deviceTableHeight+detailsTableHeight+m.statusBar.Height() < m.GetHeight() {
+		if deviceTableHeight-6 < len(m.deviceProperties) && deviceTableHeight < detailsTableHeight {
+			deviceTableHeight++
+		} else {
+			detailsTableHeight++
+		}
+	}
+	m.deviceTable = m.deviceTable.WithPageSize(deviceTableHeight - 6)
+	m.detailTable = m.detailTable.WithPageSize(detailsTableHeight - 6)
+	newStatusBar, _ := m.statusBar.Update(msg)
+	m.statusBar = newStatusBar.(StatusBarView)
+
 	return m, tea.Batch(detailCMD, cmd)
 }
 
-func (m *OptimizationDetailsView) View() string {
+func (m OptimizationDetailsPage) View() string {
 	return m.deviceTable.View() + "\n" +
-		wordwrap.String(m.item.Description, m.width) + "\n" +
+		wordwrap.String(m.item.Description, m.GetWidth()) + "\n" +
 		m.detailTable.View() + "\n" +
-		m.help.String()
+		m.statusBar.View()
 }
 
-func (m *OptimizationDetailsView) IsResponsive() bool {
-	return m.height >= m.MinHeight()
-}
-
-func (m *OptimizationDetailsView) SetHeight(height int) {
-	l := strings.Count(wordwrap.String(m.item.Description, m.width), "\n") + 1
-	m.height = height
-	m.help.SetHeight(m.height - (m.detailTable.TotalRows() + 4 + m.deviceTable.TotalRows() + 4 + l))
-}
-
-func (m *OptimizationDetailsView) MinHeight() int {
-	l := strings.Count(wordwrap.String(m.item.Description, m.width), "\n") + 1
-	return m.detailTable.TotalRows() + 4 + m.deviceTable.TotalRows() + 4 + m.help.MinHeight() + l
+func (m OptimizationDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+	m.ResponsiveView = rv.(responsive.ResponsiveView)
+	return m
 }
