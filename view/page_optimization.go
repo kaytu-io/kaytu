@@ -38,6 +38,7 @@ func NewOptimizationsView(
 	t := table.New(columns).
 		Focused(true).
 		WithPageSize(10).
+		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(style.ActiveStyleBase).
 		BorderRounded()
 
@@ -136,7 +137,11 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			changePageCmd = m.app.ChangePage(Page_Preferences)
 			m.clearScreen = true
 
-		case "enter", "right":
+		case "right":
+			m.table = m.table.ScrollRight()
+		case "left":
+			m.table = m.table.ScrollLeft()
+		case "enter":
 			if m.table.TotalRows() == 0 {
 				break
 			}
@@ -165,6 +170,8 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	newStatusBar, _ := m.statusBar.Update(msg)
 	m.statusBar = newStatusBar.(StatusBarView)
+
+	m.table = m.table.WithPageSize(m.GetHeight() - 8).WithMaxTotalWidth(m.GetWidth())
 
 	return m, cmd
 }
