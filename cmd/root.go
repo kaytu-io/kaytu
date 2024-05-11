@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/plugin"
 	"github.com/kaytu-io/kaytu/cmd/predef"
+	"github.com/kaytu-io/kaytu/controller"
 	plugin2 "github.com/kaytu-io/kaytu/pkg/plugin"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
@@ -154,19 +155,33 @@ func Execute() {
 						err := manager.NonInteractiveView.WaitAndShowResults(nonInteractiveFlag, csvExportFlag, jsonExportFlag)
 						return err
 					} else {
-						jobs := view.NewJobsView()
-						optimizations := view.NewOptimizationsView()
-						manager.SetUI(jobs, optimizations)
+						jobsController := controller.NewJobs()
+						statusBar := view.NewStatusBarView(jobsController)
+						jobsPage := view.NewJobsPage(jobsController)
 
-						p := tea.NewProgram(view.NewApp(optimizations, jobs), tea.WithFPS(10))
+						helpController := controller.NewHelp()
+						helpPage := view.NewHelpPage(helpController)
+
+						optimizationsController := controller.NewOptimizations()
+						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
+						optimizationsDetailsPage := view.NewOptimizationDetailsView(optimizationsController, helpController, statusBar)
+						preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
+
+						manager.SetUI(jobsController, optimizationsController)
+
+						p := tea.NewProgram(view.NewApp(
+							optimizationsPage,
+							optimizationsDetailsPage,
+							preferencesPage,
+							helpPage,
+							jobsPage,
+						), tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
 						}
 
 						return nil
 					}
-
-					return nil
 				},
 			}
 
