@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"github.com/kaytu-io/kaytu/controller"
 	"io"
 	"net"
 	"net/http"
@@ -34,8 +35,8 @@ type Manager struct {
 
 	golang.PluginServer
 
-	jobs          *view.JobsView
-	optimizations *view.OptimizationsView
+	jobs          *controller.Jobs
+	optimizations *controller.Optimizations
 
 	NonInteractiveView *view.NonInteractiveView
 }
@@ -122,6 +123,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 		for {
 			receivedMsg, err := stream.Recv()
 			if err != nil {
+				m.jobs.PublishError(err)
 				return err
 			}
 
@@ -263,7 +265,7 @@ func (m *Manager) Install(addr string) error {
 	return nil
 }
 
-func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsView) {
+func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimizations) {
 	m.jobs = jobs
 	m.optimizations = optimizations
 
@@ -277,10 +279,6 @@ func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsVi
 			},
 		})
 	})
-}
-
-func (m *Manager) SetJobsView(jobs *view.JobsView) {
-	m.jobs = jobs
 }
 
 func (m *Manager) SetNonInteractiveView() {

@@ -25,4 +25,6 @@ var (
 	ContinueStyle = lipgloss.NewStyle().Foreground(darkGray)
 	SvcDisable    = lipgloss.NewStyle().Background(lipgloss.Color("#222222"))
 	SvcEnable     = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222"))
+
+	StatusBarStyle = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222")).Width(9999)
 )
