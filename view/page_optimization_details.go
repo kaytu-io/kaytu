@@ -42,6 +42,7 @@ type OptimizationDetailsPage struct {
 	helpController          *controller.Help
 	optimizationsController *controller.Optimizations
 	statusBar               StatusBarView
+	app                     *App
 	responsive.ResponsiveView
 }
 
@@ -150,10 +151,12 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 	m.item = item
 	m.detailTable = table.New(detailColumns).
 		WithPageSize(1).
+		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(style.Base).BorderRounded()
 	m.deviceTable = table.New(deviceColumns).
 		WithRows(deviceRows.ToTableRows()).
 		WithHighlightedRow(0).
+		WithHorizontalFreezeColumnCount(1).
 		Focused(true).
 		WithPageSize(len(deviceRows)).
 		WithBaseStyle(style.ActiveStyleBase).BorderRounded()
@@ -186,20 +189,41 @@ func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			m.detailTableHasFocus = true
+			m.app.SetIgnoreEsc(true)
 			m.deviceTable = m.deviceTable.WithBaseStyle(style.Base)
 			m.detailTable = m.detailTable.WithBaseStyle(style.ActiveStyleBase).Focused(true).WithHighlightedRow(0)
-		case "esc", "left":
+		case "right":
+			if m.detailTableHasFocus {
+				m.detailTable = m.detailTable.ScrollRight()
+			} else {
+				m.deviceTable = m.deviceTable.ScrollRight()
+			}
+		case "left":
+			if m.detailTableHasFocus {
+				m.detailTable = m.detailTable.ScrollLeft()
+			} else {
+				m.deviceTable = m.deviceTable.ScrollLeft()
+			}
+		case "esc":
+			m.app.SetIgnoreEsc(false)
 			if m.detailTableHasFocus {
 				m.detailTableHasFocus = false
 				m.detailTable = m.detailTable.Focused(false).WithBaseStyle(style.Base)
 				m.deviceTable = m.deviceTable.Focused(true).WithBaseStyle(style.ActiveStyleBase)
 			}
+		default:
+			if m.detailTableHasFocus {
+				m.detailTable, cmd = m.detailTable.Update(msg)
+			} else {
+				m.deviceTable, cmd = m.deviceTable.Update(msg)
+			}
 		}
-	}
-	if m.detailTableHasFocus {
-		m.detailTable, cmd = m.detailTable.Update(msg)
-	} else {
-		m.deviceTable, cmd = m.deviceTable.Update(msg)
+	default:
+		if m.detailTableHasFocus {
+			m.detailTable, cmd = m.detailTable.Update(msg)
+		} else {
+			m.deviceTable, cmd = m.deviceTable.Update(msg)
+		}
 	}
 
 	if m.deviceTable.HighlightedRow().Data["0"] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
@@ -219,8 +243,8 @@ func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			detailsTableHeight++
 		}
 	}
-	m.deviceTable = m.deviceTable.WithPageSize(deviceTableHeight - 6)
-	m.detailTable = m.detailTable.WithPageSize(detailsTableHeight - 6)
+	m.deviceTable = m.deviceTable.WithPageSize(deviceTableHeight - 6).WithMaxTotalWidth(m.GetWidth())
+	m.detailTable = m.detailTable.WithPageSize(detailsTableHeight - 6).WithMaxTotalWidth(m.GetWidth())
 	newStatusBar, _ := m.statusBar.Update(msg)
 	m.statusBar = newStatusBar.(StatusBarView)
 
@@ -236,5 +260,9 @@ func (m OptimizationDetailsPage) View() string {
 
 func (m OptimizationDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
+	return m
+}
+func (m OptimizationDetailsPage) SetApp(app *App) OptimizationDetailsPage {
+	m.app = app
 	return m
 }
