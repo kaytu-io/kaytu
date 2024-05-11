@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"github.com/kaytu-io/kaytu/controller"
 	"io"
 	"net"
 	"net/http"
@@ -34,8 +35,8 @@ type Manager struct {
 
 	golang.PluginServer
 
-	jobs          *view.JobsView
-	optimizations *view.OptimizationsView
+	jobs          *controller.Jobs
+	optimizations *controller.Optimizations
 
 	NonInteractiveView *view.NonInteractiveView
 }
@@ -46,7 +47,9 @@ func New() *Manager {
 		started: false,
 	}
 }
-
+func (m *Manager) SetListenPort(port int) {
+	m.port = port
+}
 func (m *Manager) GetPlugin(name string) *RunningPlugin {
 	for _, plg := range m.plugins {
 		if plg.Plugin.Config.Name == name {
@@ -110,6 +113,8 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				})
 			case receivedMsg.GetOi() != nil:
 				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+			case receivedMsg.GetJob() != nil:
+				m.NonInteractiveView.PublishJobs(receivedMsg.GetJob())
 			case receivedMsg.GetErr() != nil:
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
@@ -120,6 +125,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 		for {
 			receivedMsg, err := stream.Recv()
 			if err != nil {
+				m.jobs.PublishError(err)
 				return err
 			}
 
@@ -261,7 +267,7 @@ func (m *Manager) Install(addr string) error {
 	return nil
 }
 
-func (m *Manager) SetUI(jobs *view.JobsView, optimizations *view.OptimizationsView) {
+func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimizations) {
 	m.jobs = jobs
 	m.optimizations = optimizations
 

@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/plugin"
 	"github.com/kaytu-io/kaytu/cmd/predef"
+	"github.com/kaytu-io/kaytu/controller"
 	plugin2 "github.com/kaytu-io/kaytu/pkg/plugin"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
@@ -44,6 +45,7 @@ func init() {
 	optimizeCmd.PersistentFlags().Bool("non-interactive-view", false, "Show optimization results in non-interactive mode")
 	optimizeCmd.PersistentFlags().Bool("csv-export", false, "Get CSV export")
 	optimizeCmd.PersistentFlags().Bool("json-export", false, "Get json export")
+	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
 }
 
 func Execute() {
@@ -89,14 +91,24 @@ func Execute() {
 					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
 						manager.SetNonInteractiveView()
 					}
-					err = manager.StartServer()
-					if err != nil {
-						return err
-					}
 
-					err = manager.StartPlugin(cmd.Name)
-					if err != nil {
-						return err
+					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
+					if !pluginDebugMode {
+						err = manager.StartServer()
+						if err != nil {
+							return err
+						}
+
+						err = manager.StartPlugin(cmd.Name)
+						if err != nil {
+							return err
+						}
+					} else {
+						manager.SetListenPort(30422)
+						err = manager.StartServer()
+						if err != nil {
+							return err
+						}
 					}
 
 					for i := 0; i < 100; i++ {
@@ -154,19 +166,33 @@ func Execute() {
 						err := manager.NonInteractiveView.WaitAndShowResults(nonInteractiveFlag, csvExportFlag, jsonExportFlag)
 						return err
 					} else {
-						jobs := view.NewJobsView()
-						optimizations := view.NewOptimizationsView()
-						manager.SetUI(jobs, optimizations)
+						jobsController := controller.NewJobs()
+						statusBar := view.NewStatusBarView(jobsController)
+						jobsPage := view.NewJobsPage(jobsController)
 
-						p := tea.NewProgram(view.NewApp(optimizations, jobs), tea.WithFPS(10))
+						helpController := controller.NewHelp()
+						helpPage := view.NewHelpPage(helpController)
+
+						optimizationsController := controller.NewOptimizations()
+						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
+						optimizationsDetailsPage := view.NewOptimizationDetailsView(optimizationsController, helpController, statusBar)
+						preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
+
+						manager.SetUI(jobsController, optimizationsController)
+
+						p := tea.NewProgram(view.NewApp(
+							optimizationsPage,
+							optimizationsDetailsPage,
+							preferencesPage,
+							helpPage,
+							jobsPage,
+						), tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
 						}
 
 						return nil
 					}
-
-					return nil
 				},
 			}
 

@@ -28,6 +28,13 @@ func NewPreferenceItem(pref *golang.PreferenceItem) *PreferenceItem {
 		pref:     pref,
 		valueIdx: 0,
 	}
+	if len(pref.PossibleValues) > 0 && pref.Value != nil {
+		for idx, possibleV := range pref.PossibleValues {
+			if possibleV == pref.Value.Value {
+				i.valueIdx = idx
+			}
+		}
+	}
 	i.ReconfigureInput()
 	return &i
 }
