@@ -13,6 +13,11 @@ const RetrySleep = 3
 var LoginCmd = &cobra.Command{
 	Use: "login",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := server.GetConfig()
+		if err != nil {
+			return err
+		}
+
 		deviceCode, err := auth0.RequestDeviceCode()
 		if err != nil {
 			return fmt.Errorf("[login-deviceCode]: %v", err)
@@ -31,9 +36,8 @@ var LoginCmd = &cobra.Command{
 			return fmt.Errorf("[login-accessToken]: %v", err)
 		}
 
-		err = server.SetConfig(server.Config{
-			AccessToken: accessToken,
-		})
+		cfg.AccessToken = accessToken
+		err = server.SetConfig(*cfg)
 		if err != nil {
 			return fmt.Errorf("[login-setConfig]: %v", err)
 		}
