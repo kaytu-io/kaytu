@@ -3,79 +3,27 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
+	"github.com/kaytu-io/kaytu/pkg/version"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 )
 
-type Plugin struct {
-	Config *golang.RegisterConfig `json:"config"`
-}
-
-func (p *Plugin) Path() string {
-	executableName := p.Config.Name
-	_ = filepath.WalkDir(PluginDir(), func(path string, info fs.DirEntry, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-		if strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) == p.Config.Name {
-			executableName = info.Name()
-			return nil
-		}
-		return nil
-	})
-
-	return filepath.Join(PluginDir(), executableName)
-}
-
 type Config struct {
-	AccessToken string    `json:"access-token"`
-	Plugins     []*Plugin `json:"plugins"`
+	AccessToken     string    `json:"access-token"`
+	Plugins         []*Plugin `json:"plugins"`
+	LastUpdateCheck time.Time `json:"lastUpdateCheck"`
+	LastVersion     string    `json:"lastVersion"`
 }
-
-var ExpiredSession = fmt.Errorf("your session has expired, please login again using `kaytu login`")
 
 var (
 	once      sync.Once
 	config    *Config
 	configErr error
 )
-
-func GetPlugins() ([]*Plugin, error) {
-	var cfg Config
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("[GetPlugins] : %v", err)
-	}
-	path := filepath.Join(home, ".kaytu", "kaytu-config.json")
-
-	_, err = os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// if the file does not exist, return nil
-			return nil, nil
-		}
-		return nil, fmt.Errorf("[GetPlugins] : %v", err)
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("[GetPlugins] : %v", err)
-	}
-
-	err = json.Unmarshal(data, &cfg)
-	if err != nil {
-		return nil, fmt.Errorf("[GetPlugins] : %v", err)
-	}
-
-	return cfg.Plugins, nil
-}
 
 func GetConfig() (*Config, error) {
 	once.Do(func() {
@@ -85,10 +33,16 @@ func GetConfig() (*Config, error) {
 }
 
 func loadConfig() (*Config, error) {
-	var config Config
+	config := Config{
+		AccessToken:     "",
+		Plugins:         nil,
+		LastUpdateCheck: time.Time{},
+		LastVersion:     version.VERSION,
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return nil, fmt.Errorf("[loadConfig] : %v", err)
+		return nil, fmt.Errorf("[loadConfig]: %v", err)
 	}
 
 	path := filepath.Join(home, ".kaytu", "kaytu-config.json")
@@ -99,23 +53,23 @@ func loadConfig() (*Config, error) {
 			// if the file does not exist, return nil
 			return &config, nil
 		}
-		return nil, fmt.Errorf("[GetPlugins] : %v", err)
+		return nil, fmt.Errorf("[loadConfig]: %v", err)
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("[loadConfig] : %v", err)
+		return nil, fmt.Errorf("[loadConfig]: %v", err)
 	}
 
 	err = json.Unmarshal(data, &config)
 	if err != nil {
-		return nil, fmt.Errorf("[loadConfig] : %v", err)
+		return nil, fmt.Errorf("[loadConfig]: %v", err)
 	}
 
 	if config.AccessToken != "" {
 		checkEXP, err := CheckExpirationTime(config.AccessToken)
 		if err != nil {
-			return nil, fmt.Errorf("[loadConfig] : %v", err)
+			return nil, fmt.Errorf("[loadConfig]: %v", err)
 		}
 
 		if checkEXP == true {
@@ -128,11 +82,11 @@ func loadConfig() (*Config, error) {
 func RemoveConfig() error {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("[removeConfig] : %v", err)
+		return fmt.Errorf("[removeConfig]: %v", err)
 	}
 	err = os.Remove(filepath.Join(home, ".kaytu", "kaytu-config.json"))
 	if err != nil {
-		return fmt.Errorf("[removeConfig] : %v", err)
+		return fmt.Errorf("[removeConfig]: %v", err)
 	}
 	return nil
 }
@@ -140,26 +94,27 @@ func RemoveConfig() error {
 func SetConfig(data Config) error {
 	configs, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("[addConfig] : %v", err)
+		return fmt.Errorf("[SetConfig]: %v", err)
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("[addConfig] : %v", err)
+		return fmt.Errorf("[SetConfig]: %v", err)
 	}
 	_, err = os.Stat(filepath.Join(home, ".kaytu"))
 	if err != nil {
 		err = os.Mkdir(filepath.Join(home, ".kaytu"), os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("[addConfig] : %v", err)
+			return fmt.Errorf("[SetConfig]: %v", err)
 		}
 	}
 
 	err = os.WriteFile(filepath.Join(home, ".kaytu", "kaytu-config.json"), configs, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("[addConfig] : %v", err)
+		return fmt.Errorf("[SetConfig]: %v", err)
 	}
 	return nil
 }
+
 func CheckExpirationTime(accessToken string) (bool, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(accessToken, jwt.MapClaims{})
 	if err != nil {

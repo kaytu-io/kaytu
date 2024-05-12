@@ -14,7 +14,7 @@ builds:
   - id: linux
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
     goos:
       - linux
     goarch:
@@ -24,7 +24,7 @@ builds:
   - id: darwin
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
@@ -34,7 +34,7 @@ builds:
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/cmd/predef.VERSION={{ .Version }}
+      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
