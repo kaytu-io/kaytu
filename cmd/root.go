@@ -49,10 +49,14 @@ func init() {
 }
 
 func Execute() {
+	err := server.CheckForUpdate()
+	if err != nil {
+		panic(err)
+	}
+
 	plugins, err := server.GetPlugins()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
 
 	if len(plugins) == 0 {
@@ -84,10 +88,16 @@ func Execute() {
 					if err != nil {
 						return err
 					}
+
 					nonInteractiveFlag := utils.ReadBooleanFlag(c, "non-interactive-view")
 					csvExportFlag := utils.ReadBooleanFlag(c, "csv-export")
 					jsonExportFlag := utils.ReadBooleanFlag(c, "json-export")
 					manager := plugin2.New()
+					err = manager.Install("github.com/" + plg.Config.Name)
+					if err != nil {
+						fmt.Println("failed due to", err)
+					}
+
 					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
 						manager.SetNonInteractiveView()
 					}
