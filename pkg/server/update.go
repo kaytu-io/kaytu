@@ -16,7 +16,7 @@ func CheckForUpdate() error {
 		return err
 	}
 
-	if cfg.LastVersion != version.VERSION {
+	if cfg.LastVersion != "" && cfg.LastVersion != version.VERSION {
 		fmt.Println("There's a new version for Kaytu CLI. Update it to latest version and enjoy the new features.")
 		time.Sleep(2 * time.Second)
 		return nil
