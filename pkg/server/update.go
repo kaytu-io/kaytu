@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/api/github"
 	"github.com/kaytu-io/kaytu/pkg/version"
+	"github.com/rogpeppe/go-internal/semver"
 	"regexp"
 	"runtime"
 	"strings"
@@ -16,7 +17,7 @@ func CheckForUpdate() error {
 		return err
 	}
 
-	if cfg.LastVersion != "" && cfg.LastVersion != version.VERSION {
+	if cfg.LastVersion != "" && semver.Compare(cfg.LastVersion, version.VERSION) > 0 {
 		fmt.Println("There's a new version for Kaytu CLI. Update it to latest version and enjoy the new features.")
 		time.Sleep(2 * time.Second)
 		return nil
