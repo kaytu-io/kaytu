@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/controller"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"net"
 	"net/http"
@@ -18,7 +19,6 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/view"
-	"github.com/schollz/progressbar/v3"
 	"google.golang.org/grpc"
 )
 
@@ -47,9 +47,11 @@ func New() *Manager {
 		started: false,
 	}
 }
+
 func (m *Manager) SetListenPort(port int) {
 	m.port = port
 }
+
 func (m *Manager) GetPlugin(name string) *RunningPlugin {
 	for _, plg := range m.plugins {
 		if plg.Plugin.Config.Name == name {
@@ -151,7 +153,6 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 }
 
 func (m *Manager) Install(addr string) error {
-	name := addr
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -162,16 +163,11 @@ func (m *Manager) Install(addr string) error {
 	}
 
 	addr = strings.TrimPrefix(addr, "github.com/")
-	if strings.HasPrefix(name, "github.com") {
-		name = strings.Split(addr, "/")[1]
-	}
 
-	fmt.Println("Installing plugin", addr)
 	release, err := github.GetLatestRelease(addr)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Latest release is", release.TagName)
 	plugins := map[string]*server.Plugin{}
 	for _, plg := range cfg.Plugins {
 		plugins[plg.Config.Name] = plg
@@ -186,10 +182,10 @@ func (m *Manager) Install(addr string) error {
 
 		if r.MatchString(asset.Name) {
 			version := strings.Split(asset.Name, "_")[1]
-			if p, ok := plugins[name]; ok && p.Config.Version == version {
-				fmt.Println("Plugin already exists")
+			if p, ok := plugins[addr]; ok && p.Config.Version == version {
 				return nil
 			}
+			fmt.Printf("Installing plugin %s, version %s\n", addr, version)
 			fmt.Println("Downloading the plugin...")
 
 			resp, err := http.Get(asset.BrowserDownloadUrl)
@@ -201,8 +197,7 @@ func (m *Manager) Install(addr string) error {
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
 			pluginExt := filepath.Ext(asset.Name)
-
-			f, err := os.OpenFile(filepath.Join(server.PluginDir(), name+pluginExt), os.O_CREATE|os.O_RDWR, os.ModePerm)
+			f, err := os.OpenFile(filepath.Join(server.PluginDir(), strings.ReplaceAll(addr, "/", "_")+pluginExt), os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				return err
 			}
@@ -220,7 +215,7 @@ func (m *Manager) Install(addr string) error {
 
 			plugin := server.Plugin{
 				Config: &golang.RegisterConfig{
-					Name:     name,
+					Name:     addr,
 					Version:  "",
 					Provider: "",
 					Commands: nil,
@@ -236,7 +231,7 @@ func (m *Manager) Install(addr string) error {
 			installed := false
 			for i := 0; i < 30; i++ {
 				for _, runningPlugin := range m.plugins {
-					if runningPlugin.Plugin.Config.Name == name {
+					if runningPlugin.Plugin.Config.Name == addr {
 						installed = true
 					}
 				}
@@ -251,7 +246,7 @@ func (m *Manager) Install(addr string) error {
 				return errors.New("plugin install timeout")
 			}
 
-			plugins[name] = &m.GetPlugin(name).Plugin
+			plugins[addr] = &m.GetPlugin(addr).Plugin
 			break
 		}
 	}
@@ -285,4 +280,32 @@ func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimiz
 
 func (m *Manager) SetNonInteractiveView() {
 	m.NonInteractiveView = view.NewNonInteractiveView()
+}
+
+func (m *Manager) AutoUpdatePlugin(plg *server.Plugin) error {
+	release, err := github.GetLatestRelease(plg.Config.Name)
+	if err != nil {
+		return err
+	}
+
+	for _, asset := range release.Assets {
+		pattern := fmt.Sprintf("plugin_([a-z0-9\\.]+)_%s_%s", runtime.GOOS, runtime.GOARCH)
+		r, err := regexp.Compile(pattern)
+		if err != nil {
+			return err
+		}
+
+		if r.MatchString(asset.Name) {
+			version := strings.Split(asset.Name, "_")[1]
+			if plg.Config.Version != version {
+				fmt.Printf("there's a new version. run `kaytu plugin install %s` to update to latest version\n", plg.Config.Name)
+			} else {
+				fmt.Println("already updated")
+			}
+			return nil
+		}
+	}
+
+	fmt.Println("asset not found")
+	return nil
 }
