@@ -2,8 +2,6 @@
 project_name: kaytu
 
 release:
-  prerelease: "true"
-  make_latest: false
   github:
     owner: kaytu-io
     name: kaytu
