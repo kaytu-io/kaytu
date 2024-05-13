@@ -197,6 +197,9 @@ func (m *Manager) Install(addr string) error {
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
 			pluginExt := filepath.Ext(asset.Name)
+			if runtime.GOOS != "windows" {
+				pluginExt = ""
+			}
 			f, err := os.OpenFile(filepath.Join(server.PluginDir(), strings.ReplaceAll(addr, "/", "_")+pluginExt), os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
 				return err
@@ -280,32 +283,4 @@ func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimiz
 
 func (m *Manager) SetNonInteractiveView() {
 	m.NonInteractiveView = view.NewNonInteractiveView()
-}
-
-func (m *Manager) AutoUpdatePlugin(plg *server.Plugin) error {
-	release, err := github.GetLatestRelease(plg.Config.Name)
-	if err != nil {
-		return err
-	}
-
-	for _, asset := range release.Assets {
-		pattern := fmt.Sprintf("plugin_([a-z0-9\\.]+)_%s_%s", runtime.GOOS, runtime.GOARCH)
-		r, err := regexp.Compile(pattern)
-		if err != nil {
-			return err
-		}
-
-		if r.MatchString(asset.Name) {
-			version := strings.Split(asset.Name, "_")[1]
-			if plg.Config.Version != version {
-				fmt.Printf("there's a new version. run `kaytu plugin install %s` to update to latest version\n", plg.Config.Name)
-			} else {
-				fmt.Println("already updated")
-			}
-			return nil
-		}
-	}
-
-	fmt.Println("asset not found")
-	return nil
 }
