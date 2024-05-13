@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/plugin"
@@ -59,6 +58,14 @@ func Execute() {
 		panic(err)
 	}
 
+	for _, p := range plugins {
+		if p.Config.Name == "aws" {
+			server.RemoveConfig()
+			Execute()
+			return
+		}
+	}
+
 	if len(plugins) == 0 {
 		manager := plugin2.New()
 		err := manager.StartServer()
@@ -93,10 +100,6 @@ func Execute() {
 					csvExportFlag := utils.ReadBooleanFlag(c, "csv-export")
 					jsonExportFlag := utils.ReadBooleanFlag(c, "json-export")
 					manager := plugin2.New()
-					err = manager.Install("github.com/" + plg.Config.Name)
-					if err != nil {
-						fmt.Println("failed due to", err)
-					}
 
 					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
 						manager.SetNonInteractiveView()
@@ -121,6 +124,15 @@ func Execute() {
 						}
 					}
 
+					repoAddr := "github.com/" + plg.Config.Name
+					if plg.Config.Name == "aws" {
+						repoAddr = "aws"
+					}
+					err = manager.Install(repoAddr)
+					if err != nil {
+						fmt.Println("failed due to", err)
+					}
+
 					for i := 0; i < 100; i++ {
 						runningPlg := manager.GetPlugin(plg.Config.Name)
 						if runningPlg != nil {
@@ -130,7 +142,7 @@ func Execute() {
 					}
 					runningPlg := manager.GetPlugin(plg.Config.Name)
 					if runningPlg == nil {
-						return errors.New("running plugin not found")
+						return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
 					}
 
 					flagValues := map[string]string{}
