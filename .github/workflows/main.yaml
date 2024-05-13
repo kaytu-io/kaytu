@@ -168,6 +168,8 @@ jobs:
           zip -r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           sha256sum kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip > kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
           
+          ls 
+          
           sed -i '/kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip/{
             r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
             d
