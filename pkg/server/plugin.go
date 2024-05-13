@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -20,7 +21,12 @@ func (p *Plugin) Path() string {
 		if info.IsDir() {
 			return nil
 		}
-		if strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) == executableName {
+		pluginExt := filepath.Ext(path)
+		if runtime.GOOS != "windows" {
+			pluginExt = ""
+		}
+
+		if strings.TrimSuffix(filepath.Base(path), pluginExt) == executableName {
 			executableName = info.Name()
 			return nil
 		}
