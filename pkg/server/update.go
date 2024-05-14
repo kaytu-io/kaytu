@@ -1,8 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
-	"github.com/kaytu-io/kaytu/pkg/api/github"
+	githubAPI "github.com/google/go-github/v62/github"
 	"github.com/kaytu-io/kaytu/pkg/version"
 	"github.com/rogpeppe/go-internal/semver"
 	"regexp"
@@ -27,7 +28,8 @@ func CheckForUpdate() error {
 		return nil
 	}
 
-	release, err := github.GetLatestRelease("kaytu-io/kaytu")
+	api := githubAPI.NewClient(nil)
+	release, _, err := api.Repositories.GetLatestRelease(context.Background(), "kaytu-io", "kaytu")
 	if err != nil {
 		return err
 	}
@@ -39,8 +41,8 @@ func CheckForUpdate() error {
 			return err
 		}
 
-		if r.MatchString(asset.Name) {
-			ver := strings.Split(asset.Name, "_")[1]
+		if asset.Name != nil && r.MatchString(*asset.Name) {
+			ver := strings.Split(*asset.Name, "_")[1]
 			cfg.LastVersion = ver
 			cfg.LastUpdateCheck = time.Now()
 			err = SetConfig(*cfg)
