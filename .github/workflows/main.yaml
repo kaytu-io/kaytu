@@ -152,7 +152,7 @@ jobs:
         id: download_release_amd64
         with:
           repository: "kaytu-io/kaytu"
-          fileName: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe
+          fileName: '*'
           latest: true
       - name: Add windows zip
         id: add_windows_zip
@@ -173,8 +173,7 @@ jobs:
           sed -i '/kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip/{
             r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
             d
-          }' kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
-          cp kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksum.txt
+          }' kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksums.txt
           
           export UPLOAD_URL=$(curl --silent "https://api.github.com/repos/kaytu-io/kaytu/releases/latest" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}"  | jq -r .upload_url)
           echo "$UPLOAD_URL"
