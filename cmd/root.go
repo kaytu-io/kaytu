@@ -73,7 +73,7 @@ func Execute() {
 			panic(err)
 		}
 
-		err = manager.Install("aws")
+		err = manager.Install("aws", "")
 		if err != nil {
 			panic(err)
 		}
@@ -84,7 +84,8 @@ func Execute() {
 		}
 	}
 
-	for _, plg := range plugins {
+	for _, loopPlg := range plugins {
+		plg := loopPlg
 		for _, loopCmd := range plg.Config.Commands {
 			cmd := loopCmd
 			theCmd := &cobra.Command{
@@ -119,7 +120,7 @@ func Execute() {
 					if plg.Config.Name == "aws" {
 						repoAddr = "aws"
 					}
-					err = manager.Install(repoAddr)
+					err = manager.Install(repoAddr, "")
 					if err != nil {
 						fmt.Println("failed due to", err)
 					}

@@ -14,4 +14,6 @@ var PluginCmd = &cobra.Command{
 func init() {
 	PluginCmd.AddCommand(installCmd)
 	PluginCmd.AddCommand(listCmd)
+
+	installCmd.Flags().String("token", "", "Github fine-grained access token")
 }
