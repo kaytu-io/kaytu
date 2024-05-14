@@ -106,22 +106,13 @@ func Execute() {
 					}
 
 					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
-					if !pluginDebugMode {
-						err = manager.StartServer()
-						if err != nil {
-							return err
-						}
-
-						err = manager.StartPlugin(cmd.Name)
-						if err != nil {
-							return err
-						}
-					} else {
+					if pluginDebugMode {
 						manager.SetListenPort(30422)
-						err = manager.StartServer()
-						if err != nil {
-							return err
-						}
+					}
+
+					err = manager.StartServer()
+					if err != nil {
+						return err
 					}
 
 					repoAddr := "github.com/" + plg.Config.Name
@@ -133,6 +124,12 @@ func Execute() {
 						fmt.Println("failed due to", err)
 					}
 
+					if !pluginDebugMode {
+						err = manager.StartPlugin(cmd.Name)
+						if err != nil {
+							return err
+						}
+					}
 					for i := 0; i < 100; i++ {
 						runningPlg := manager.GetPlugin(plg.Config.Name)
 						if runningPlg != nil {
