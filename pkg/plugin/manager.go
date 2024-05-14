@@ -1,8 +1,10 @@
 package plugin
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	githubAPI "github.com/google/go-github/v62/github"
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/schollz/progressbar/v3"
 	"io"
@@ -15,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaytu-io/kaytu/pkg/api/github"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/view"
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 )
 
@@ -152,7 +154,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	}
 }
 
-func (m *Manager) Install(addr string) error {
+func (m *Manager) Install(addr, token string) error {
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -163,11 +165,21 @@ func (m *Manager) Install(addr string) error {
 	}
 
 	addr = strings.TrimPrefix(addr, "github.com/")
+	owner, repository, _ := strings.Cut(addr, "/")
 
-	release, err := github.GetLatestRelease(addr)
+	var tc *http.Client
+	if token != "" {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token},
+		)
+		tc = oauth2.NewClient(context.Background(), ts)
+	}
+	api := githubAPI.NewClient(tc)
+	release, _, err := api.Repositories.GetLatestRelease(context.Background(), owner, repository)
 	if err != nil {
 		return err
 	}
+
 	plugins := map[string]*server.Plugin{}
 	for _, plg := range cfg.Plugins {
 		plugins[plg.Config.Name] = plg
@@ -180,23 +192,32 @@ func (m *Manager) Install(addr string) error {
 			return err
 		}
 
-		if r.MatchString(asset.Name) {
-			version := strings.Split(asset.Name, "_")[1]
+		if asset.ID != nil && asset.Name != nil && r.MatchString(*asset.Name) {
+			version := strings.Split(*asset.Name, "_")[1]
 			if p, ok := plugins[addr]; ok && p.Config.Version == version {
 				return nil
 			}
 			fmt.Printf("Installing plugin %s, version %s\n", addr, version)
 			fmt.Println("Downloading the plugin...")
 
-			resp, err := http.Get(asset.BrowserDownloadUrl)
+			rc, url, err := api.Repositories.DownloadReleaseAsset(context.Background(), owner, repository, *asset.ID, nil)
 			if err != nil {
 				return err
 			}
-			defer resp.Body.Close()
+			if len(url) > 0 {
+				resp, err := http.Get(url)
+				if err != nil {
+					return err
+				}
+
+				defer resp.Body.Close()
+
+				rc = resp.Body
+			}
 
 			os.MkdirAll(server.PluginDir(), os.ModePerm)
 
-			pluginExt := filepath.Ext(asset.Name)
+			pluginExt := filepath.Ext(*asset.Name)
 			if runtime.GOOS != "windows" {
 				pluginExt = ""
 			}
@@ -205,8 +226,8 @@ func (m *Manager) Install(addr string) error {
 				return err
 			}
 
-			bar := progressbar.DefaultBytes(resp.ContentLength)
-			_, err = io.Copy(io.MultiWriter(f, bar), resp.Body)
+			bar := progressbar.DefaultBytes(int64(asset.GetSize()))
+			_, err = io.Copy(io.MultiWriter(f, bar), rc)
 			if err != nil {
 				return err
 			}
