@@ -168,8 +168,6 @@ jobs:
           zip -r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           sha256sum kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip > kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
           
-          ls 
-          
           sed -i '/kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip/{
             r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
             d
@@ -231,6 +229,16 @@ jobs:
           upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
           asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
           asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64_checksum.txt
+          asset_content_type: text/plain
+      - name: Upload Release Asset new checksum
+        id: upload-release-asset-new-checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
+          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksum.txt
+          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksum.txt
           asset_content_type: text/plain
   chocolatey-publish:
     name: Release Kaytu choco
