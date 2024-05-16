@@ -237,8 +237,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           upload_url: ${{ steps.add_windows_zip.outputs.upload_url }}
-          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksum.txt
-          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksum.txt
+          asset_path: ./kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksums.txt
+          asset_name: kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksums.txt
           asset_content_type: text/plain
   chocolatey-publish:
     name: Release Kaytu choco
