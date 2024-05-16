@@ -52,3 +52,16 @@ We respect your privacy. Our open-source code guarantees that we never collect s
 ```shell
 kaytu
 ```
+
+it will install aws plugin automatically.
+now you can get optimizations by running:
+
+```shell
+kaytu optimize ec2-instance
+```
+
+```shell
+kaytu login
+
+kaytu optimize rds-instance
+```
