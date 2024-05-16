@@ -3,6 +3,7 @@ package sdk
 import (
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"time"
 )
 
 type Job interface {
@@ -15,6 +16,10 @@ type JobQueue struct {
 	queue         chan Job
 	maxConcurrent int
 	stream        golang.Plugin_RegisterClient
+
+	pendingCounter  SafeCounter
+	finishedCounter SafeCounter
+	onFinish        func()
 }
 
 func NewJobQueue(maxConcurrent int, stream golang.Plugin_RegisterClient) *JobQueue {
@@ -26,6 +31,8 @@ func NewJobQueue(maxConcurrent int, stream golang.Plugin_RegisterClient) *JobQue
 }
 
 func (q *JobQueue) Push(job Job) {
+	q.pendingCounter.Increment()
+
 	q.stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Job{
 			Job: &golang.JobResult{
@@ -44,6 +51,19 @@ func (q *JobQueue) Start() {
 	for i := 0; i < q.maxConcurrent; i++ {
 		go q.run()
 	}
+
+	go func() {
+		for {
+			if q.finishedCounter.Get() == q.pendingCounter.Get() && q.onFinish != nil {
+				q.onFinish()
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
+}
+
+func (q *JobQueue) SetOnFinish(f func()) {
+	q.onFinish = f
 }
 
 func (q *JobQueue) run() {
@@ -74,5 +94,6 @@ func (q *JobQueue) run() {
 				Job: jobResult,
 			},
 		})
+		q.finishedCounter.Increment()
 	}
 }
