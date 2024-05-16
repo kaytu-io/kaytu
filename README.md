@@ -1,7 +1,7 @@
 <p align="center">
 <a href="https://www.kaytu.io"><img src=".github/assets/Kaytu-New-Logo.svg" alt="Kaytu Logo" width="300" /></a>
 
-<p align="center">Kaytu enables engineering, DevOps, and SRE teams to reduce cloud costs by recommending optimal workload configurations based on <b>actual-usage</b>, ensuring savings without compromise.
+<p align="center">Kaytu recommends optimal workload configurations based on <b>actual-usage,</b>, ensuring savings without compromising reliability.
 </p>
 
 ![Kaytu Gif](.github/assets/kaytu.gif)
@@ -10,11 +10,12 @@
 
 
 - **Ease of use**: One-line command. Use without modifying workloads or making configuration changes.
-- **Base on actual Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch), including advanced AWS CloudWatch metrics (where available).
+- **Optimize**: Optimize AWS EC2 Instances & AWS RDS Instances/Clusters.
+- **Base on actual Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch).
 - **Customize**: Optimize for region, CPU, memory, network performance, storage, licenses, and more to match your specific requirements.
 - **Secure** - no credentials to share; extracts required metrics from the client side
-- **Open-core philosophy** Use without fear of lock-in. The CLI is open-sourced, and the Server side will be open-sourced soon.
-- **Coming Soon**: Non-Interactive mode, Azure support, GPU Optimization, Credit utilization for Burst instances, and Observability data from Prometheus
+- **Open philosophy** Use without fear of lock-in. The CLI is open-sourced, and the Server side will be open-sourced soon.
+- **Coming Soon**: Non-Interactive mode, GCP, Azure, GPU Optimization and Observability data from Prometheus
 
 ## Getting Started
 
@@ -53,15 +54,21 @@ We respect your privacy. Our open-source code guarantees that we never collect s
 kaytu
 ```
 
-it will install aws plugin automatically.
-now you can get optimizations by running:
+This will run and install any plugins.
+
+To see how you can optimize EC2 Instances, run this command:
 
 ```shell
 kaytu optimize ec2-instance
 ```
 
+Some optimizations such as RDS require login: 
 ```shell
 kaytu login
+```
 
+For RDS:
+
+```shell
 kaytu optimize rds-instance
 ```
