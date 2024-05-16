@@ -13,13 +13,15 @@ import (
 )
 
 type Plugin struct {
-	prc     Processor
-	rootCmd *cobra.Command
+	jobMaxConcurrent int
+	prc              Processor
+	rootCmd          *cobra.Command
 }
 
-func New(prc Processor) *Plugin {
+func New(prc Processor, jobMaxConcurrent int) *Plugin {
 	plg := &Plugin{
-		prc: prc,
+		prc:              prc,
+		jobMaxConcurrent: jobMaxConcurrent,
 	}
 	plg.rootCmd = &cobra.Command{
 		Use:  "plugin",
@@ -57,6 +59,9 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	jobQueue := NewJobQueue(p.jobMaxConcurrent, stream)
+	jobQueue.Start()
+
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
@@ -68,7 +73,7 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 			p.prc.ReEvaluate(msg.GetReEvaluate())
 		case msg.GetStart() != nil:
 			startMsg := msg.GetStart()
-			err = p.prc.StartProcess(startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken())
+			err = p.prc.StartProcess(startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken(), jobQueue)
 			if err != nil {
 				stream.Send(&golang.PluginMessage{
 					PluginMessage: &golang.PluginMessage_Err{
