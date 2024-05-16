@@ -2,18 +2,18 @@ package sdk
 
 import "sync"
 
-type LazyLoadCounter struct {
+type SafeCounter struct {
 	counter int
 	mutex   sync.RWMutex
 }
 
-func (m *LazyLoadCounter) Get() int {
+func (m *SafeCounter) Get() int {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	return m.counter
 }
 
-func (m *LazyLoadCounter) Increment() {
+func (m *SafeCounter) Increment() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.counter++

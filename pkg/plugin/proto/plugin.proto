@@ -23,6 +23,7 @@ message RegisterConfig {
   string version = 2;
   string provider = 3;
   repeated Command commands = 4;
+  string min_kaytu_version = 5;
 }
 
 message Error {
