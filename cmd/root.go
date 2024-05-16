@@ -116,22 +116,28 @@ func Execute() {
 						return err
 					}
 
-					repoAddr := "github.com/" + plg.Config.Name
-					if plg.Config.Name == "aws" {
-						repoAddr = "aws"
-					}
-					err = manager.Install(repoAddr, "")
-					if err != nil {
-						fmt.Println("failed due to", err)
-					}
-
 					if !pluginDebugMode {
+						repoAddr := "github.com/" + plg.Config.Name
+						if plg.Config.Name == "aws" {
+							repoAddr = "aws"
+						}
+						err = manager.Install(repoAddr, "")
+						if err != nil {
+							fmt.Println("failed due to", err)
+						}
+
 						err = manager.StartPlugin(cmd.Name)
 						if err != nil {
 							return err
 						}
 					}
-					for i := 0; i < 100; i++ {
+
+					waitLoopCount := 100
+					if pluginDebugMode {
+						waitLoopCount = 1000
+					}
+
+					for i := 0; i < waitLoopCount; i++ {
 						runningPlg := manager.GetPlugin(plg.Config.Name)
 						if runningPlg != nil {
 							break
