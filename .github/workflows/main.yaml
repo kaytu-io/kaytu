@@ -209,6 +209,10 @@ jobs:
           curl --request DELETE \
             --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$windowszip \
             --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
+          windowschecksum=$(echo $assets | jq '.[] | select(.name=="kaytu_${{ steps.set_new_tag.outputs.new_tag }}_checksums.txt") | .id')
+          curl --request DELETE \
+            --url https://api.github.com/repos/kaytu-io/kaytu/releases/assets/$windowschecksum \
+            --header 'authorization: Bearer ${{ secrets.GH_TOKEN }}'
 
       - name: Upload Release Asset amd64 zip
         id: upload-release-asset-amd64-zip
