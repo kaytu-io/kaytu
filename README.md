@@ -1,7 +1,7 @@
 <p align="center">
 <a href="https://www.kaytu.io"><img src=".github/assets/Kaytu-New-Logo.svg" alt="Kaytu Logo" width="300" /></a>
 
-<p align="center">Kaytu recommends optimal workload configurations based on <b>actual-usage,</b>, ensuring savings without compromising reliability.
+<p align="center">Kaytu recommends optimal workload configurations based on <b>actual-usage</b>. Cut costs without compromising reliability.
 </p>
 
 ![Kaytu Gif](.github/assets/kaytu.gif)
