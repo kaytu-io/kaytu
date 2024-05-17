@@ -53,19 +53,21 @@ func (m OptimizationsPage) OnClose() Page {
 	return m
 }
 func (m OptimizationsPage) OnOpen() Page {
+	m.helpController.SetKeyMap([]string{
+		"↑/↓: move",
+		"pgdown/pgup: next/prev page",
+		"←/→: scroll in the table",
+		"enter: see resource details",
+		"p: change preferences",
+		"P: change preferences for all resources",
+		"r: load all items in current page",
+		"ctrl+j: list of jobs",
+		"q/ctrl+c: exit",
+	})
 	return m
 }
 
 func (m OptimizationsPage) Init() tea.Cmd {
-	m.helpController.SetKeyMap([]string{
-		"↑/↓: move",
-		"←/→: scroll right and left in the table",
-		"enter: see details",
-		"p: change preferences for one item",
-		"P: change preferences for all items",
-		"r: load all items in current page",
-		"q/ctrl+c: exit",
-	})
 	return nil
 }
 
@@ -183,7 +185,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	newStatusBar, _ := m.statusBar.Update(msg)
 	m.statusBar = newStatusBar.(StatusBarView)
 
-	m.table = m.table.WithPageSize(m.GetHeight() - 8).WithMaxTotalWidth(m.GetWidth())
+	m.table = m.table.WithPageSize(m.GetHeight() - (7 + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
 
 	return m, cmd
 }
