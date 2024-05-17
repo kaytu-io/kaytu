@@ -176,7 +176,7 @@ func (m PreferencesConfigurationPage) View() string {
 	//}
 	//builder.WriteString(style.SvcDisable.Render("    "))
 
-	visibleCount := m.GetHeight() - 5
+	visibleCount := m.GetHeight() - (4 + m.statusBar.Height())
 	builder.WriteString("\n")
 	if m.visibleStartIdx > 0 {
 		builder.WriteString(" ⇡⇡⇡")
@@ -247,7 +247,7 @@ func (m *PreferencesConfigurationPage) fixVisibleStartIdx() {
 		m.visibleStartIdx--
 	}
 
-	visibleCount := m.GetHeight() - 5
+	visibleCount := m.GetHeight() - (4 + m.statusBar.Height())
 	for m.focused >= m.visibleStartIdx+visibleCount {
 		m.visibleStartIdx++
 	}

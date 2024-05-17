@@ -77,6 +77,7 @@ func (m *App) ChangePage(id PageEnum) tea.Cmd {
 }
 
 func (m *App) Init() tea.Cmd {
+	m.ChangePage(Page_Optimizations)
 	return tea.Batch(m.pages[m.activePageIdx].Init(), tea.EnterAltScreen, TickCmdWithDuration(100*time.Microsecond))
 }
 
@@ -103,8 +104,8 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "ctrl+h":
-			changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Help))
+		//case "ctrl+h":
+		//	changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Help))
 		case "ctrl+j":
 			changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Jobs))
 		case "esc":
