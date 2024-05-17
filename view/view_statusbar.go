@@ -9,39 +9,64 @@ import (
 )
 
 type StatusBarView struct {
+	helpController *controller.Help
 	jobsController *controller.Jobs
 	content        string
+	width          int
 }
 
-func NewStatusBarView(JobsController *controller.Jobs) StatusBarView {
-	return StatusBarView{jobsController: JobsController}
+func NewStatusBarView(JobsController *controller.Jobs, helpController *controller.Help) StatusBarView {
+	return StatusBarView{jobsController: JobsController, helpController: helpController}
 }
 
 func (v StatusBarView) Init() tea.Cmd { return nil }
 func (v StatusBarView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	runningCount, failedCount := len(v.jobsController.RunningJobs()), len(v.jobsController.FailedJobs())
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		v.width = msg.Width
+	}
+
+	failedJobs := v.jobsController.FailedJobs()
+	runningCount, failedCount := len(v.jobsController.RunningJobs()), len(failedJobs)
 
 	var status []string
+
+	var helpLines []string
+	w := 0
+
+	if runningCount > 0 {
+		line := fmt.Sprintf(" running jobs: %d ", runningCount)
+		w += len(line)
+		helpLines = append(helpLines, style.JobsStatusStyle.Render(line))
+	}
+
+	for idx, line := range v.helpController.Help() {
+		line = fmt.Sprintf(" %s ", line)
+		w += len(line)
+		if w > v.width {
+			helpLines = append(helpLines, "\n")
+			w = 0
+		}
+
+		if idx%2 == 0 {
+			helpLines = append(helpLines, style.InfoStatusStyle.Render(line))
+		} else {
+			helpLines = append(helpLines, style.InfoStatusStyle2.Render(line))
+		}
+	}
+	status = append(status, strings.Join(helpLines, "")+"\n")
+
 	if err := v.jobsController.GetError(); len(err) > 0 {
 		status = append(status, style.ErrorStatusStyle.Render(strings.TrimSpace(err))+"\n")
 	}
-	if runningCount > 0 {
-		status = append(status, style.JobsStatusStyle.Render(fmt.Sprintf(" running jobs: %d ", runningCount)))
-	}
 	if failedCount > 0 {
-		status = append(status, style.JobsStatusStyle.Render(fmt.Sprintf(" failed jobs: %d ", failedCount)))
+		status = append(status, style.ErrorStatusStyle.Render(fmt.Sprintf("failed job: %s, press ctrl+j to see more", failedJobs[0]))+"\n")
 	}
-	if runningCount > 0 || failedCount > 0 {
-		status = append(status, style.InfoStatusStyle.Render(fmt.Sprintf(" press ctrl+j to see list of jobs ")))
-	}
-
-	status = append(status, style.InfoStatusStyle.Render(fmt.Sprintf(" press ctrl+h to see help page ")))
-
 	v.content = strings.Join(status, "")
 	return v, nil
 }
 func (v StatusBarView) View() string {
-	return style.StatusBarStyle.Render(v.content)
+	return v.content
 }
 
 func (v StatusBarView) Height() int {

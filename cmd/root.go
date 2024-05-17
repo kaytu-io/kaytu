@@ -192,12 +192,12 @@ func Execute() {
 						err := manager.NonInteractiveView.WaitAndShowResults(nonInteractiveFlag, csvExportFlag, jsonExportFlag)
 						return err
 					} else {
-						jobsController := controller.NewJobs()
-						statusBar := view.NewStatusBarView(jobsController)
-						jobsPage := view.NewJobsPage(jobsController)
-
 						helpController := controller.NewHelp()
 						helpPage := view.NewHelpPage(helpController)
+
+						jobsController := controller.NewJobs()
+						statusBar := view.NewStatusBarView(jobsController, helpController)
+						jobsPage := view.NewJobsPage(jobsController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
