@@ -10,8 +10,10 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/pkg/utils"
+	"github.com/kaytu-io/kaytu/pkg/version"
 	"github.com/kaytu-io/kaytu/preferences"
 	"github.com/kaytu-io/kaytu/view"
+	"github.com/rogpeppe/go-internal/semver"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -149,6 +151,10 @@ func Execute() {
 						return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
 					}
 
+					if semver.Compare(version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
+						return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plg.Config.MinKaytuVersion)
+					}
+
 					flagValues := map[string]string{}
 					for _, flag := range cmd.GetFlags() {
 						value := utils.ReadStringFlag(c, flag.Name)
@@ -158,6 +164,20 @@ func Execute() {
 					for _, rcmd := range runningPlg.Plugin.Config.Commands {
 						if rcmd.Name == cmd.Name {
 							preferences.Update(rcmd.DefaultPreferences)
+
+							if rcmd.LoginRequired && cfg.AccessToken == "" {
+								// login
+								err := predef.LoginCmd.RunE(c, args)
+								if err != nil {
+									return err
+								}
+
+								cfg, err = server.GetConfig()
+								if err != nil {
+									return err
+								}
+							}
+							break
 						}
 					}
 

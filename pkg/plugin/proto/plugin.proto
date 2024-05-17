@@ -16,6 +16,7 @@ message Command {
   string description = 2;
   repeated Flag flags = 3;
   repeated PreferenceItem default_preferences = 4;
+  bool login_required = 5;
 }
 
 message RegisterConfig {
