@@ -165,7 +165,9 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 	m.selectedDevice = ""
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
-		"esc/←: back to optimizations list",
+		"←/→: scroll in the table",
+		"enter: switch to device detail table",
+		"esc: back to optimizations list",
 		"q/ctrl+c: exit",
 	})
 	return m
