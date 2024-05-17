@@ -6,6 +6,8 @@ import (
 	"fmt"
 	githubAPI "github.com/google/go-github/v62/github"
 	"github.com/kaytu-io/kaytu/controller"
+	"github.com/kaytu-io/kaytu/pkg/version"
+	"github.com/rogpeppe/go-internal/semver"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"net"
@@ -193,11 +195,11 @@ func (m *Manager) Install(addr, token string) error {
 		}
 
 		if asset.ID != nil && asset.Name != nil && r.MatchString(*asset.Name) {
-			version := strings.Split(*asset.Name, "_")[1]
-			if p, ok := plugins[addr]; ok && p.Config.Version == version {
+			assetVersion := strings.Split(*asset.Name, "_")[1]
+			if p, ok := plugins[addr]; ok && p.Config.Version == assetVersion {
 				return nil
 			}
-			fmt.Printf("Installing plugin %s, version %s\n", addr, version)
+			fmt.Printf("Installing plugin %s, version %s\n", addr, assetVersion)
 			fmt.Println("Downloading the plugin...")
 
 			rc, url, err := api.Repositories.DownloadReleaseAsset(context.Background(), owner, repository, *asset.ID, nil)
@@ -271,6 +273,10 @@ func (m *Manager) Install(addr, token string) error {
 			}
 
 			plugins[addr] = &m.GetPlugin(addr).Plugin
+
+			if semver.Compare(version.VERSION, plugins[addr].Config.MinKaytuVersion) == -1 {
+				return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plugins[addr].Config.MinKaytuVersion)
+			}
 			break
 		}
 	}
