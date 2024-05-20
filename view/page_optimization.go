@@ -6,6 +6,7 @@ import (
 	"github.com/evertras/bubble-table/table"
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/style"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 )
 
@@ -90,7 +91,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i.ResourceType,
 			i.Region,
 			i.Platform,
-			fmt.Sprintf("$%.2f (%%%.2f)", totalSaving, (totalSaving/totalCurrentCost)*100),
+			fmt.Sprintf("$%s (%%%.2f)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
 		}
 		if i.Skipped {
 			row[5] = "skipped"
@@ -209,7 +210,7 @@ func (m OptimizationsPage) View() string {
 	}
 
 	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		style.CostStyle.Render(fmt.Sprintf("$%.2f", totalCost)), style.SavingStyle.Render(fmt.Sprintf("$%.2f", savings)),
+		style.CostStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(savings))),
 		m.table.View(),
 		m.statusBar.View(),
 	)

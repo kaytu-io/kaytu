@@ -7,6 +7,7 @@ import (
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/style"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 	"github.com/muesli/reflow/wordwrap"
 	"strings"
@@ -124,12 +125,12 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 			dev.DeviceId,
 			dev.ResourceType,
 			dev.Runtime,
-			fmt.Sprintf("$%.2f", dev.CurrentCost),
+			fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost)),
 			ifRecommendationExists(func() string {
-				return fmt.Sprintf("$%.2f", dev.RightSizedCost)
+				return fmt.Sprintf("$%s", utils.FormatFloat(dev.RightSizedCost))
 			}),
 			ifRecommendationExists(func() string {
-				return fmt.Sprintf("$%.2f", dev.CurrentCost-dev.RightSizedCost)
+				return fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost-dev.RightSizedCost))
 			}),
 		})
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"os"
 	"sync"
 	"time"
@@ -122,7 +123,7 @@ func getItemString(item *golang.OptimizationItem) string {
 				totalSaving += dev.CurrentCost - dev.RightSizedCost
 			}
 		}
-		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("$%.2f", totalSaving))
+		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("$%s", utils.FormatFloat(totalSaving)))
 		t.AppendRow(row)
 		itemString += t.Render()
 		itemString += "\n    " + bold.Sprint("Devices") + ":"
@@ -196,7 +197,7 @@ func getDeviceString(dev *golang.Device) string {
 	t.AppendHeader(headers)
 	var row table.Row
 	var itemString string
-	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("$%.2f", dev.CurrentCost-dev.RightSizedCost))
+	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost-dev.RightSizedCost)))
 	t.AppendRow(row)
 	itemString += t.Render()
 	itemString += "\n        " + bold.Sprint("Properties") + ":\n" + getPropertiesString(dev.Properties)
@@ -281,29 +282,25 @@ func (v *NonInteractiveView) PublishResultsReady(ready *golang.ResultsReady) {
 	v.resultsReady <- ready.Ready
 }
 
-func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool, jsonExport bool) error {
+func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error {
 	go v.WaitForAllItems()
 	go v.WaitForJobs()
 	for {
 		select {
 		case ready := <-v.resultsReady:
 			if ready == true {
-				if showResults {
+				if nonInteractiveFlag == "table" {
 					str, err := v.OptimizationsString()
 					if err != nil {
 						return err
 					}
-					os.Stderr.WriteString(str)
-				}
-				if csvExport {
+					os.Stdout.WriteString(str)
+				} else if nonInteractiveFlag == "csv" {
 					csvHeaders, csvRows := exportCsv(v.items)
-					file, err := os.Create("export.csv")
-					if err != nil {
-						return err
-					}
-					writer := csv.NewWriter(file)
+					out := os.Stdout
+					writer := csv.NewWriter(out)
 
-					err = writer.Write(csvHeaders)
+					err := writer.Write(csvHeaders)
 					if err != nil {
 						return err
 					}
@@ -315,12 +312,11 @@ func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool
 						}
 					}
 					writer.Flush()
-					err = file.Close()
+					err = out.Close()
 					if err != nil {
 						return err
 					}
-				}
-				if jsonExport {
+				} else if nonInteractiveFlag == "json" {
 					jsonValue := struct {
 						Items []*golang.OptimizationItem
 					}{
@@ -331,19 +327,21 @@ func (v *NonInteractiveView) WaitAndShowResults(showResults bool, csvExport bool
 						return err
 					}
 
-					file, err := os.Create("export.json")
+					out := os.Stdout
 					if err != nil {
 						return err
 					}
 
-					_, err = file.Write(jsonData)
+					_, err = out.Write(jsonData)
 					if err != nil {
 						return err
 					}
-					err = file.Close()
+					err = out.Close()
 					if err != nil {
 						return err
 					}
+				} else {
+					os.Stderr.WriteString("output mode not recognized!")
 				}
 				return nil
 			}
@@ -427,8 +425,8 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		for _, d := range i.Devices {
 			for _, p := range d.Properties {
 				rows = append(rows, []string{
-					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("$%.2f", totalSaving),
-					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("$%.2f", d.CurrentCost), fmt.Sprintf("$%.2f", d.RightSizedCost), fmt.Sprintf("$%.2f", d.CurrentCost-d.RightSizedCost),
+					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("$%s", utils.FormatFloat(totalSaving)),
+					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("$%s", utils.FormatFloat(d.CurrentCost)), fmt.Sprintf("$%s", utils.FormatFloat(d.RightSizedCost)), fmt.Sprintf("$%s", utils.FormatFloat(d.CurrentCost-d.RightSizedCost)),
 					p.Key, p.Current, p.Average, p.Max, p.Recommended,
 				})
 			}

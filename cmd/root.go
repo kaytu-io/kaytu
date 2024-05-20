@@ -43,9 +43,7 @@ func init() {
 	rootCmd.AddCommand(optimizeCmd)
 
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
-	optimizeCmd.PersistentFlags().Bool("non-interactive-view", false, "Show optimization results in non-interactive mode")
-	optimizeCmd.PersistentFlags().Bool("csv-export", false, "Get CSV export")
-	optimizeCmd.PersistentFlags().Bool("json-export", false, "Get json export")
+	optimizeCmd.PersistentFlags().String("output", "interactive", "Show optimization results in selected output (possible values: interactive, table, csv, json. default value: interactive)")
 	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
 }
 
@@ -99,12 +97,19 @@ func Execute() {
 						return err
 					}
 
-					nonInteractiveFlag := utils.ReadBooleanFlag(c, "non-interactive-view")
-					csvExportFlag := utils.ReadBooleanFlag(c, "csv-export")
-					jsonExportFlag := utils.ReadBooleanFlag(c, "json-export")
+					nonInteractiveFlag := utils.ReadStringFlag(c, "output")
 					manager := plugin2.New()
 
-					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
+					switch nonInteractiveFlag {
+					case "interactive":
+					case "table":
+					case "csv":
+					case "json":
+					default:
+						return fmt.Errorf("output mode not recognized\npossible values: interactive, table, csv, json. default value: interactive (default \"interactive\")")
+					}
+
+					if nonInteractiveFlag != "interactive" {
 						manager.SetNonInteractiveView()
 					}
 
@@ -208,8 +213,8 @@ func Execute() {
 						return err
 					}
 
-					if nonInteractiveFlag || csvExportFlag || jsonExportFlag {
-						err := manager.NonInteractiveView.WaitAndShowResults(nonInteractiveFlag, csvExportFlag, jsonExportFlag)
+					if nonInteractiveFlag != "interactive" {
+						err := manager.NonInteractiveView.WaitAndShowResults(nonInteractiveFlag)
 						return err
 					} else {
 						helpController := controller.NewHelp()
