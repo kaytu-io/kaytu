@@ -1,6 +1,9 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func PFloat64ToString(v *float64) string {
 	if v == nil {
@@ -75,4 +78,20 @@ func SizeByteToGB(v *int32) string {
 	}
 	vv := *v // / 1000000000
 	return fmt.Sprintf("%d GB", vv)
+}
+
+func FormatFloat(number float64) string {
+	parts := strings.Split(fmt.Sprintf("%.2f", number), ".")
+	integerPart := parts[0]
+	decimalPart := parts[1]
+
+	var result []rune
+	for i, digit := range integerPart {
+		if i > 0 && (len(integerPart)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, rune(digit))
+	}
+
+	return fmt.Sprintf("%s.%s", string(result), decimalPart)
 }
