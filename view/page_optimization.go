@@ -6,6 +6,7 @@ import (
 	"github.com/evertras/bubble-table/table"
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/style"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 )
 
@@ -40,7 +41,8 @@ func NewOptimizationsView(
 		WithPageSize(10).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(style.ActiveStyleBase).
-		BorderRounded()
+		BorderRounded().
+		HighlightStyle(style.HighlightStyle)
 
 	return OptimizationsPage{
 		optimizations:  optimizations,
@@ -75,9 +77,11 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var rows Rows
 	for _, i := range m.optimizations.Items() {
 		totalSaving := 0.0
+		totalCurrentCost := 0.0
 		if !i.Loading && !i.Skipped && !i.LazyLoadingEnabled {
 			for _, dev := range i.Devices {
 				totalSaving += dev.CurrentCost - dev.RightSizedCost
+				totalCurrentCost += dev.CurrentCost
 			}
 		}
 
@@ -87,7 +91,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i.ResourceType,
 			i.Region,
 			i.Platform,
-			fmt.Sprintf("$%.2f", totalSaving),
+			fmt.Sprintf("$%s (%%%.2f)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
 		}
 		if i.Skipped {
 			row[5] = "skipped"
@@ -206,7 +210,7 @@ func (m OptimizationsPage) View() string {
 	}
 
 	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		style.CostStyle.Render(fmt.Sprintf("$%.2f", totalCost)), style.SavingStyle.Render(fmt.Sprintf("$%.2f", savings)),
+		style.CostStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(savings))),
 		m.table.View(),
 		m.statusBar.View(),
 	)
