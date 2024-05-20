@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin"
-	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
-var installCmd = &cobra.Command{
-	Use: "install",
+var uninstallCmd = &cobra.Command{
+	Use: "uninstall",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager := plugin.New()
 		err := manager.StartServer()
@@ -18,14 +17,12 @@ var installCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			return errors.New("please provide plugin path")
+			return errors.New("please provide plugin name")
 		}
 
-		token := utils.ReadStringFlag(cmd, "token")
-		unsafe := utils.ReadBooleanFlag(cmd, "unsafe")
-		err = manager.Install(args[0], token, unsafe)
+		err = manager.Uninstall(args[0])
 		if err != nil {
-			fmt.Printf("failed to install plugin due to %v\n", err)
+			fmt.Printf("failed to uninstall plugin due to %v\n", err)
 			return err
 		}
 		return nil
