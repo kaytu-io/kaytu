@@ -322,6 +322,9 @@ func (m *Manager) SetNonInteractiveView() {
 }
 
 func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, error) {
+	if pluginName == "kaytu-io/plugin-aws" {
+		return true, nil
+	}
 	api := githubAPI.NewClient(tc)
 	fileContent, _, resp, err := api.Repositories.GetContents(context.Background(), "kaytu-io", "kaytu", "approved_plugins", nil)
 	if err != nil {
@@ -343,4 +346,41 @@ func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, erro
 		}
 	}
 	return false, nil
+}
+
+func (m *Manager) Uninstall(pluginName string) error {
+	cfg, err := server.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	plugins := map[string]*server.Plugin{}
+	installed := false
+	for _, plg := range cfg.Plugins {
+		if pluginName == plg.Config.Name {
+			installed = true
+			continue
+		}
+		plugins[plg.Config.Name] = plg
+	}
+	if !installed {
+		fmt.Errorf("plugin not found")
+	}
+
+	pluginFile := filepath.Join(server.PluginDir(), strings.ReplaceAll(pluginName, "/", "_"))
+
+	err = os.Remove(pluginFile)
+	if err != nil {
+		return err
+	}
+
+	cfg.Plugins = nil
+	for _, v := range plugins {
+		cfg.Plugins = append(cfg.Plugins, v)
+	}
+	err = server.SetConfig(*cfg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
