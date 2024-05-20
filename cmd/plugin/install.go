@@ -22,7 +22,8 @@ var installCmd = &cobra.Command{
 		}
 
 		token := utils.ReadStringFlag(cmd, "token")
-		err = manager.Install(args[0], token)
+		unsafe := utils.ReadBooleanFlag(cmd, "unsafe")
+		err = manager.Install(args[0], token, unsafe)
 		if err != nil {
 			fmt.Printf("failed to install plugin due to %v\n", err)
 			return err

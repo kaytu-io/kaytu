@@ -156,7 +156,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	}
 }
 
-func (m *Manager) Install(addr, token string) error {
+func (m *Manager) Install(addr, token string, unsafe bool) error {
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -176,6 +176,15 @@ func (m *Manager) Install(addr, token string) error {
 		)
 		tc = oauth2.NewClient(context.Background(), ts)
 	}
+
+	approved, err := m.pluginApproved(tc, addr)
+	if err != nil {
+		return err
+	}
+	if !approved && !unsafe {
+		return fmt.Errorf("plugin not approved")
+	}
+
 	api := githubAPI.NewClient(tc)
 	release, _, err := api.Repositories.GetLatestRelease(context.Background(), owner, repository)
 	if err != nil {
@@ -310,4 +319,28 @@ func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimiz
 
 func (m *Manager) SetNonInteractiveView() {
 	m.NonInteractiveView = view.NewNonInteractiveView()
+}
+
+func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, error) {
+	api := githubAPI.NewClient(tc)
+	fileContent, _, resp, err := api.Repositories.GetContents(context.Background(), "kaytu-io", "kaytu", "approved_plugins", nil)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode != 200 {
+		return false, err
+	}
+
+	content, err := fileContent.GetContent()
+	if err != nil {
+		return false, err
+	}
+	plugins := strings.Split(content, "\n")
+	for _, plugin := range plugins {
+		if plugin == pluginName {
+			return true, nil
+		}
+	}
+	return false, nil
 }
