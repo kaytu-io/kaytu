@@ -111,18 +111,20 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 	}
 
 	deviceColumns := []table.Column{
-		table.NewColumn("0", "DeviceID", 30),
-		table.NewColumn("1", "ResourceType", 20),
-		table.NewColumn("2", "Runtime", 13),
-		table.NewColumn("3", "Current Cost", 20),
-		table.NewColumn("4", "Right sized Cost", 20),
-		table.NewColumn("5", "Savings", 20),
+		table.NewColumn("0", "Resource ID", 30),
+		table.NewColumn("1", "Resource Name", 23),
+		table.NewColumn("2", "ResourceType", 20),
+		table.NewColumn("3", "Runtime", 13),
+		table.NewColumn("4", "Current Cost", 20),
+		table.NewColumn("5", "Right sized Cost", 20),
+		table.NewColumn("6", "Savings", 20),
 	}
 
 	deviceRows := Rows{}
 	for _, dev := range item.Devices {
 		deviceRows = append(deviceRows, Row{
 			dev.DeviceId,
+			item.Name,
 			dev.ResourceType,
 			dev.Runtime,
 			fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost)),
