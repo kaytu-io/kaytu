@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os/exec"
+	"runtime"
 )
 
 type DeviceCodeRequest struct {
@@ -66,6 +68,24 @@ func RequestDeviceCode() (string, error) {
 
 	fmt.Println("open this url in your browser:")
 	fmt.Println(response.VerificationUrlComplete)
+	err = openUrl(response.VerificationUrlComplete)
+	if err != nil {
+		return "", fmt.Errorf("failed to open url in browser: %v", err)
+	}
 
 	return response.DeviceCode, nil
+}
+
+func openUrl(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+
+	return cmd.Start()
 }
