@@ -91,7 +91,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i.ResourceType,
 			i.Region,
 			i.Platform,
-			fmt.Sprintf("$%s (%%%.2f)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
+			fmt.Sprintf("$%s (%.2f%%)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
 		}
 		if i.Skipped {
 			row[5] = "skipped"
