@@ -32,7 +32,7 @@ func (r Rows) ToTableRows() []table.Row {
 	return rows
 }
 
-type OptimizationDetailsPage struct {
+type ResourceDetailsPage struct {
 	item                *golang.OptimizationItem
 	deviceTable         table.Model
 	detailTable         table.Model
@@ -92,15 +92,15 @@ func NewOptimizationDetailsView(
 	optimizationsController *controller.Optimizations,
 	helpController *controller.Help,
 	statusBar StatusBarView,
-) OptimizationDetailsPage {
-	return OptimizationDetailsPage{
+) ResourceDetailsPage {
+	return ResourceDetailsPage{
 		helpController:          helpController,
 		optimizationsController: optimizationsController,
 		statusBar:               statusBar,
 	}
 }
 
-func (m OptimizationDetailsPage) OnOpen() Page {
+func (m ResourceDetailsPage) OnOpen() Page {
 	item := m.optimizationsController.SelectedItem()
 
 	ifRecommendationExists := func(f func() string) string {
@@ -175,14 +175,14 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 	})
 	return m
 }
-func (m OptimizationDetailsPage) OnClose() Page {
+func (m ResourceDetailsPage) OnClose() Page {
 	return m
 }
-func (m OptimizationDetailsPage) Init() tea.Cmd {
+func (m ResourceDetailsPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd, detailCMD tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -256,18 +256,18 @@ func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(detailCMD, cmd)
 }
 
-func (m OptimizationDetailsPage) View() string {
+func (m ResourceDetailsPage) View() string {
 	return m.deviceTable.View() + "\n" +
 		wordwrap.String(m.item.Description, m.GetWidth()) + "\n" +
 		m.detailTable.View() + "\n" +
 		m.statusBar.View()
 }
 
-func (m OptimizationDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m ResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
-func (m OptimizationDetailsPage) SetApp(app *App) OptimizationDetailsPage {
+func (m ResourceDetailsPage) SetApp(app *App) ResourceDetailsPage {
 	m.app = app
 	return m
 }

@@ -218,11 +218,10 @@ func Execute() {
 						return err
 					} else {
 						helpController := controller.NewHelp()
-						helpPage := view.NewHelpPage(helpController)
 
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
-						jobsPage := view.NewJobsPage(jobsController)
+						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -235,7 +234,6 @@ func Execute() {
 							optimizationsPage,
 							optimizationsDetailsPage,
 							preferencesPage,
-							helpPage,
 							jobsPage,
 						), tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
