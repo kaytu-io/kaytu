@@ -70,7 +70,7 @@ func RequestDeviceCode() (string, error) {
 	fmt.Println(response.VerificationUrlComplete)
 	err = openUrl(response.VerificationUrlComplete)
 	if err != nil {
-		return "", fmt.Errorf("failed to open url in browser: %v", err)
+		fmt.Println(fmt.Errorf("failed to open url in browser: %v", err))
 	}
 
 	return response.DeviceCode, nil
