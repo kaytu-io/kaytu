@@ -13,16 +13,18 @@ func startPlugin(plg *server.Plugin, serverAddr string) error {
 	logsDir := server.LogsDir()
 	cmd := exec.Command(plg.Path(), "--server", serverAddr)
 
-	errLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.err.logs", strings.ReplaceAll(plg.Config.Name, "/", "_"))), os.O_CREATE|os.O_APPEND, os.ModePerm)
+	errLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.err.logs", strings.ReplaceAll(plg.Config.Name, "/", "_"))), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
+	defer errLogs.Close()
 	cmd.Stderr = errLogs
 
-	outLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.out.logs", strings.ReplaceAll(plg.Config.Name, "/", "_"))), os.O_CREATE|os.O_APPEND, os.ModePerm)
+	outLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.out.logs", strings.ReplaceAll(plg.Config.Name, "/", "_"))), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
+	defer outLogs.Close()
 	cmd.Stdout = outLogs
 
 	err = cmd.Start()
