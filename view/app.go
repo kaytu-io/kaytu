@@ -9,11 +9,10 @@ import (
 type PageEnum int
 
 const (
-	Page_Optimizations       = 0
-	Page_OptimizationDetails = 1
-	Page_Preferences         = 2
-	Page_Help                = 3
-	Page_Jobs                = 4
+	Page_Overview        = 0
+	Page_ResourceDetails = 1
+	Page_Preferences     = 2
+	Page_Jobs            = 3
 )
 
 type Page interface {
@@ -36,10 +35,9 @@ type App struct {
 }
 
 func NewApp(
-	optimizationsPage OptimizationsPage,
-	optimizationDetailsPage OptimizationDetailsPage,
-	preferencesPage PreferencesConfigurationPage,
-	helpPage HelpPage,
+	optimizationsPage OverviewPage,
+	optimizationDetailsPage ResourceDetailsPage,
+	preferencesPage PreferencesPage,
 	jobsPage JobsPage,
 ) *App {
 	app := &App{}
@@ -49,7 +47,6 @@ func NewApp(
 		optimizationsPage,
 		optimizationDetailsPage,
 		preferencesPage,
-		helpPage,
 		jobsPage,
 	}
 	return app
@@ -77,7 +74,7 @@ func (m *App) ChangePage(id PageEnum) tea.Cmd {
 }
 
 func (m *App) Init() tea.Cmd {
-	m.ChangePage(Page_Optimizations)
+	m.ChangePage(Page_Overview)
 	return tea.Batch(m.pages[m.activePageIdx].Init(), tea.EnterAltScreen, TickCmdWithDuration(100*time.Microsecond))
 }
 
