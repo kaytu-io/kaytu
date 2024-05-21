@@ -349,6 +349,7 @@ func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, erro
 }
 
 func (m *Manager) Uninstall(pluginName string) error {
+	fmt.Println(fmt.Sprintf("Uninstalling plugin %s", pluginName))
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -364,7 +365,7 @@ func (m *Manager) Uninstall(pluginName string) error {
 		plugins[plg.Config.Name] = plg
 	}
 	if !installed {
-		fmt.Errorf("plugin not found")
+		return fmt.Errorf("plugin not found")
 	}
 
 	pluginFile := filepath.Join(server.PluginDir(), strings.ReplaceAll(pluginName, "/", "_"))
@@ -382,5 +383,6 @@ func (m *Manager) Uninstall(pluginName string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(fmt.Sprintf("Plugin %s uninstalled", pluginName))
 	return nil
 }
