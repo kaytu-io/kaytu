@@ -1,0 +1,17 @@
+HHEEEEREEEpanic: no important thing
+
+goroutine 1 [running]:
+github.com/kaytu-io/plugin-aws/plugin.(*AWSPlugin).StartProcess(0xc00030e110?, {0x0?, 0x0?}, 0x0?, {0x0?, 0x92cc4d?})
+	/home/arta/data/codes/Work/Kaytu/plugin-aws/plugin/service.go:67 +0x50
+github.com/kaytu-io/kaytu/pkg/plugin/sdk.(*Plugin).runE(0xc0000bc7c8, 0xc000157ce8?, {0xc000157cc0?, 0x0?, 0x0?})
+	/home/arta/go/pkg/mod/github.com/kaytu-io/kaytu@v0.7.10-rc.0/pkg/plugin/sdk/sdk.go:71 +0x536
+github.com/spf13/cobra.(*Command).execute(0xc0001c5900, {0xc0000b4100, 0x2, 0x2})
+	/home/arta/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:856 +0x694
+github.com/spf13/cobra.(*Command).ExecuteC(0xc0001c5900)
+	/home/arta/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:974 +0x38d
+github.com/spf13/cobra.(*Command).Execute(...)
+	/home/arta/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:902
+github.com/kaytu-io/kaytu/pkg/plugin/sdk.(*Plugin).Execute(0xc0000bc7c8)
+	/home/arta/go/pkg/mod/github.com/kaytu-io/kaytu@v0.7.10-rc.0/pkg/plugin/sdk/sdk.go:91 +0x53
+main.main()
+	/home/arta/data/codes/Work/Kaytu/plugin-aws/main.go:9 +0x11a
