@@ -50,15 +50,7 @@ type ResourceDetailsPage struct {
 func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 	res := map[string]Rows{}
 	for _, dev := range item.Devices {
-		rows := Rows{
-			{
-				"",
-				"",
-				style.Bold.Render("Average"),
-				style.Bold.Render("Max"),
-				"",
-			},
-		}
+		rows := Rows{}
 
 		for _, prop := range dev.Properties {
 			if !strings.HasPrefix(prop.Key, " ") {
@@ -68,7 +60,6 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 				prop.Key,
 				prop.Current,
 				prop.Average,
-				prop.Max,
 				prop.Recommended,
 			})
 		}
@@ -77,9 +68,9 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 
 	for deviceID, rows := range res {
 		for idx, row := range rows {
-			if row[1] != row[4] {
+			if row[1] != row[3] {
 				row[1] = style.ChangeFrom.Render(row[1])
-				row[4] = style.ChangeTo.Render(row[4])
+				row[3] = style.ChangeTo.Render(row[3])
 			}
 			rows[idx] = row
 		}
@@ -147,8 +138,7 @@ func (m ResourceDetailsPage) OnOpen() Page {
 		table.NewColumn("0", "", 30),
 		table.NewColumn("1", "Current", 30),
 		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
-		table.NewColumn("3", "", 15),
-		table.NewColumn("4", "Recommendation", 30),
+		table.NewColumn("3", "Recommendation", 30),
 	}
 
 	m.item = item
