@@ -45,60 +45,13 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
           COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
           REPOSITORY_OWNER: ${{ env.REPOSITORY_OWNER }}
           REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+          HOMEBREW_TAP: ${{ env.HOMEBREW_TAP }}
 
-      - uses: robinraju/release-downloader@v1.10
-        id: download_release_amd64
-        with:
-          repository: "${{ env.REPOSITORY_OWNER }}/${{ env.REPOSITORY_NAME }}"   # "adorigi/kaytu"
-          fileName: '*'
-          latest: true
-          tarBall: true
-          zipBall: true
-
-      - name: update cli version in homebrew
-        run: |
-          sed -i "s+VERSION_HOMEBREW+$(echo "${{ github.ref_name }}" | sed 's/^.//')+g" homebrew/kaytu.rb
-          
-          ls 
-          export VERSION=${{ github.ref_name }}
-          export VERSION=${VERSION#v}
-          echo "version=$VERSION"
-          echo "kaytu_$VERSION_darwin_amd64"
-
-          sha256sum "kaytu_${VERSION}_darwin_amd64.tar.gz" | awk '{print $1}' > newHash
-          sed -i "s+HASH_MAC_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
-          
-          sha256sum "kaytu_${VERSION}_darwin_arm64.tar.gz" | awk '{print $1}' > newHash
-          sed -i "s+HASH_MAC_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
-          
-          sha256sum "kaytu_${VERSION}_linux_arm64.tar.gz" | awk '{print $1}' > newHash
-          sed -i "s+HASH_LINUX_ARM64+$(cat newHash)+g" homebrew/kaytu.rb
-          
-          sha256sum "kaytu_${VERSION}_linux_amd64.tar.gz" | awk '{print $1}' > newHash
-          sed -i "s+HASH_LINUX_AMD64+$(cat newHash)+g" homebrew/kaytu.rb
-          
-          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ env.REPOSITORY_OWNER }}/${{ env.HOMEBREW_TAP }}.git
-          
-          cd ${{ env.HOMEBREW_TAP }}
-          
-          git remote add ${{ env.HOMEBREW_TAP }}-origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ env.REPOSITORY_OWNER }}/${{ env.HOMEBREW_TAP }}.git
-          git config user.name 'adorigi'
-          git config user.email 'gulegulzaradnan@gmail.com'
-          
-          cp ../homebrew/kaytu.rb kaytu.rb  
-          
-          git checkout main
-          git add .
-          git commit -a -m "update cli version"
-          git push ${{ env.HOMEBREW_TAP }}-origin 
-          
-          cd ..
-          rm -rf ${{ env.HOMEBREW_TAP }}
 #   sign-windows:
 #     runs-on: ubuntu-latest
 #     needs:
