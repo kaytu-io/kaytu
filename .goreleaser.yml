@@ -3,8 +3,8 @@ project_name: kaytu
 
 release:
   github:
-    owner: kaytu-io
-    name: kaytu
+    owner: "{{ .Env.REPOSITORY_OWNER }}"
+    name:  "{{ .Env.REPOSITORY_NAME }}"
 
 checksum: {}
 
@@ -12,7 +12,7 @@ builds:
   - id: linux
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - linux
     goarch:
@@ -22,7 +22,7 @@ builds:
   - id: darwin
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/"{{ .Env.REPOSITORY_OWNER }}"/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
@@ -32,7 +32,7 @@ builds:
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/"{{ .Env.REPOSITORY_OWNER }}"/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
