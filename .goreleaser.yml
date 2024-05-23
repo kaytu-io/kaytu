@@ -47,6 +47,12 @@ archives:
   - id: windows
     format: zip
     builds: [windows]
+  - id: linux
+    format: tar.gz
+    builds: [linux]
+  - id: darwin 
+    format: tar.gz
+    builds: [darwin]
 
 
 brews:
@@ -59,9 +65,8 @@ brews:
       name:  "{{ .Env.REPOSITORY_OWNER }}"
       email: gulegulzaradnan@gmail.com
     ids:
-      - binary
-      - default
-      - windows
+      - linux
+      - darwin
 
 
 #chocolateys:
