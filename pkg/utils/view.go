@@ -81,7 +81,7 @@ func SizeByteToGB(v *int32) string {
 	return fmt.Sprintf("%d GB", vv)
 }
 
-func FormatFloat(number float64) string {
+func FormatPriceFloat(number float64) string {
 	isNegative := false
 	if number < 0 {
 		isNegative = true
@@ -99,8 +99,8 @@ func FormatFloat(number float64) string {
 		result = append(result, rune(digit))
 	}
 	if isNegative {
-		return fmt.Sprintf("-%s.%s", string(result), decimalPart)
+		return fmt.Sprintf("-$%s.%s", string(result), decimalPart)
 	} else {
-		return fmt.Sprintf("%s.%s", string(result), decimalPart)
+		return fmt.Sprintf("$%s.%s", string(result), decimalPart)
 	}
 }
