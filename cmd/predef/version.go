@@ -9,7 +9,8 @@ import (
 
 // VersionCmd represents the version command
 var VersionCmd = &cobra.Command{
-	Use: "version",
+	Use:   "version",
+	Short: "Print the version number of Kaytu CLI",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(version.VERSION)
 	},

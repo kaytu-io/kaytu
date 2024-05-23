@@ -25,6 +25,8 @@ var optimizeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
+	Short: "Identify right sizing opportunities based on your usage",
+	Long:  "Identify right sizing opportunities based on your usage",
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -89,8 +91,9 @@ func Execute() {
 		for _, loopCmd := range plg.Config.Commands {
 			cmd := loopCmd
 			theCmd := &cobra.Command{
-				Use:  cmd.Name,
-				Long: cmd.Description,
+				Use:   cmd.Name,
+				Short: cmd.Description,
+				Long:  cmd.Description,
 				RunE: func(c *cobra.Command, args []string) error {
 					cfg, err := server.GetConfig()
 					if err != nil {
