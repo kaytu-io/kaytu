@@ -123,7 +123,7 @@ func getItemString(item *golang.OptimizationItem) string {
 				totalSaving += dev.CurrentCost - dev.RightSizedCost
 			}
 		}
-		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("$%s", utils.FormatFloat(totalSaving)))
+		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)))
 		t.AppendRow(row)
 		itemString += t.Render()
 		itemString += "\n    " + bold.Sprint("Devices") + ":"
@@ -197,7 +197,7 @@ func getDeviceString(dev *golang.Device) string {
 	t.AppendHeader(headers)
 	var row table.Row
 	var itemString string
-	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost-dev.RightSizedCost)))
+	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost-dev.RightSizedCost)))
 	t.AppendRow(row)
 	itemString += t.Render()
 	itemString += "\n        " + bold.Sprint("Properties") + ":\n" + getPropertiesString(dev.Properties)
@@ -425,8 +425,8 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		for _, d := range i.Devices {
 			for _, p := range d.Properties {
 				rows = append(rows, []string{
-					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("$%s", utils.FormatFloat(totalSaving)),
-					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("$%s", utils.FormatFloat(d.CurrentCost)), fmt.Sprintf("$%s", utils.FormatFloat(d.RightSizedCost)), fmt.Sprintf("$%s", utils.FormatFloat(d.CurrentCost-d.RightSizedCost)),
+					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
+					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
 					p.Key, p.Current, p.Average, p.Max, p.Recommended,
 				})
 			}

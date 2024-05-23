@@ -10,7 +10,7 @@ import (
 	"github.com/kaytu-io/kaytu/view/responsive"
 )
 
-type OptimizationsPage struct {
+type OverviewPage struct {
 	table       table.Model
 	clearScreen bool
 
@@ -26,7 +26,7 @@ func NewOptimizationsView(
 	optimizations *controller.Optimizations,
 	helpController *controller.Help,
 	statusBar StatusBarView,
-) OptimizationsPage {
+) OverviewPage {
 	columns := []table.Column{
 		table.NewColumn("0", "Resource Id", 23),
 		table.NewColumn("1", "Resource Name", 23),
@@ -44,17 +44,17 @@ func NewOptimizationsView(
 		BorderRounded().
 		HighlightStyle(style.HighlightStyle)
 
-	return OptimizationsPage{
+	return OverviewPage{
 		optimizations:  optimizations,
 		helpController: helpController,
 		table:          t,
 		statusBar:      statusBar,
 	}
 }
-func (m OptimizationsPage) OnClose() Page {
+func (m OverviewPage) OnClose() Page {
 	return m
 }
-func (m OptimizationsPage) OnOpen() Page {
+func (m OverviewPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
 		"pgdown/pgup: next/prev page",
@@ -69,11 +69,11 @@ func (m OptimizationsPage) OnOpen() Page {
 	return m
 }
 
-func (m OptimizationsPage) Init() tea.Cmd {
+func (m OverviewPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var rows Rows
 	for _, i := range m.optimizations.Items() {
 		totalSaving := 0.0
@@ -91,7 +91,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i.ResourceType,
 			i.Region,
 			i.Platform,
-			fmt.Sprintf("$%s (%%%.2f)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
+			fmt.Sprintf("%s (%.2f%%)", utils.FormatPriceFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
 		}
 		if i.Skipped {
 			row[5] = "skipped"
@@ -168,7 +168,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for _, i := range m.optimizations.Items() {
 				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading && !i.LazyLoadingEnabled {
 					m.optimizations.SelectItem(i)
-					changePageCmd = m.app.ChangePage(Page_OptimizationDetails)
+					changePageCmd = m.app.ChangePage(Page_ResourceDetails)
 					break
 				} else if selectedInstanceID == i.Id && !i.Skipped && i.LazyLoadingEnabled {
 					i.LazyLoadingEnabled = false
@@ -194,7 +194,7 @@ func (m OptimizationsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m OptimizationsPage) View() string {
+func (m OverviewPage) View() string {
 	//if m.clearScreen {
 	//	m.clearScreen = false
 	//	return ""
@@ -210,18 +210,18 @@ func (m OptimizationsPage) View() string {
 	}
 
 	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		style.CostStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(savings))),
+		style.CostStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(savings))),
 		m.table.View(),
 		m.statusBar.View(),
 	)
 }
 
-func (m OptimizationsPage) SetApp(app *App) OptimizationsPage {
+func (m OverviewPage) SetApp(app *App) OverviewPage {
 	m.app = app
 	return m
 }
 
-func (m OptimizationsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m OverviewPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }

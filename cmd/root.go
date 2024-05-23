@@ -25,6 +25,8 @@ var optimizeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
+	Short: "Identify right sizing opportunities based on your usage",
+	Long:  "Identify right sizing opportunities based on your usage",
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -73,7 +75,7 @@ func Execute() {
 			panic(err)
 		}
 
-		err = manager.Install("aws", "")
+		err = manager.Install("aws", "", false)
 		if err != nil {
 			panic(err)
 		}
@@ -89,8 +91,9 @@ func Execute() {
 		for _, loopCmd := range plg.Config.Commands {
 			cmd := loopCmd
 			theCmd := &cobra.Command{
-				Use:  cmd.Name,
-				Long: cmd.Description,
+				Use:   cmd.Name,
+				Short: cmd.Description,
+				Long:  cmd.Description,
 				RunE: func(c *cobra.Command, args []string) error {
 					cfg, err := server.GetConfig()
 					if err != nil {
@@ -128,7 +131,7 @@ func Execute() {
 						if plg.Config.Name == "aws" {
 							repoAddr = "aws"
 						}
-						err = manager.Install(repoAddr, "")
+						err = manager.Install(repoAddr, "", false)
 						if err != nil {
 							fmt.Println("failed due to", err)
 						}
@@ -218,11 +221,10 @@ func Execute() {
 						return err
 					} else {
 						helpController := controller.NewHelp()
-						helpPage := view.NewHelpPage(helpController)
 
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
-						jobsPage := view.NewJobsPage(jobsController)
+						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -235,7 +237,6 @@ func Execute() {
 							optimizationsPage,
 							optimizationsDetailsPage,
 							preferencesPage,
-							helpPage,
 							jobsPage,
 						), tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
