@@ -48,6 +48,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
           COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
+          REPOSITORY_OWNER: ${{ env.REPOSITORY_OWNER }}
+          REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
       - uses: robinraju/release-downloader@v1.10
         id: download_release_amd64
