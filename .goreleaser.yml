@@ -56,7 +56,7 @@ archives:
 
 
 brews:
-  - name: kaytu-cli
+  - name: kaytu
     homepage: https://github.com/adorigi/kaytu
     repository:
       owner: "{{ .Env.REPOSITORY_OWNER }}"
