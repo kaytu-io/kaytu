@@ -91,7 +91,7 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i.ResourceType,
 			i.Region,
 			i.Platform,
-			fmt.Sprintf("$%s (%.2f%%)", utils.FormatFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
+			fmt.Sprintf("%s (%.2f%%)", utils.FormatPriceFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
 		}
 		if i.Skipped {
 			row[5] = "skipped"
@@ -210,7 +210,7 @@ func (m OverviewPage) View() string {
 	}
 
 	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		style.CostStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("$%s", utils.FormatFloat(savings))),
+		style.CostStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(savings))),
 		m.table.View(),
 		m.statusBar.View(),
 	)

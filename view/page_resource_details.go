@@ -118,12 +118,12 @@ func (m ResourceDetailsPage) OnOpen() Page {
 			item.Name,
 			dev.ResourceType,
 			dev.Runtime,
-			fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost)),
+			fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost)),
 			ifRecommendationExists(func() string {
-				return fmt.Sprintf("$%s", utils.FormatFloat(dev.RightSizedCost))
+				return fmt.Sprintf("%s", utils.FormatPriceFloat(dev.RightSizedCost))
 			}),
 			ifRecommendationExists(func() string {
-				return fmt.Sprintf("$%s", utils.FormatFloat(dev.CurrentCost-dev.RightSizedCost))
+				return fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost-dev.RightSizedCost))
 			}),
 		})
 	}
