@@ -5,7 +5,8 @@ import (
 )
 
 var PluginCmd = &cobra.Command{
-	Use: "plugin",
+	Use:   "plugin",
+	Short: "Manage plugins",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
