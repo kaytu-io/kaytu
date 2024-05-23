@@ -11,7 +11,8 @@ import (
 const RetrySleep = 3
 
 var LoginCmd = &cobra.Command{
-	Use: "login",
+	Use:   "login",
+	Short: "Login to Kaytu",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := server.GetConfig()
 		if err != nil {

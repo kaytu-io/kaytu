@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -80,7 +81,12 @@ func SizeByteToGB(v *int32) string {
 	return fmt.Sprintf("%d GB", vv)
 }
 
-func FormatFloat(number float64) string {
+func FormatPriceFloat(number float64) string {
+	isNegative := false
+	if number < 0 {
+		isNegative = true
+		number = math.Abs(number)
+	}
 	parts := strings.Split(fmt.Sprintf("%.2f", number), ".")
 	integerPart := parts[0]
 	decimalPart := parts[1]
@@ -92,6 +98,9 @@ func FormatFloat(number float64) string {
 		}
 		result = append(result, rune(digit))
 	}
-
-	return fmt.Sprintf("%s.%s", string(result), decimalPart)
+	if isNegative {
+		return fmt.Sprintf("-$%s.%s", string(result), decimalPart)
+	} else {
+		return fmt.Sprintf("$%s.%s", string(result), decimalPart)
+	}
 }

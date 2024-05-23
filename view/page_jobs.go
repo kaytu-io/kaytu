@@ -11,14 +11,18 @@ import (
 )
 
 type JobsPage struct {
-	jobController *controller.Jobs
+	helpController *controller.Help
+	jobController  *controller.Jobs
+	statusBar      StatusBarView
 
 	responsive.ResponsiveView
 }
 
-func NewJobsPage(jobController *controller.Jobs) JobsPage {
+func NewJobsPage(jobController *controller.Jobs, helpController *controller.Help, statusBar StatusBarView) JobsPage {
 	return JobsPage{
-		jobController: jobController,
+		jobController:  jobController,
+		helpController: helpController,
+		statusBar:      statusBar,
 	}
 }
 
@@ -26,12 +30,20 @@ func (m JobsPage) OnClose() Page {
 	return m
 }
 func (m JobsPage) OnOpen() Page {
+	m.helpController.SetKeyMap([]string{
+		"esc: back to main menu",
+		"q/ctrl+c: exit",
+	})
+
 	return m
 }
 
 func (m JobsPage) Init() tea.Cmd { return nil }
 
 func (m JobsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	newStatusBar, _ := m.statusBar.Update(msg)
+	m.statusBar = newStatusBar.(StatusBarView)
+
 	return m, nil
 }
 
@@ -65,7 +77,8 @@ func (m JobsPage) View() string {
 		lines = append(lines, " no running job")
 	}
 
-	return "\n" + statusErr + strings.Join(lines, "\n")
+	return "\n" + statusErr + strings.Join(lines, "\n") + "\n\n" +
+		m.statusBar.View()
 }
 func (m JobsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
