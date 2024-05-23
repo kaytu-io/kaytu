@@ -17,7 +17,7 @@ type (
 	errMsg error
 )
 
-type PreferencesConfigurationPage struct {
+type PreferencesPage struct {
 	focused int
 	err     error
 
@@ -36,15 +36,15 @@ func NewPreferencesConfiguration(
 	helpController *controller.Help,
 	optimizations *controller.Optimizations,
 	statusBar StatusBarView,
-) PreferencesConfigurationPage {
-	return PreferencesConfigurationPage{
+) PreferencesPage {
+	return PreferencesPage{
 		helpController: helpController,
 		optimizations:  optimizations,
 		statusBar:      statusBar,
 	}
 }
 
-func (m PreferencesConfigurationPage) OnOpen() Page {
+func (m PreferencesPage) OnOpen() Page {
 	m.visibleStartIdx = 0
 	var preferences []*golang.PreferenceItem
 	if selectedItem := m.optimizations.SelectedItem(); selectedItem != nil {
@@ -84,7 +84,7 @@ func (m PreferencesConfigurationPage) OnOpen() Page {
 	return m
 }
 
-func (m PreferencesConfigurationPage) OnClose() Page {
+func (m PreferencesPage) OnClose() Page {
 	selectedItem := m.optimizations.SelectedItem()
 	if selectedItem == nil {
 		for _, selectedItem := range m.optimizations.Items() {
@@ -114,11 +114,11 @@ func (m PreferencesConfigurationPage) OnClose() Page {
 	return m
 }
 
-func (m PreferencesConfigurationPage) Init() tea.Cmd {
+func (m PreferencesPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m PreferencesConfigurationPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PreferencesPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -162,7 +162,7 @@ func (m PreferencesConfigurationPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PreferencesConfigurationPage) View() string {
+func (m PreferencesPage) View() string {
 	builder := strings.Builder{}
 
 	builder.WriteString(style.SvcDisable.Render("Configure your preferences:"))
@@ -204,7 +204,7 @@ func (m PreferencesConfigurationPage) View() string {
 	return builder.String()
 }
 
-func (m *PreferencesConfigurationPage) ChangeService(svc string) {
+func (m *PreferencesPage) ChangeService(svc string) {
 	if svc == "All" {
 		for _, i := range m.items {
 			i.hidden = false
@@ -242,7 +242,7 @@ func numberValidator(s string) error {
 	return nil
 }
 
-func (m *PreferencesConfigurationPage) fixVisibleStartIdx() {
+func (m *PreferencesPage) fixVisibleStartIdx() {
 	for m.focused < m.visibleStartIdx {
 		m.visibleStartIdx--
 	}
@@ -253,14 +253,14 @@ func (m *PreferencesConfigurationPage) fixVisibleStartIdx() {
 	}
 }
 
-func (m *PreferencesConfigurationPage) nextInput() {
+func (m *PreferencesPage) nextInput() {
 	m.focused = (m.focused + 1) % len(m.items)
 	if m.items[m.focused].hidden {
 		m.nextInput()
 	}
 }
 
-func (m *PreferencesConfigurationPage) prevInput() {
+func (m *PreferencesPage) prevInput() {
 	m.focused--
 	// Wrap around
 	if m.focused < 0 {
@@ -271,7 +271,7 @@ func (m *PreferencesConfigurationPage) prevInput() {
 	}
 }
 
-func (m PreferencesConfigurationPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m PreferencesPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }

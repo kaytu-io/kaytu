@@ -32,7 +32,7 @@ func (r Rows) ToTableRows() []table.Row {
 	return rows
 }
 
-type OptimizationDetailsPage struct {
+type ResourceDetailsPage struct {
 	item                *golang.OptimizationItem
 	deviceTable         table.Model
 	detailTable         table.Model
@@ -50,15 +50,7 @@ type OptimizationDetailsPage struct {
 func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 	res := map[string]Rows{}
 	for _, dev := range item.Devices {
-		rows := Rows{
-			{
-				"",
-				"",
-				style.Bold.Render("Average"),
-				style.Bold.Render("Max"),
-				"",
-			},
-		}
+		rows := Rows{}
 
 		for _, prop := range dev.Properties {
 			if !strings.HasPrefix(prop.Key, " ") {
@@ -68,7 +60,6 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 				prop.Key,
 				prop.Current,
 				prop.Average,
-				prop.Max,
 				prop.Recommended,
 			})
 		}
@@ -77,9 +68,9 @@ func ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
 
 	for deviceID, rows := range res {
 		for idx, row := range rows {
-			if row[1] != row[4] {
+			if row[1] != row[3] {
 				row[1] = style.ChangeFrom.Render(row[1])
-				row[4] = style.ChangeTo.Render(row[4])
+				row[3] = style.ChangeTo.Render(row[3])
 			}
 			rows[idx] = row
 		}
@@ -92,15 +83,15 @@ func NewOptimizationDetailsView(
 	optimizationsController *controller.Optimizations,
 	helpController *controller.Help,
 	statusBar StatusBarView,
-) OptimizationDetailsPage {
-	return OptimizationDetailsPage{
+) ResourceDetailsPage {
+	return ResourceDetailsPage{
 		helpController:          helpController,
 		optimizationsController: optimizationsController,
 		statusBar:               statusBar,
 	}
 }
 
-func (m OptimizationDetailsPage) OnOpen() Page {
+func (m ResourceDetailsPage) OnOpen() Page {
 	item := m.optimizationsController.SelectedItem()
 
 	ifRecommendationExists := func(f func() string) string {
@@ -147,8 +138,7 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 		table.NewColumn("0", "", 30),
 		table.NewColumn("1", "Current", 30),
 		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
-		table.NewColumn("3", "", 15),
-		table.NewColumn("4", "Recommendation", 30),
+		table.NewColumn("3", "Recommendation", 30),
 	}
 
 	m.item = item
@@ -175,14 +165,14 @@ func (m OptimizationDetailsPage) OnOpen() Page {
 	})
 	return m
 }
-func (m OptimizationDetailsPage) OnClose() Page {
+func (m ResourceDetailsPage) OnClose() Page {
 	return m
 }
-func (m OptimizationDetailsPage) Init() tea.Cmd {
+func (m ResourceDetailsPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd, detailCMD tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -256,18 +246,18 @@ func (m OptimizationDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(detailCMD, cmd)
 }
 
-func (m OptimizationDetailsPage) View() string {
+func (m ResourceDetailsPage) View() string {
 	return m.deviceTable.View() + "\n" +
 		wordwrap.String(m.item.Description, m.GetWidth()) + "\n" +
 		m.detailTable.View() + "\n" +
 		m.statusBar.View()
 }
 
-func (m OptimizationDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m ResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
-func (m OptimizationDetailsPage) SetApp(app *App) OptimizationDetailsPage {
+func (m ResourceDetailsPage) SetApp(app *App) ResourceDetailsPage {
 	m.app = app
 	return m
 }
