@@ -22,7 +22,7 @@ builds:
   - id: darwin
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/"{{ .Env.REPOSITORY_OWNER }}"/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
@@ -32,7 +32,7 @@ builds:
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/"{{ .Env.REPOSITORY_OWNER }}"/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
@@ -47,6 +47,20 @@ archives:
   - id: windows
     format: zip
     builds: [windows]
+
+
+brews:
+  -
+    name: kaytu-cli
+    homepage: https://github.com/adorigi/kaytu
+    repository:
+      owner: "{{ .Env.REPOSITORY_OWNER }}"
+      name: "{{ .Env.HOMEBREW_TAP }}" 
+    commit_author:
+      name:  "{{ .Env.REPOSITORY_OWNER }}"
+      email: gulegulzaradnan@gmail.com
+
+
 #chocolateys:
 #  - name: kaytu
 #    ids:
