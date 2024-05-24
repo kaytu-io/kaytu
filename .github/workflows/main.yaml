@@ -83,7 +83,7 @@ jobs:
           sudo apt-get -y install osslsigncode
           echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
           echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt          
-          osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_$VERSION_windows_amd64.exe -out kaytu.exe
+          osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
           mkdir kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           mv kaytu.exe kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
           zip -r kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.zip kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64
