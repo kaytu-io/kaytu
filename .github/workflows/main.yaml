@@ -73,6 +73,8 @@ jobs:
       - name: Add windows zip
         id: add_windows_zip
         run: |
+          ls -l 
+
           export VERSION=${{ github.ref_name }}
           export VERSION=${VERSION#v}
           echo "version=$VERSION"
