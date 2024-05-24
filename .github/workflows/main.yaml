@@ -78,9 +78,11 @@ jobs:
           echo "version=$VERSION"
           echo "kaytu_$VERSION_darwin_amd64"
 
-          sudo apt update -y && sudo apt -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
-          sudo apt-get update -y
-          sudo apt-get -y install osslsigncode
+          sudo apt-get -qq update -y 
+          sudo apt-get -qq -y install cmake libssl-dev libcurl4-openssl-dev zlib1g-dev python3
+
+          sudo apt-get -qq  update -y
+          sudo apt-get -qq  -y install osslsigncode
           echo "${{ secrets.SELFSIGNED_KEY }}" | base64 --decode > cert.key
           echo "${{ secrets.SELFSIGNED_CRT }}" | base64 --decode > cert.crt          
           osslsigncode sign -certs cert.crt -key cert.key -n "Kaytu" -i https://kaytu.io/ -in kaytu_${{ steps.set_new_tag.outputs.new_tag }}_windows_amd64.exe -out kaytu.exe
