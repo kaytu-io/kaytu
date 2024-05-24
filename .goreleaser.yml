@@ -57,13 +57,13 @@ archives:
 
 brews:
   - name: kaytu
-    homepage: https://github.com/adorigi/kaytu
+    homepage: https://github.com/"{{ .Env.REPOSITORY_OWNER }}"/"{{ .Env.REPOSITORY_NAME }}"
     repository:
       owner: "{{ .Env.REPOSITORY_OWNER }}"
       name: "{{ .Env.HOMEBREW_TAP }}" 
     commit_author:
       name:  "{{ .Env.REPOSITORY_OWNER }}"
-      email: gulegulzaradnan@gmail.com
+      email: "{{ .Env.OWNER_EMAIL }}"
     ids:
       - linux
       - darwin
