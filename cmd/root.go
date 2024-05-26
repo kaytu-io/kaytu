@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -225,6 +226,7 @@ func Execute() {
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
+						premiumPage := view.NewPremiumPage("https://kaytu.io", helpController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -233,12 +235,15 @@ func Execute() {
 
 						manager.SetUI(jobsController, optimizationsController)
 
-						p := tea.NewProgram(view.NewApp(
+						app := view.NewApp(
 							optimizationsPage,
 							optimizationsDetailsPage,
 							preferencesPage,
 							jobsPage,
-						), tea.WithFPS(10))
+							premiumPage,
+						)
+						go checkForPremiumError(app, jobsController)
+						p := tea.NewProgram(app, tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
 						}
@@ -262,5 +267,16 @@ func Execute() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+}
+
+func checkForPremiumError(app *view.App, jobsController *controller.Jobs) {
+	for {
+		runningJobs := jobsController.RunningJobs()
+		for _, v := range runningJobs {
+			if strings.Contains(v, "Listing all RDS Instances") {
+				app.ChangePage(view.Page_Premium)
+			}
+		}
 	}
 }
