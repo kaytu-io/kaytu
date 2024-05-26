@@ -13,6 +13,7 @@ const (
 	Page_ResourceDetails = 1
 	Page_Preferences     = 2
 	Page_Jobs            = 3
+	Page_Premium         = 4
 )
 
 type Page interface {
@@ -39,6 +40,7 @@ func NewApp(
 	optimizationDetailsPage ResourceDetailsPage,
 	preferencesPage PreferencesPage,
 	jobsPage JobsPage,
+	premiumPage PremiumPage,
 ) *App {
 	app := &App{}
 	optimizationsPage = optimizationsPage.SetApp(app)
@@ -48,6 +50,7 @@ func NewApp(
 		optimizationDetailsPage,
 		preferencesPage,
 		jobsPage,
+		premiumPage,
 	}
 	return app
 }
