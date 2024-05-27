@@ -29,6 +29,16 @@ var optimizeCmd = &cobra.Command{
 	Long:  "Identify right sizing opportunities based on your usage",
 }
 
+var terraformCmd = &cobra.Command{
+	Use: "terraform",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		return cmd.Help()
+	},
+	Short: "Identify right sizing opportunities based on your usage",
+	Long:  "Identify right sizing opportunities based on your usage",
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use: "kaytu",
@@ -43,6 +53,7 @@ func init() {
 	rootCmd.AddCommand(predef.LoginCmd)
 	rootCmd.AddCommand(predef.LogoutCmd)
 	rootCmd.AddCommand(optimizeCmd)
+	rootCmd.AddCommand(terraformCmd)
 
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
 	optimizeCmd.PersistentFlags().String("output", "interactive", "Show optimization results in selected output (possible values: interactive, table, csv, json. default value: interactive)")
