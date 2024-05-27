@@ -10,6 +10,7 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/utils"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -346,7 +347,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 				return nil
 			}
 		case err := <-v.errorChan:
-			os.Stderr.WriteString(err.Error())
+			os.Stderr.WriteString("\n" + err.Error())
 			return nil
 		}
 	}
@@ -375,6 +376,11 @@ func (v *NonInteractiveView) WaitForJobs() {
 				}
 			}
 			if len(job.FailureMessage) > 0 {
+				if matchesPattern(job.FailureMessage) {
+					v.errorChan <- fmt.Errorf(fmt.Sprintf("You have reached the limit for this user and organization.\n"+
+						"You need to buy premium to use unlimitted edition:\n"+
+						"%s", utils.BookMeetingURL))
+				}
 				v.failedJobsMap[job.Id] = fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)
 			}
 			v.jobMutex.Unlock()
@@ -433,4 +439,12 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		}
 	}
 	return headers, rows
+}
+
+func matchesPattern(input string) bool {
+	pattern := `^reached the .+ limit for both user and organization$`
+
+	re := regexp.MustCompile(pattern)
+
+	return re.MatchString(input)
 }
