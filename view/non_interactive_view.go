@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -348,6 +349,61 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 		case err := <-v.errorChan:
 			os.Stderr.WriteString(err.Error())
 			return nil
+		}
+	}
+}
+
+func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (string, error) {
+	go v.WaitForAllItems()
+	go v.WaitForJobs()
+	for {
+		select {
+		case ready := <-v.resultsReady:
+			if ready == true {
+				if nonInteractiveFlag == "table" {
+					str, err := v.OptimizationsString()
+					if err != nil {
+						return "", err
+					}
+					return str, nil
+				} else if nonInteractiveFlag == "csv" {
+					csvHeaders, csvRows := exportCsv(v.items)
+					s := &bytes.Buffer{}
+					writer := csv.NewWriter(s)
+
+					err := writer.Write(csvHeaders)
+					if err != nil {
+						return "", err
+					}
+
+					for _, row := range csvRows {
+						err := writer.Write(row)
+						if err != nil {
+							return "", err
+						}
+					}
+					writer.Flush()
+					return s.String(), nil
+				} else if nonInteractiveFlag == "json" {
+					jsonValue := struct {
+						Items []*golang.OptimizationItem
+					}{
+						Items: v.items,
+					}
+					jsonData, err := json.Marshal(jsonValue)
+					if err != nil {
+						return "", err
+					}
+
+					return string(jsonData), nil
+				} else {
+					os.Stderr.WriteString("output mode not recognized!")
+				}
+				return "", nil
+			}
+		case err := <-v.errorChan:
+			os.Stderr.WriteString(err.Error())
+			return "", nil
 		}
 	}
 }
