@@ -1,0 +1,38 @@
+name: Test
+
+on:
+    push:
+        tags:        
+            - 'v[0-9]+.[0-9]+.[0-9]+-rc'  
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      - name: Install cosign
+        run: |
+          curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+          sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+          sudo chmod +x /usr/local/bin/cosign
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --skip homebrew
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
+          COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
+          REPOSITORY_OWNER: ${{ github.event.repository.owner }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          
