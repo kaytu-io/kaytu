@@ -41,9 +41,6 @@ builds:
 archives:
   - id: binary
     format: binary
-  # - id: default
-  #   format: tar.gz
-  #   builds: [linux, darwin]
   - id: windows
     format: zip
     builds: [windows]
