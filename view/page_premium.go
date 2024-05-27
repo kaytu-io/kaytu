@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/style"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 	"strings"
 )
@@ -12,14 +13,11 @@ import (
 type PremiumPage struct {
 	helpController *controller.Help
 
-	buyPremiumLink string
-
 	responsive.ResponsiveView
 }
 
-func NewPremiumPage(buyPremiumLink string, helpController *controller.Help) PremiumPage {
+func NewPremiumPage(helpController *controller.Help) PremiumPage {
 	return PremiumPage{
-		buyPremiumLink: buyPremiumLink,
 		helpController: helpController,
 	}
 }
@@ -41,9 +39,9 @@ func (m PremiumPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m PremiumPage) View() string {
-	message := []string{fmt.Sprintf("You have reached the limit of ... for this user and organization.\n"+
+	message := []string{fmt.Sprintf("You have reached the limit for this user and organization.\n"+
 		"You need to buy premium to use unlimitted edition:\n"+
-		"%s", m.buyPremiumLink)}
+		"%s", utils.BookMeetingURL)}
 	var helpLines []string
 	for idx, line := range m.helpController.Help() {
 		line = fmt.Sprintf(" %s ", line)

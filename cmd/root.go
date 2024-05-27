@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"os"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -226,7 +226,7 @@ func Execute() {
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
-						premiumPage := view.NewPremiumPage("https://kaytu.io", helpController)
+						premiumPage := view.NewPremiumPage(helpController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -272,11 +272,19 @@ func Execute() {
 
 func checkForPremiumError(app *view.App, jobsController *controller.Jobs) {
 	for {
-		runningJobs := jobsController.RunningJobs()
+		runningJobs := jobsController.FailedJobs()
 		for _, v := range runningJobs {
-			if strings.Contains(v, "Listing all RDS Instances") {
+			if matchesPattern(v) {
 				app.ChangePage(view.Page_Premium)
 			}
 		}
 	}
+}
+
+func matchesPattern(input string) bool {
+	pattern := `^.+ failed due to reached the .+ limit for both user and organization$`
+
+	re := regexp.MustCompile(pattern)
+
+	return re.MatchString(input)
 }
