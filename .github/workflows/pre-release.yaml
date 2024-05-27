@@ -7,10 +7,10 @@ on:
       
 
 env:
-    REPOSITORY_OWNER: "adorigi"
+    REPOSITORY_OWNER: "kaytu-io"
     REPOSITORY_NAME: "kaytu"
-    HOMEBREW_TAP: "homebrew-adorigi"
-    OWNER_EMAIL: "gulegulzaradnan@gmail.com"
+    HOMEBREW_TAP: "homebrew-cli-tap"
+    OWNER_EMAIL: "dev@kaytu.io"
 
 jobs:
   tag:
@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: stable
       - name: Install cosign
@@ -77,7 +77,6 @@ jobs:
           args: release --clean --skip homebrew
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
           REPOSITORY_OWNER: ${{ env.REPOSITORY_OWNER }}
           REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
