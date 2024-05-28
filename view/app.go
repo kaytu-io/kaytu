@@ -13,7 +13,7 @@ const (
 	Page_ResourceDetails = 1
 	Page_Preferences     = 2
 	Page_Jobs            = 3
-	Page_Premium         = 4
+	Page_ContactUs       = 4
 )
 
 type Page interface {
@@ -40,7 +40,7 @@ func NewApp(
 	optimizationDetailsPage ResourceDetailsPage,
 	preferencesPage PreferencesPage,
 	jobsPage JobsPage,
-	premiumPage PremiumPage,
+	premiumPage ContactUsPage,
 ) *App {
 	app := &App{}
 	optimizationsPage = optimizationsPage.SetApp(app)
@@ -99,36 +99,36 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		changePageCmd = tea.Batch(tea.ClearScreen, changePageCmd)
 	}
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		//case "ctrl+h":
-		//	changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Help))
-		case "ctrl+j":
-			changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Jobs))
-		case "esc":
-			if !m.ignoreESC && len(m.history) > 0 {
-				var page PageEnum
-				l := len(m.history)
-				m.history, page = m.history[:l-1], m.history[l-1]
+	if m.activePageIdx != int(Page_ContactUs) {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "ctrl+c":
+				return m, tea.Quit
+			case "ctrl+j":
+				changePageCmd = tea.Batch(changePageCmd, m.ChangePage(Page_Jobs))
+			case "esc":
+				if !m.ignoreESC && len(m.history) > 0 {
+					var page PageEnum
+					l := len(m.history)
+					m.history, page = m.history[:l-1], m.history[l-1]
 
-				m.pages[m.activePageIdx] = m.pages[m.activePageIdx].OnClose()
-				m.activePageIdx = int(page)
-				m.pages[m.activePageIdx] = m.pages[m.activePageIdx].OnOpen()
-				wsMsg := tea.WindowSizeMsg{
-					Width:  m.width,
-					Height: m.height,
+					m.pages[m.activePageIdx] = m.pages[m.activePageIdx].OnClose()
+					m.activePageIdx = int(page)
+					m.pages[m.activePageIdx] = m.pages[m.activePageIdx].OnOpen()
+					wsMsg := tea.WindowSizeMsg{
+						Width:  m.width,
+						Height: m.height,
+					}
+					model, updateSizeCmd := m.pages[m.activePageIdx].Update(wsMsg)
+					m.pages[m.activePageIdx] = model.(Page)
+					changePageCmd = tea.Batch(changePageCmd, updateSizeCmd)
+
+					newRV := m.pages[m.activePageIdx].SetSize(wsMsg)
+					m.pages[m.activePageIdx] = m.pages[m.activePageIdx].SetResponsiveView(newRV)
+					changePageCmd = tea.Batch(tea.ClearScreen, changePageCmd)
+
 				}
-				model, updateSizeCmd := m.pages[m.activePageIdx].Update(wsMsg)
-				m.pages[m.activePageIdx] = model.(Page)
-				changePageCmd = tea.Batch(changePageCmd, updateSizeCmd)
-
-				newRV := m.pages[m.activePageIdx].SetSize(wsMsg)
-				m.pages[m.activePageIdx] = m.pages[m.activePageIdx].SetResponsiveView(newRV)
-				changePageCmd = tea.Batch(tea.ClearScreen, changePageCmd)
-
 			}
 		}
 	}

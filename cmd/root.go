@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"os"
-	"regexp"
 	"time"
 )
 
@@ -226,7 +225,7 @@ func Execute() {
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
-						premiumPage := view.NewPremiumPage(helpController)
+						premiumPage := view.NewContactUsPage(helpController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -272,19 +271,13 @@ func Execute() {
 
 func checkForPremiumError(app *view.App, jobsController *controller.Jobs) {
 	for {
-		runningJobs := jobsController.FailedJobs()
+		runningJobs := jobsController.RunningJobs()
 		for _, v := range runningJobs {
-			if matchesLimitPattern(v) {
-				app.ChangePage(view.Page_Premium)
+			if v == "Listing all RDS Clusters in us-east-1" {
+				_ = app.ChangePage(view.Page_ContactUs)
+				return
 			}
 		}
+		time.Sleep(500 * time.Millisecond)
 	}
-}
-
-func matchesLimitPattern(input string) bool {
-	pattern := `^.+ failed due to reached the .+ limit for both user and organization$`
-
-	re := regexp.MustCompile(pattern)
-
-	return re.MatchString(input)
 }
