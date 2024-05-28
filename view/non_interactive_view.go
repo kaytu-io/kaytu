@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -258,6 +259,9 @@ func getPropertiesString(properties []*golang.Property) string {
 
 	var itemString string
 	for _, p := range properties {
+		if p.Hidden {
+			continue
+		}
 		var row table.Row
 		row = append(row, "└───── "+p.Key, p.Current, p.Average, p.Max, p.Recommended)
 		t.AppendRow(row)
@@ -352,6 +356,61 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 	}
 }
 
+func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (string, error) {
+	go v.WaitForAllItems()
+	go v.WaitForJobs()
+	for {
+		select {
+		case ready := <-v.resultsReady:
+			if ready == true {
+				if nonInteractiveFlag == "table" {
+					str, err := v.OptimizationsString()
+					if err != nil {
+						return "", err
+					}
+					return str, nil
+				} else if nonInteractiveFlag == "csv" {
+					csvHeaders, csvRows := exportCsv(v.items)
+					s := &bytes.Buffer{}
+					writer := csv.NewWriter(s)
+
+					err := writer.Write(csvHeaders)
+					if err != nil {
+						return "", err
+					}
+
+					for _, row := range csvRows {
+						err := writer.Write(row)
+						if err != nil {
+							return "", err
+						}
+					}
+					writer.Flush()
+					return s.String(), nil
+				} else if nonInteractiveFlag == "json" {
+					jsonValue := struct {
+						Items []*golang.OptimizationItem
+					}{
+						Items: v.items,
+					}
+					jsonData, err := json.Marshal(jsonValue)
+					if err != nil {
+						return "", err
+					}
+
+					return string(jsonData), nil
+				} else {
+					os.Stderr.WriteString("output mode not recognized!")
+				}
+				return "", nil
+			}
+		case err := <-v.errorChan:
+			os.Stderr.WriteString(err.Error())
+			return "", nil
+		}
+	}
+}
+
 func (v *NonInteractiveView) itemLoadingExists() bool {
 	for _, item := range v.items {
 		if item.Loading {
@@ -424,6 +483,9 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		}
 		for _, d := range i.Devices {
 			for _, p := range d.Properties {
+				if p.Hidden {
+					continue
+				}
 				rows = append(rows, []string{
 					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
 					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),

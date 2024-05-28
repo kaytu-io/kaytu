@@ -5,6 +5,12 @@ import (
 	"strconv"
 )
 
+func ReadIntFlag(cmd *cobra.Command, name string) int64 {
+	str := ReadStringFlag(cmd, name)
+	i, _ := strconv.ParseInt(str, 10, 64)
+	return i
+}
+
 func ReadStringFlag(cmd *cobra.Command, name string) string {
 	if cmd.Flags().Lookup(name) == nil {
 		return ""
