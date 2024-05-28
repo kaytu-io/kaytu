@@ -10,38 +10,43 @@ import (
 	"strings"
 )
 
-type PremiumPage struct {
+type ContactUsPage struct {
 	helpController *controller.Help
 
 	responsive.ResponsiveView
 }
 
-func NewPremiumPage(helpController *controller.Help) PremiumPage {
-	return PremiumPage{
+func NewContactUsPage(helpController *controller.Help) ContactUsPage {
+	return ContactUsPage{
 		helpController: helpController,
 	}
 }
 
-func (m PremiumPage) OnClose() Page {
+func (m ContactUsPage) OnClose() Page {
 	return m
 }
-func (m PremiumPage) OnOpen() Page {
+func (m ContactUsPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"ctrl+c: exit",
 	})
 	return m
 }
 
-func (m PremiumPage) Init() tea.Cmd { return nil }
+func (m ContactUsPage) Init() tea.Cmd { return nil }
 
-func (m PremiumPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ContactUsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		}
+	}
 	return m, nil
 }
 
-func (m PremiumPage) View() string {
-	message := []string{fmt.Sprintf("You have reached the limit for this user and organization.\n"+
-		"You need to purchase for premium user or organization to use unlimitted edition, contact us:\n"+
-		"%s", utils.BuyPremiumEmail)}
+func (m ContactUsPage) View() string {
+	message := []string{utils.ContactUsMessage}
 	var helpLines []string
 	for idx, line := range m.helpController.Help() {
 		line = fmt.Sprintf(" %s ", line)
@@ -56,7 +61,7 @@ func (m PremiumPage) View() string {
 
 	return strings.Join(message, "")
 }
-func (m PremiumPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m ContactUsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
