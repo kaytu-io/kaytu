@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/zclconf/go-cty/cty"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,6 +24,7 @@ var terraformCmd = &cobra.Command{
 	Short: "Create pull request for right sizing opportunities on your terraform git",
 	Long:  "Create pull request for right sizing opportunities on your terraform git",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ignoreYoungerThan := utils.ReadIntFlag(cmd, "ignore-younger-than")
 		contentBytes, err := github.GetFile(
 			utils.ReadStringFlag(cmd, "github-owner"),
 			utils.ReadStringFlag(cmd, "github-repo"),
@@ -100,12 +102,21 @@ var terraformCmd = &cobra.Command{
 		rightSizingDescription := map[string]string{}
 		for _, item := range jsonObj.Items {
 			var recommendedInstanceSize string
+			maxRuntimeHours := int64(1) // since default for ignoreYoungerThan is 1
 			for _, device := range item.Devices {
 				for _, property := range device.Properties {
+					if property.Key == "RuntimeHours" {
+						i, _ := strconv.ParseInt(property.Current, 10, 64)
+						maxRuntimeHours = max(maxRuntimeHours, i)
+					}
 					if property.Key == "Instance Size" && property.Current != property.Recommended {
 						recommendedInstanceSize = property.Recommended
 					}
 				}
+			}
+
+			if maxRuntimeHours < ignoreYoungerThan {
+				continue
 			}
 			if recommendedInstanceSize == "" {
 				continue
@@ -175,6 +186,10 @@ var terraformCmd = &cobra.Command{
 		for _, id := range rightSizedIds {
 			description += fmt.Sprintf("Changing instance class of %s to %s\n", id, recommendation[id])
 			description += rightSizingDescription[id] + "\n\n"
+		}
+
+		if countRightSized == 0 {
+			return nil
 		}
 		return github.ApplyChanges(
 			utils.ReadStringFlag(cmd, "github-owner"),
