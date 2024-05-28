@@ -56,6 +56,8 @@ jobs:
           path: new_tag.txt
   release:
     runs-on: ubuntu-latest
+    needs:
+        - tag
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,6 +91,7 @@ jobs:
   sign-windows:
     runs-on: ubuntu-latest
     needs:
+      - tag
       - release
     steps:
       - name: Download new tag
@@ -204,6 +207,7 @@ jobs:
     if: github.event.inputs.publishChocolatey == 'true'
     runs-on: windows-latest
     needs:
+      - tag
       - release
       - sign-windows
     steps:
