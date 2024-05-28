@@ -13,6 +13,7 @@ import (
 	"github.com/kaytu-io/kaytu/preferences"
 	"github.com/spf13/cobra"
 	"github.com/zclconf/go-cty/cty"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -99,9 +100,12 @@ var terraformCmd = &cobra.Command{
 		}
 
 		recommendation := map[string]string{}
+		current := map[string]string{}
+		savings := map[string]float64{}
 		rightSizingDescription := map[string]string{}
 		for _, item := range jsonObj.Items {
 			var recommendedInstanceSize string
+			var currentInstanceSize string
 			maxRuntimeHours := int64(1) // since default for ignoreYoungerThan is 1
 			for _, device := range item.Devices {
 				for _, property := range device.Properties {
@@ -111,8 +115,10 @@ var terraformCmd = &cobra.Command{
 					}
 					if property.Key == "Instance Size" && property.Current != property.Recommended {
 						recommendedInstanceSize = property.Recommended
+						currentInstanceSize = property.Current
 					}
 				}
+				savings[item.Id] += device.CurrentCost - device.RightSizedCost
 			}
 
 			if maxRuntimeHours < ignoreYoungerThan {
@@ -122,6 +128,7 @@ var terraformCmd = &cobra.Command{
 				continue
 			}
 			recommendation[item.Id] = recommendedInstanceSize
+			current[item.Id] = currentInstanceSize
 			rightSizingDescription[item.Id] = item.Description
 		}
 
@@ -133,6 +140,7 @@ var terraformCmd = &cobra.Command{
 		body := file.Body()
 		localVars := map[string]string{}
 		countRightSized := 0
+		totalSavings := 0.0
 		var rightSizedIds []string
 		for _, block := range body.Blocks() {
 			if block.Type() == "locals" {
@@ -166,6 +174,7 @@ var terraformCmd = &cobra.Command{
 								block.Body().SetAttributeValue("instance_class", cty.StringVal(v))
 								countRightSized++
 								rightSizedIds = append(rightSizedIds, k)
+								totalSavings += savings[k]
 							}
 						}
 					}
@@ -176,6 +185,8 @@ var terraformCmd = &cobra.Command{
 							block.Body().SetAttributeValue("instance_class", cty.StringVal(recommendation[value]))
 							countRightSized++
 							rightSizedIds = append(rightSizedIds, value)
+							totalSavings += savings[value]
+
 						}
 					}
 				}
@@ -184,12 +195,19 @@ var terraformCmd = &cobra.Command{
 
 		description := ""
 		for _, id := range rightSizedIds {
-			description += fmt.Sprintf("Changing instance class of %s to %s\n", id, recommendation[id])
-			description += rightSizingDescription[id] + "\n\n"
+			description += fmt.Sprintf("**%s:**\n", id)
+			description += fmt.Sprintf("- Changing instance class from %s to %s\n\n", current[id], recommendation[id])
+			description += "Reasoning: " + rightSizingDescription[id] + "\n\n"
+			description += "-------------------------------------------------------------------------\n\n"
 		}
 
 		if countRightSized == 0 {
 			return nil
+		}
+
+		reduceOrIncreaseWord := "reduces"
+		if totalSavings < 0 {
+			reduceOrIncreaseWord = "increases"
 		}
 		return github.ApplyChanges(
 			utils.ReadStringFlag(cmd, "github-owner"),
@@ -197,10 +215,10 @@ var terraformCmd = &cobra.Command{
 			utils.ReadStringFlag(cmd, "github-username"),
 			utils.ReadStringFlag(cmd, "github-token"),
 			utils.ReadStringFlag(cmd, "github-base-branch"),
-			fmt.Sprintf("SRE Bot right sizing %d resources", countRightSized),
+			fmt.Sprintf("srebot: resizing %d resources.", countRightSized),
 			utils.ReadStringFlag(cmd, "terraform-file-path"),
 			string(file.Bytes()),
-			fmt.Sprintf("SRE Bot right sizing %d resources", countRightSized),
+			fmt.Sprintf("srebot: resizing %d resources. %s by $%.0f", countRightSized, reduceOrIncreaseWord, math.Abs(totalSavings)),
 			description,
 		)
 	},
