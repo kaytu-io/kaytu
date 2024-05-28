@@ -40,7 +40,7 @@ func NewApp(
 	optimizationDetailsPage ResourceDetailsPage,
 	preferencesPage PreferencesPage,
 	jobsPage JobsPage,
-	premiumPage ContactUsPage,
+	contactUsPage ContactUsPage,
 ) *App {
 	app := &App{}
 	optimizationsPage = optimizationsPage.SetApp(app)
@@ -50,7 +50,7 @@ func NewApp(
 		optimizationDetailsPage,
 		preferencesPage,
 		jobsPage,
-		premiumPage,
+		contactUsPage,
 	}
 	return app
 }

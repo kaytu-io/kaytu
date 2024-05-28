@@ -225,7 +225,7 @@ func Execute() {
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
-						premiumPage := view.NewContactUsPage(helpController)
+						contactUsPage := view.NewContactUsPage(helpController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -239,9 +239,9 @@ func Execute() {
 							optimizationsDetailsPage,
 							preferencesPage,
 							jobsPage,
-							premiumPage,
+							contactUsPage,
 						)
-						go checkForPremiumError(app, jobsController)
+						go checkForLimitsError(app, jobsController)
 						p := tea.NewProgram(app, tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
@@ -269,11 +269,11 @@ func Execute() {
 	}
 }
 
-func checkForPremiumError(app *view.App, jobsController *controller.Jobs) {
+func checkForLimitsError(app *view.App, jobsController *controller.Jobs) {
 	for {
-		runningJobs := jobsController.RunningJobs()
+		runningJobs := jobsController.FailedJobs()
 		for _, v := range runningJobs {
-			if v == "Listing all RDS Clusters in us-east-1" {
+			if utils.MatchesLimitPattern(v) {
 				_ = app.ChangePage(view.Page_ContactUs)
 				return
 			}
