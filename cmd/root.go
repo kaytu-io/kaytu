@@ -29,16 +29,6 @@ var optimizeCmd = &cobra.Command{
 	Long:  "Identify right sizing opportunities based on your usage",
 }
 
-var terraformCmd = &cobra.Command{
-	Use: "terraform",
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		return cmd.Help()
-	},
-	Short: "Identify right sizing opportunities based on your usage",
-	Long:  "Identify right sizing opportunities based on your usage",
-}
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use: "kaytu",
@@ -58,6 +48,22 @@ func init() {
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
 	optimizeCmd.PersistentFlags().String("output", "interactive", "Show optimization results in selected output (possible values: interactive, table, csv, json. default value: interactive)")
 	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
+
+	terraformCmd.Flags().String("preferences", "", "Path to preferences file (yaml)")
+	terraformCmd.Flags().String("github-owner", "", "Github owner")
+	terraformCmd.Flags().String("github-repo", "", "Github repo")
+	terraformCmd.Flags().String("github-username", "", "Github username")
+	terraformCmd.Flags().String("github-token", "", "Github token")
+	terraformCmd.Flags().String("github-base-branch", "", "Github base branch")
+	terraformCmd.Flags().String("terraform-file-path", "", "Terraform file path (relative to your git repository)")
+	terraformCmd.Flags().Int64("ignore-younger-than", 1, "Ignoring resources which are younger than X hours")
+	terraformCmd.MarkFlagRequired("github-owner")
+	terraformCmd.MarkFlagRequired("github-repo")
+	terraformCmd.MarkFlagRequired("github-username")
+	terraformCmd.MarkFlagRequired("github-token")
+	terraformCmd.MarkFlagRequired("github-base-branch")
+	terraformCmd.MarkFlagRequired("terraform-file-path")
+
 }
 
 func Execute() {
