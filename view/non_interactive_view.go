@@ -259,6 +259,9 @@ func getPropertiesString(properties []*golang.Property) string {
 
 	var itemString string
 	for _, p := range properties {
+		if p.Hidden {
+			continue
+		}
 		var row table.Row
 		row = append(row, "└───── "+p.Key, p.Current, p.Average, p.Max, p.Recommended)
 		t.AppendRow(row)
@@ -480,6 +483,9 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		}
 		for _, d := range i.Devices {
 			for _, p := range d.Properties {
+				if p.Hidden {
+					continue
+				}
 				rows = append(rows, []string{
 					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
 					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
