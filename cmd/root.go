@@ -274,14 +274,14 @@ func checkForPremiumError(app *view.App, jobsController *controller.Jobs) {
 	for {
 		runningJobs := jobsController.FailedJobs()
 		for _, v := range runningJobs {
-			if matchesPattern(v) {
+			if matchesLimitPattern(v) {
 				app.ChangePage(view.Page_Premium)
 			}
 		}
 	}
 }
 
-func matchesPattern(input string) bool {
+func matchesLimitPattern(input string) bool {
 	pattern := `^.+ failed due to reached the .+ limit for both user and organization$`
 
 	re := regexp.MustCompile(pattern)
