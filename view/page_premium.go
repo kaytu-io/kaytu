@@ -40,8 +40,8 @@ func (m PremiumPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m PremiumPage) View() string {
 	message := []string{fmt.Sprintf("You have reached the limit for this user and organization.\n"+
-		"You need to buy premium to use unlimitted edition:\n"+
-		"%s", utils.BookMeetingURL)}
+		"You need to purchase for premium user or organization to use unlimitted edition, contact us:\n"+
+		"%s", utils.BuyPremiumEmail)}
 	var helpLines []string
 	for idx, line := range m.helpController.Help() {
 		line = fmt.Sprintf(" %s ", line)

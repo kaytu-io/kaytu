@@ -376,10 +376,10 @@ func (v *NonInteractiveView) WaitForJobs() {
 				}
 			}
 			if len(job.FailureMessage) > 0 {
-				if matchesPattern(job.FailureMessage) {
+				if matchesLimitPattern(job.FailureMessage) {
 					v.errorChan <- fmt.Errorf(fmt.Sprintf("You have reached the limit for this user and organization.\n"+
-						"You need to buy premium to use unlimitted edition:\n"+
-						"%s", utils.BookMeetingURL))
+						"You need to purchase for premium user or organization to use unlimitted edition, contact us:\n"+
+						"%s", utils.BuyPremiumEmail))
 				}
 				v.failedJobsMap[job.Id] = fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)
 			}
@@ -441,7 +441,7 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 	return headers, rows
 }
 
-func matchesPattern(input string) bool {
+func matchesLimitPattern(input string) bool {
 	pattern := `^reached the .+ limit for both user and organization$`
 
 	re := regexp.MustCompile(pattern)
