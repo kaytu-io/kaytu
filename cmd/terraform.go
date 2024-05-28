@@ -102,10 +102,13 @@ var terraformCmd = &cobra.Command{
 			var recommendedInstanceSize string
 			for _, device := range item.Devices {
 				for _, property := range device.Properties {
-					if property.Key == "Instance Size" {
+					if property.Key == "Instance Size" && property.Current != property.Recommended {
 						recommendedInstanceSize = property.Recommended
 					}
 				}
+			}
+			if recommendedInstanceSize == "" {
+				continue
 			}
 			recommendation[item.Id] = recommendedInstanceSize
 			rightSizingDescription[item.Id] = item.Description
@@ -146,7 +149,7 @@ var terraformCmd = &cobra.Command{
 
 				if instanceUseIdentifierPrefixBool {
 					for k, v := range recommendation {
-						if strings.HasPrefix(value, k) {
+						if strings.HasPrefix(k, value) {
 							dbNameAttr := block.Body().GetAttribute("db_name")
 							if dbNameAttr != nil {
 								block.Body().SetAttributeValue("instance_class", cty.StringVal(v))
@@ -171,7 +174,7 @@ var terraformCmd = &cobra.Command{
 		description := ""
 		for _, id := range rightSizedIds {
 			description += fmt.Sprintf("Changing instance class of %s to %s\n", id, recommendation[id])
-			description += rightSizingDescription[id] + "\n"
+			description += rightSizingDescription[id] + "\n\n"
 		}
 		return github.ApplyChanges(
 			utils.ReadStringFlag(cmd, "github-owner"),
