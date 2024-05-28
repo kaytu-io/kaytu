@@ -44,6 +44,7 @@ message Property {
   string average = 3;
   string max = 4;
   string recommended = 5;
+  bool hidden = 6;
 }
 
 message Device {
