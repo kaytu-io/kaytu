@@ -1,13 +1,24 @@
-name: Release
+name: Pre-Release
 
 on:
-  push:
-    branches:
-      - dev
+    schedule:
+        - cron: "0 0 * * *" 
+    push:
+        tags:        
+        - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+' 
+    workflow_dispatch:
+      
+
+env:
+    REPOSITORY_OWNER: "kaytu-io"
+    REPOSITORY_NAME: "kaytu"
+    HOMEBREW_TAP: "homebrew-cli-tap"
+    OWNER_EMAIL: "dev@kaytu.io"
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     outputs:
       latest_tag: ${{ steps.set_latest_tag.outputs.latest_tag }}
     steps:
@@ -15,18 +26,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: stable
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Tag version
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1
         with:
-          github_token: ${{ secrets.GH_TOKEN }}
-          release_branches: main
-          pre_release_branches: dev
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pre_release_branches: main
           append_to_pre_release_tag: rc
           tag_prefix: v
       - name: Set latest tag output
@@ -52,14 +58,15 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
+    if: always()
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: stable
       - name: Install cosign
@@ -72,13 +79,14 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --skip homebrew
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-#          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY_OWNER: ${{ env.REPOSITORY_OWNER }}
+          REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
           COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
-#
+
 #      - uses: robinraju/release-downloader@v1.10
 #        id: download_release_amd64
 #        with:

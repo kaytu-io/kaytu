@@ -3,8 +3,8 @@ project_name: kaytu
 
 release:
   github:
-    owner: kaytu-io
-    name: kaytu
+    owner: "{{ .Env.REPOSITORY_OWNER }}"
+    name:  "{{ .Env.REPOSITORY_NAME }}"
 
 checksum: {}
 
@@ -12,7 +12,7 @@ builds:
   - id: linux
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - linux
     goarch:
@@ -22,7 +22,7 @@ builds:
   - id: darwin
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
@@ -32,7 +32,7 @@ builds:
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/kaytu-io/kaytu/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
@@ -41,12 +41,31 @@ builds:
 archives:
   - id: binary
     format: binary
-  - id: default
-    format: tar.gz
-    builds: [linux, darwin]
   - id: windows
     format: zip
     builds: [windows]
+  - id: linux
+    format: tar.gz
+    builds: [linux]
+  - id: darwin 
+    format: tar.gz
+    builds: [darwin]
+
+
+brews:
+  - name: kaytu
+    homepage: https://github.com/"{{ .Env.REPOSITORY_OWNER }}"/"{{ .Env.REPOSITORY_NAME }}"
+    repository:
+      owner: "{{ .Env.REPOSITORY_OWNER }}"
+      name: "{{ .Env.HOMEBREW_TAP }}" 
+    commit_author:
+      name:  "{{ .Env.REPOSITORY_OWNER }}"
+      email: "{{ .Env.OWNER_EMAIL }}"
+    ids:
+      - linux
+      - darwin
+
+
 #chocolateys:
 #  - name: kaytu
 #    ids:
