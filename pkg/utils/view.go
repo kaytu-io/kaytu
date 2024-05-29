@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 )
 
@@ -103,4 +104,12 @@ func FormatPriceFloat(number float64) string {
 	} else {
 		return fmt.Sprintf("$%s.%s", string(result), decimalPart)
 	}
+}
+
+func MatchesLimitPattern(input string) bool {
+	pattern := `^.+ failed due to reached the .+ limit for both user and organization$`
+
+	re := regexp.MustCompile(pattern)
+
+	return re.MatchString(input)
 }

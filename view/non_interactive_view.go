@@ -350,7 +350,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 				return nil
 			}
 		case err := <-v.errorChan:
-			os.Stderr.WriteString(err.Error())
+			os.Stderr.WriteString("\n" + err.Error())
 			return nil
 		}
 	}
@@ -434,6 +434,9 @@ func (v *NonInteractiveView) WaitForJobs() {
 				}
 			}
 			if len(job.FailureMessage) > 0 {
+				if utils.MatchesLimitPattern(fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)) {
+					v.errorChan <- fmt.Errorf(utils.ContactUsMessage)
+				}
 				v.failedJobsMap[job.Id] = fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)
 			}
 			v.jobMutex.Unlock()
