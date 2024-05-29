@@ -242,6 +242,7 @@ func Execute() {
 						jobsController := controller.NewJobs()
 						statusBar := view.NewStatusBarView(jobsController, helpController)
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
+						contactUsPage := view.NewContactUsPage(helpController)
 
 						optimizationsController := controller.NewOptimizations()
 						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
@@ -250,12 +251,15 @@ func Execute() {
 
 						manager.SetUI(jobsController, optimizationsController)
 
-						p := tea.NewProgram(view.NewApp(
+						app := view.NewApp(
 							optimizationsPage,
 							optimizationsDetailsPage,
 							preferencesPage,
 							jobsPage,
-						), tea.WithFPS(10))
+							contactUsPage,
+						)
+						go checkForLimitsError(app, jobsController)
+						p := tea.NewProgram(app, tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
 						}
@@ -279,5 +283,18 @@ func Execute() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+}
+
+func checkForLimitsError(app *view.App, jobsController *controller.Jobs) {
+	for {
+		runningJobs := jobsController.FailedJobs()
+		for _, v := range runningJobs {
+			if utils.MatchesLimitPattern(v) {
+				_ = app.ChangePage(view.Page_ContactUs)
+				return
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }
