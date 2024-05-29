@@ -86,6 +86,9 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		if msg.Height < 20 {
+			msg.Height = 20
+		}
 		m.height = msg.Height
 		m.width = msg.Width
 
