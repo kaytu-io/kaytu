@@ -98,13 +98,14 @@ jobs:
       - tag
       - release
     steps:
+      - name: Download new tag
+        uses: actions/download-artifact@v2
+        with:
+          name: new_tag
       - name: Set new tag
         id: set_new_tag
         run: |
-            export VERSION=${{ github.ref_name }}
-            export VERSION=${VERSION#v}
-            echo "version=$VERSION"
-            echo "::set-output name=new_tag::$VERSION"
+          echo "::set-output name=new_tag::$(cat new_tag.txt)"
       - uses: robinraju/release-downloader@v1.10
         id: download_release_amd64
         with:
