@@ -175,9 +175,8 @@ func Execute() {
 					if runningPlg == nil {
 						return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
 					}
-
-					if semver.Compare(version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
-						return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plg.Config.MinKaytuVersion)
+					if runningPlg.Plugin.Config.MinKaytuVersion != "" && semver.Compare("v"+version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
+						return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", runningPlg.Plugin.Config.MinKaytuVersion)
 					}
 
 					flagValues := map[string]string{}

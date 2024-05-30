@@ -320,7 +320,7 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 
 			plugins[addr] = &m.GetPlugin(addr).Plugin
 
-			if semver.Compare(version.VERSION, plugins[addr].Config.MinKaytuVersion) == -1 {
+			if semver.Compare("v"+version.VERSION, plugins[addr].Config.MinKaytuVersion) == -1 {
 				return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plugins[addr].Config.MinKaytuVersion)
 			}
 			break
