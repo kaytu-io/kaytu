@@ -25,7 +25,7 @@ func (o *Optimizations[T]) Process() {
 	for newItem := range o.itemsChan {
 		updated := false
 		for idx, i := range o.items {
-			switch castedNewItem := any(i).(type) {
+			switch castedNewItem := any(newItem).(type) {
 			case *golang.OptimizationItem:
 				castedI := any(i).(*golang.OptimizationItem)
 				if castedNewItem.Id == castedI.Id {
