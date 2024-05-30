@@ -2,6 +2,7 @@ package view
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/view/responsive"
 	"time"
 )
@@ -37,7 +38,25 @@ type App struct {
 func NewApp(
 	optimizationsPage OverviewPage,
 	optimizationDetailsPage ResourceDetailsPage,
-	preferencesPage PreferencesPage,
+	preferencesPage PreferencesPage[golang.OptimizationItem],
+	jobsPage JobsPage,
+) *App {
+	app := &App{}
+	optimizationsPage = optimizationsPage.SetApp(app)
+	optimizationDetailsPage = optimizationDetailsPage.SetApp(app)
+	app.pages = []Page{
+		optimizationsPage,
+		optimizationDetailsPage,
+		preferencesPage,
+		jobsPage,
+	}
+	return app
+}
+
+func NewCustomPluginApp(
+	optimizationsPage PluginCustomOverviewPage,
+	optimizationDetailsPage PluginCustomResourceDetailsPage,
+	preferencesPage PreferencesPage[golang.ChartOptimizationItem],
 	jobsPage JobsPage,
 ) *App {
 	app := &App{}

@@ -25,6 +25,28 @@ message RegisterConfig {
   string provider = 3;
   repeated Command commands = 4;
   string min_kaytu_version = 5;
+
+  ChartDefinition overview_chart = 6;
+  ChartDefinition devices_chart = 7;
+}
+
+message ChartRowItem {
+  string value = 1;
+}
+
+message ChartRow {
+  string row_id = 1;
+  map<string, ChartRowItem> values = 2; // Column Id -> Item
+}
+
+message ChartColumnItem {
+  string id = 1;
+  string name = 2;
+  uint32 width = 3;
+}
+
+message ChartDefinition {
+  repeated ChartColumnItem columns = 2;
 }
 
 message Error {
@@ -44,6 +66,10 @@ message Property {
   string average = 3;
   string max = 4;
   string recommended = 5;
+}
+
+message Properties {
+  repeated Property properties = 1;
 }
 
 message Device {
@@ -82,6 +108,19 @@ message OptimizationItem {
   bool lazy_loading_enabled = 12;
 }
 
+message ChartOptimizationItem {
+  ChartRow overview_chart_row = 1;
+  repeated PreferenceItem preferences = 2;
+  bool loading = 3;
+  bool skipped = 4;
+  google.protobuf.StringValue skip_reason = 5;
+  bool lazy_loading_enabled = 6;
+  string description = 7;
+
+  repeated ChartRow devices_chart_rows = 8;
+  map<string, Properties> devices_properties = 9; // Device Row id -> Row properties
+}
+
 message ResultsReady {
   bool ready = 1;
 }
@@ -93,6 +132,7 @@ message PluginMessage {
     RegisterConfig conf = 3;
     Error err = 4;
     ResultsReady ready = 5;
+    ChartOptimizationItem coi = 6;
   }
 }
 
