@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evertras/bubble-table/table"
 	"github.com/kaytu-io/kaytu/controller"
@@ -174,7 +175,10 @@ func (m PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m PluginCustomOverviewPage) View() string {
-	return ""
+	return fmt.Sprintf("%s\n%s",
+		m.table.View(),
+		m.statusBar.View(),
+	)
 }
 
 func (m PluginCustomOverviewPage) SetApp(app *App) PluginCustomOverviewPage {
