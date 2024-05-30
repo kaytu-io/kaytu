@@ -39,8 +39,9 @@ type Manager struct {
 
 	golang.PluginServer
 
-	jobs          *controller.Jobs
-	optimizations *controller.Optimizations
+	jobs                      *controller.Jobs
+	optimizations             *controller.Optimizations[golang.OptimizationItem]
+	pluginCustomOptimizations *controller.Optimizations[golang.ChartOptimizationItem]
 
 	NonInteractiveView *view.NonInteractiveView
 }
@@ -147,7 +148,16 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				m.jobs.Publish(receivedMsg.GetJob())
 
 			case receivedMsg.GetOi() != nil:
+				if m.optimizations == nil {
+					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
+				}
 				m.optimizations.SendItem(receivedMsg.GetOi())
+
+			case receivedMsg.GetCoi() != nil:
+				if m.pluginCustomOptimizations == nil {
+					return errors.New("custom optimizations controller not set - is plugin running in default ui mode?")
+				}
+				m.pluginCustomOptimizations.SendItem(receivedMsg.GetCoi())
 
 			case receivedMsg.GetErr() != nil:
 				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
@@ -328,9 +338,25 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 	return nil
 }
 
-func (m *Manager) SetUI(jobs *controller.Jobs, optimizations *controller.Optimizations) {
+func (m *Manager) SetDefaultUI(jobs *controller.Jobs, optimizations *controller.Optimizations[golang.OptimizationItem]) {
 	m.jobs = jobs
 	m.optimizations = optimizations
+
+	optimizations.SetReEvaluateFunc(func(id string, items []*golang.PreferenceItem) {
+		m.stream.Send(&golang.ServerMessage{
+			ServerMessage: &golang.ServerMessage_ReEvaluate{
+				ReEvaluate: &golang.ReEvaluate{
+					Id:          id,
+					Preferences: items,
+				},
+			},
+		})
+	})
+}
+
+func (m *Manager) SetCustomUI(jobs *controller.Jobs, optimizations *controller.Optimizations[golang.ChartOptimizationItem]) {
+	m.jobs = jobs
+	m.pluginCustomOptimizations = optimizations
 
 	optimizations.SetReEvaluateFunc(func(id string, items []*golang.PreferenceItem) {
 		m.stream.Send(&golang.ServerMessage{

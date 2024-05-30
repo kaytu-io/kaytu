@@ -244,21 +244,36 @@ func Execute() {
 						jobsPage := view.NewJobsPage(jobsController, helpController, statusBar)
 						contactUsPage := view.NewContactUsPage(helpController)
 
-						optimizationsController := controller.NewOptimizations()
-						optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
-						optimizationsDetailsPage := view.NewOptimizationDetailsView(optimizationsController, helpController, statusBar)
-						preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
-
-						manager.SetUI(jobsController, optimizationsController)
-
-						app := view.NewApp(
-							optimizationsPage,
-							optimizationsDetailsPage,
-							preferencesPage,
-							jobsPage,
-							contactUsPage,
-						)
+						var app *view.App
+						if runningPlg.Plugin.Config.DevicesChart != nil && runningPlg.Plugin.Config.OverviewChart != nil {
+							optimizationsController := controller.NewOptimizations[golang.ChartOptimizationItem]()
+							optimizationsPage := view.NewPluginCustomOverviewPageView(runningPlg.Plugin.Config.OverviewChart, optimizationsController, helpController, statusBar)
+							optimizationsDetailsPage := view.NewPluginCustomOptimizationDetailsView(runningPlg.Plugin.Config.DevicesChart, optimizationsController, helpController, statusBar)
+							preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
+							manager.SetCustomUI(jobsController, optimizationsController)
+							app = view.NewCustomPluginApp(
+								optimizationsPage,
+								optimizationsDetailsPage,
+								preferencesPage,
+								jobsPage,
+								contactUsPage,
+							)
+						} else {
+							optimizationsController := controller.NewOptimizations[golang.OptimizationItem]()
+							optimizationsPage := view.NewOptimizationsView(optimizationsController, helpController, statusBar)
+							optimizationsDetailsPage := view.NewOptimizationDetailsView(optimizationsController, helpController, statusBar)
+							preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
+							manager.SetDefaultUI(jobsController, optimizationsController)
+							app = view.NewApp(
+								optimizationsPage,
+								optimizationsDetailsPage,
+								preferencesPage,
+								jobsPage,
+								contactUsPage,
+							)
+						}
 						go checkForLimitsError(app, jobsController)
+
 						p := tea.NewProgram(app, tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
