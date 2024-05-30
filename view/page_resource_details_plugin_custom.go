@@ -7,24 +7,16 @@ import (
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/style"
-	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 	"github.com/muesli/reflow/wordwrap"
 	"strings"
 )
 
-type Row []string
-type Rows []Row
+const XKaytuRowId = "x_kaytu_row_id"
 
-func (r Row) ToTableRow() table.Row {
-	data := table.RowData{}
-	for idx, d := range r {
-		data[fmt.Sprintf("%d", idx)] = d
-	}
-	return table.NewRow(data)
-}
+type RowsWithId []RowWithId
 
-func (r Rows) ToTableRows() []table.Row {
+func (r RowsWithId) ToTableRows() []table.Row {
 	var rows []table.Row
 	for _, row := range r {
 		rows = append(rows, row.ToTableRow())
@@ -32,8 +24,24 @@ func (r Rows) ToTableRows() []table.Row {
 	return rows
 }
 
-type ResourceDetailsPage struct {
-	item                *golang.OptimizationItem
+type RowWithId struct {
+	ID  string
+	Row map[string]string
+}
+
+func (r RowWithId) ToTableRow() table.Row {
+	data := table.RowData{}
+	for k, v := range r.Row {
+		data[k] = v
+	}
+	data[XKaytuRowId] = r.ID
+	return table.NewRow(data)
+}
+
+type PluginCustomResourceDetailsPage struct {
+	chartDefinition *golang.ChartDefinition
+
+	item                *golang.ChartOptimizationItem
 	deviceTable         table.Model
 	detailTable         table.Model
 	deviceProperties    map[string]Rows
@@ -41,15 +49,15 @@ type ResourceDetailsPage struct {
 	detailTableHasFocus bool
 
 	helpController          *controller.Help
-	optimizationsController *controller.Optimizations[golang.OptimizationItem]
+	optimizationsController *controller.Optimizations[golang.ChartOptimizationItem]
 	statusBar               StatusBarView
 	app                     *App
 	responsive.ResponsiveView
 }
 
-func (m ResourceDetailsPage) ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
+func (m PluginCustomResourceDetailsPage) ExtractProperties(item *golang.ChartOptimizationItem) map[string]Rows {
 	res := map[string]Rows{}
-	for _, dev := range item.Devices {
+	for devId, dev := range item.GetDevicesProperties() {
 		rows := Rows{}
 
 		for _, prop := range dev.Properties {
@@ -63,7 +71,7 @@ func (m ResourceDetailsPage) ExtractProperties(item *golang.OptimizationItem) ma
 				prop.Recommended,
 			})
 		}
-		res[dev.DeviceId] = rows
+		res[devId] = rows
 	}
 
 	for deviceID, rows := range res {
@@ -79,52 +87,38 @@ func (m ResourceDetailsPage) ExtractProperties(item *golang.OptimizationItem) ma
 	return res
 }
 
-func NewOptimizationDetailsView(
-	optimizationsController *controller.Optimizations[golang.OptimizationItem],
+func NewPluginCustomOptimizationDetailsView(
+	chartDefinition *golang.ChartDefinition,
+	optimizationsController *controller.Optimizations[golang.ChartOptimizationItem],
 	helpController *controller.Help,
 	statusBar StatusBarView,
-) ResourceDetailsPage {
-	return ResourceDetailsPage{
+) PluginCustomResourceDetailsPage {
+	return PluginCustomResourceDetailsPage{
+		chartDefinition:         chartDefinition,
 		helpController:          helpController,
 		optimizationsController: optimizationsController,
 		statusBar:               statusBar,
 	}
 }
 
-func (m ResourceDetailsPage) OnOpen() Page {
+func (m PluginCustomResourceDetailsPage) OnOpen() Page {
 	item := m.optimizationsController.SelectedItem()
 
-	ifRecommendationExists := func(f func() string) string {
-		if !item.Loading && !item.Skipped && !item.LazyLoadingEnabled {
-			return f()
+	var deviceColumns []table.Column
+	for _, column := range m.chartDefinition.GetColumns() {
+		deviceColumns = append(deviceColumns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
+	}
+
+	deviceRows := RowsWithId{}
+	for _, deviceChartRow := range item.GetDevicesChartRows() {
+		rowValues := make(map[string]string)
+		for key, value := range deviceChartRow.GetValues() {
+			rowValues[key] = value.GetValue()
 		}
-		return ""
-	}
 
-	deviceColumns := []table.Column{
-		table.NewColumn("0", "Resource ID", 30),
-		table.NewColumn("1", "Resource Name", 23),
-		table.NewColumn("2", "ResourceType", 20),
-		table.NewColumn("3", "Runtime", 13),
-		table.NewColumn("4", "Current Cost", 20),
-		table.NewColumn("5", "Right sized Cost", 20),
-		table.NewColumn("6", "Savings", 20),
-	}
-
-	deviceRows := Rows{}
-	for _, dev := range item.Devices {
-		deviceRows = append(deviceRows, Row{
-			dev.DeviceId,
-			item.Name,
-			dev.ResourceType,
-			dev.Runtime,
-			fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost)),
-			ifRecommendationExists(func() string {
-				return fmt.Sprintf("%s", utils.FormatPriceFloat(dev.RightSizedCost))
-			}),
-			ifRecommendationExists(func() string {
-				return fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost-dev.RightSizedCost))
-			}),
+		deviceRows = append(deviceRows, RowWithId{
+			ID:  deviceChartRow.GetRowId(),
+			Row: rowValues,
 		})
 	}
 
@@ -165,14 +159,14 @@ func (m ResourceDetailsPage) OnOpen() Page {
 	})
 	return m
 }
-func (m ResourceDetailsPage) OnClose() Page {
+func (m PluginCustomResourceDetailsPage) OnClose() Page {
 	return m
 }
-func (m ResourceDetailsPage) Init() tea.Cmd {
+func (m PluginCustomResourceDetailsPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd, detailCMD tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -227,7 +221,7 @@ func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows())
 	}
 
-	lineCount := strings.Count(wordwrap.String(m.item.Description, m.GetWidth()), "\n") + 1
+	lineCount := strings.Count(wordwrap.String(m.item.GetDescription(), m.GetWidth()), "\n") + 1
 	deviceTableHeight := 7
 	detailsTableHeight := 7
 
@@ -246,18 +240,18 @@ func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(detailCMD, cmd)
 }
 
-func (m ResourceDetailsPage) View() string {
+func (m PluginCustomResourceDetailsPage) View() string {
 	return m.deviceTable.View() + "\n" +
-		wordwrap.String(m.item.Description, m.GetWidth()) + "\n" +
+		wordwrap.String(m.item.GetDescription(), m.GetWidth()) + "\n" +
 		m.detailTable.View() + "\n" +
 		m.statusBar.View()
 }
 
-func (m ResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m PluginCustomResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
-func (m ResourceDetailsPage) SetApp(app *App) ResourceDetailsPage {
+func (m PluginCustomResourceDetailsPage) SetApp(app *App) PluginCustomResourceDetailsPage {
 	m.app = app
 	return m
 }
