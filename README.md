@@ -1,7 +1,7 @@
 <p align="center">
 <a href="https://www.kaytu.io"><img src=".github/assets/Kaytu-New-Logo.svg" alt="Kaytu Logo" width="300" /></a>
 
-<p align="center">Kaytu recommends optimal workload configurations based on <b>actual-usage</b>. Cut costs without compromising reliability.
+<p align="center">Kaytu's AI platform boosts cloud efficiency by analyzing historical usage and delivering <b>intelligent recommendations</b>—such as optimizing instance sizes—that maintain reliability. Pay for what you need, without compromising your apps.
 </p>
 
 ![Kaytu Gif](.github/assets/kaytu.gif)
@@ -46,25 +46,19 @@ aws sts get-caller-identity
 ```
 [Click here to see how to log in to AWS CLI.](https://docs.aws.amazon.com/signin/latest/userguide/command-line-sign-in.html)
 
-We respect your privacy. Our open-source code guarantees that we never collect sensitive information like AWS credentials, IPs, tags, etc.
+We respect your privacy. Our open-source code guarantees that we never collect sensitive information such as AWS resource identifiers, credentials, IPs, tags, etc.
 
 ### 3. Run Kaytu CLI
 
+Login to your free account:
 ```shell
-kaytu
+kaytu login
 ```
-
-This will run and install any plugins.
 
 To see how you can optimize EC2 Instances, run this command:
 
 ```shell
 kaytu optimize ec2-instance
-```
-
-Some optimizations such as RDS require login: 
-```shell
-kaytu login
 ```
 
 For RDS:
