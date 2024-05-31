@@ -19,4 +19,5 @@ func init() {
 
 	installCmd.Flags().String("token", "", "Github fine-grained access token")
 	installCmd.Flags().Bool("unsafe", false, "Allow kaytu to install unapproved plugins")
+	installCmd.Flags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
 }

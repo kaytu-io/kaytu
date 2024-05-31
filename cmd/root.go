@@ -92,7 +92,7 @@ func Execute() {
 			panic(err)
 		}
 
-		err = manager.Install("aws", "", false)
+		err = manager.Install("aws", "", false, false)
 		if err != nil {
 			panic(err)
 		}
@@ -148,7 +148,7 @@ func Execute() {
 						if plg.Config.Name == "aws" {
 							repoAddr = "aws"
 						}
-						err = manager.Install(repoAddr, "", false)
+						err = manager.Install(repoAddr, "", false, false)
 						if err != nil {
 							fmt.Println("failed due to", err)
 						}
