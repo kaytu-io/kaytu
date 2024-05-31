@@ -7,37 +7,33 @@ import (
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/style"
-	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/kaytu-io/kaytu/view/responsive"
 )
 
-type OverviewPage struct {
+type PluginCustomOverviewPage struct {
 	table       table.Model
 	clearScreen bool
 
 	helpController *controller.Help
-	optimizations  *controller.Optimizations[golang.OptimizationItem]
+	optimizations  *controller.Optimizations[golang.ChartOptimizationItem]
 	statusBar      StatusBarView
 	app            *App
 
 	responsive.ResponsiveView
 }
 
-func NewOptimizationsView(
-	optimizations *controller.Optimizations[golang.OptimizationItem],
+func NewPluginCustomOverviewPageView(
+	chartDefinition *golang.ChartDefinition,
+	optimizations *controller.Optimizations[golang.ChartOptimizationItem],
 	helpController *controller.Help,
 	statusBar StatusBarView,
-) OverviewPage {
-	columns := []table.Column{
-		table.NewColumn("0", "Resource Id", 23),
-		table.NewColumn("1", "Resource Name", 23),
-		table.NewColumn("2", "Resource Type", 15),
-		table.NewColumn("3", "Region", 15),
-		table.NewColumn("4", "Platform", 15),
-		table.NewColumn("5", "Total Saving (Monthly)", 40),
-		table.NewColumn("6", "", 1),
+) PluginCustomOverviewPage {
+	var columns []table.Column
+	tableColumnIdToIndex := make(map[string]int)
+	for i, column := range chartDefinition.GetColumns() {
+		columns = append(columns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
+		tableColumnIdToIndex[column.GetId()] = i
 	}
-
 	t := table.New(columns).
 		Focused(true).
 		WithPageSize(10).
@@ -46,7 +42,7 @@ func NewOptimizationsView(
 		BorderRounded().
 		HighlightStyle(style.HighlightStyle)
 
-	return OverviewPage{
+	return PluginCustomOverviewPage{
 		optimizations:  optimizations,
 		helpController: helpController,
 		table:          t,
@@ -54,11 +50,11 @@ func NewOptimizationsView(
 	}
 }
 
-func (m OverviewPage) OnClose() Page {
+func (m PluginCustomOverviewPage) OnClose() Page {
 	return m
 }
 
-func (m OverviewPage) OnOpen() Page {
+func (m PluginCustomOverviewPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
 		"pgdown/pgup: next/prev page",
@@ -73,47 +69,27 @@ func (m OverviewPage) OnOpen() Page {
 	return m
 }
 
-func (m OverviewPage) Init() tea.Cmd {
+func (m PluginCustomOverviewPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var rows Rows
-	for _, i := range m.optimizations.Items() {
-		totalSaving := 0.0
-		totalCurrentCost := 0.0
-		if !i.Loading && !i.Skipped && !i.LazyLoadingEnabled {
-			for _, dev := range i.Devices {
-				totalSaving += dev.CurrentCost - dev.RightSizedCost
-				totalCurrentCost += dev.CurrentCost
-			}
-		}
+func (m PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var rows RowsWithId
 
-		row := Row{
-			i.Id,
-			i.Name,
-			i.ResourceType,
-			i.Region,
-			i.Platform,
-			fmt.Sprintf("%s (%.2f%%)", utils.FormatPriceFloat(totalSaving), (totalSaving/totalCurrentCost)*100),
+	for _, i := range m.optimizations.Items() {
+		rowValues := make(map[string]string)
+		for k, value := range i.GetOverviewChartRow().GetValues() {
+			rowValues[k] = value.GetValue()
 		}
-		if i.Skipped {
-			row[5] = "skipped"
-			if len(i.SkipReason) > 0 {
-				row[5] += " - " + i.SkipReason
-			}
-		} else if i.LazyLoadingEnabled {
-			row[5] = "press enter to load"
-		} else if i.Loading {
-			row[5] = "loading"
+		row := RowWithId{
+			ID:  i.GetOverviewChartRow().GetRowId(),
+			Row: rowValues,
 		}
-		row = append(row, "→")
 		rows = append(rows, row)
 	}
 	m.table = m.table.WithRows(rows.ToTableRows())
 
 	var changePageCmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		key := msg.String()
@@ -132,9 +108,9 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.table.TotalRows() == 0 {
 				break
 			}
-			selectedInstanceID := m.table.HighlightedRow().Data["0"]
+			selectedRowId := m.table.HighlightedRow().Data[XKaytuRowId]
 			for _, i := range m.optimizations.Items() {
-				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading && !i.LazyLoadingEnabled {
+				if selectedRowId == i.GetOverviewChartRow().GetRowId() && !i.GetSkipped() && !i.GetLoading() && !i.GetLazyLoadingEnabled() {
 					m.optimizations.SelectItem(i)
 					changePageCmd = m.app.ChangePage(Page_Preferences)
 					m.clearScreen = true
@@ -151,11 +127,11 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			start, end := m.table.VisibleIndices()
 			for _, i := range m.optimizations.Items()[start : end+1] {
-				if !i.Skipped && i.LazyLoadingEnabled {
+				if !i.GetSkipped() && i.GetLazyLoadingEnabled() {
 					i.LazyLoadingEnabled = false
 					i.Loading = true
 					m.optimizations.SendItem(i)
-					m.optimizations.ReEvaluate(i.Id, i.Preferences)
+					m.optimizations.ReEvaluate(i.GetOverviewChartRow().GetRowId(), i.GetPreferences())
 				}
 			}
 
@@ -168,17 +144,17 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-			selectedInstanceID := m.table.HighlightedRow().Data["0"]
+			selectedRowId := m.table.HighlightedRow().Data[XKaytuRowId]
 			for _, i := range m.optimizations.Items() {
-				if selectedInstanceID == i.Id && !i.Skipped && !i.Loading && !i.LazyLoadingEnabled {
+				if selectedRowId == i.GetOverviewChartRow().GetRowId() && !i.GetSkipped() && !i.GetLoading() && !i.GetLazyLoadingEnabled() {
 					m.optimizations.SelectItem(i)
 					changePageCmd = m.app.ChangePage(Page_ResourceDetails)
 					break
-				} else if selectedInstanceID == i.Id && !i.Skipped && i.LazyLoadingEnabled {
+				} else if selectedRowId == i.GetOverviewChartRow().GetRowId() && !i.GetLoading() && i.GetLazyLoadingEnabled() {
 					i.LazyLoadingEnabled = false
 					i.Loading = true
 					m.optimizations.SendItem(i)
-					m.optimizations.ReEvaluate(i.Id, i.Preferences)
+					m.optimizations.ReEvaluate(i.GetOverviewChartRow().GetRowId(), i.GetPreferences())
 				}
 			}
 		}
@@ -198,34 +174,19 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m OverviewPage) View() string {
-	//if m.clearScreen {
-	//	m.clearScreen = false
-	//	return ""
-	//}
-
-	totalCost := 0.0
-	savings := 0.0
-	for _, i := range m.optimizations.Items() {
-		for _, dev := range i.Devices {
-			totalCost += dev.CurrentCost
-			savings += dev.CurrentCost - dev.RightSizedCost
-		}
-	}
-
-	return fmt.Sprintf("Current runtime cost: %s, Savings: %s\n%s\n%s",
-		style.CostStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(totalCost))), style.SavingStyle.Render(fmt.Sprintf("%s", utils.FormatPriceFloat(savings))),
+func (m PluginCustomOverviewPage) View() string {
+	return fmt.Sprintf("%s\n%s",
 		m.table.View(),
 		m.statusBar.View(),
 	)
 }
 
-func (m OverviewPage) SetApp(app *App) OverviewPage {
+func (m PluginCustomOverviewPage) SetApp(app *App) PluginCustomOverviewPage {
 	m.app = app
 	return m
 }
 
-func (m OverviewPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m PluginCustomOverviewPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }

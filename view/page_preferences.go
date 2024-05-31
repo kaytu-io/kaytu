@@ -17,7 +17,7 @@ type (
 	errMsg error
 )
 
-type PreferencesPage struct {
+type PreferencesPage[T golang.OptimizationItem | golang.ChartOptimizationItem] struct {
 	focused int
 	err     error
 
@@ -27,28 +27,35 @@ type PreferencesPage struct {
 	visibleStartIdx int
 
 	helpController *controller.Help
-	optimizations  *controller.Optimizations
+	optimizations  *controller.Optimizations[T]
 	statusBar      StatusBarView
 	responsive.ResponsiveView
 }
 
-func NewPreferencesConfiguration(
+func NewPreferencesConfiguration[T golang.OptimizationItem | golang.ChartOptimizationItem](
 	helpController *controller.Help,
-	optimizations *controller.Optimizations,
+	optimizations *controller.Optimizations[T],
 	statusBar StatusBarView,
-) PreferencesPage {
-	return PreferencesPage{
+) PreferencesPage[T] {
+	return PreferencesPage[T]{
 		helpController: helpController,
 		optimizations:  optimizations,
 		statusBar:      statusBar,
 	}
 }
 
-func (m PreferencesPage) OnOpen() Page {
+func (m PreferencesPage[T]) OnOpen() Page {
 	m.visibleStartIdx = 0
 	var preferences []*golang.PreferenceItem
 	if selectedItem := m.optimizations.SelectedItem(); selectedItem != nil {
-		preferences = selectedItem.Preferences
+		switch any(selectedItem).(type) {
+		case *golang.OptimizationItem:
+			selectedItem := any(selectedItem).(*golang.OptimizationItem)
+			preferences = selectedItem.Preferences
+		case *golang.ChartOptimizationItem:
+			selectedItem := any(selectedItem).(*golang.ChartOptimizationItem)
+			preferences = selectedItem.GetPreferences()
+		}
 	} else {
 		preferences = preferences2.DefaultPreferences()
 	}
@@ -84,41 +91,65 @@ func (m PreferencesPage) OnOpen() Page {
 	return m
 }
 
-func (m PreferencesPage) OnClose() Page {
+func (m PreferencesPage[T]) OnClose() Page {
 	selectedItem := m.optimizations.SelectedItem()
 	if selectedItem == nil {
 		for _, selectedItem := range m.optimizations.Items() {
-			if selectedItem.Skipped || selectedItem.LazyLoadingEnabled {
-				continue
+			switch castedSelectedItem := any(selectedItem).(type) {
+			case *golang.OptimizationItem:
+				if castedSelectedItem.Skipped || castedSelectedItem.LazyLoadingEnabled {
+					continue
+				}
+				var prefs []*golang.PreferenceItem
+				for _, item := range m.items {
+					prefs = append(prefs, item.pref)
+				}
+				castedSelectedItem.Preferences = prefs
+				castedSelectedItem.Loading = true
+				var a = any(castedSelectedItem).(T)
+				m.optimizations.SendItem(&a)
+				m.optimizations.ReEvaluate(castedSelectedItem.Id, prefs)
+			case *golang.ChartOptimizationItem:
+				if castedSelectedItem.GetSkipped() || castedSelectedItem.GetLazyLoadingEnabled() {
+					continue
+				}
+				var prefs []*golang.PreferenceItem
+				for _, item := range m.items {
+					prefs = append(prefs, item.pref)
+				}
+				castedSelectedItem.Preferences = prefs
+				castedSelectedItem.Loading = true
+				var a = any(castedSelectedItem).(T)
+				m.optimizations.SendItem(&a)
+				m.optimizations.ReEvaluate(castedSelectedItem.GetOverviewChartRow().GetRowId(), prefs)
 			}
-
-			var prefs []*golang.PreferenceItem
-			for _, item := range m.items {
-				prefs = append(prefs, item.pref)
-			}
-			selectedItem.Preferences = prefs
-			selectedItem.Loading = true
-			m.optimizations.SendItem(selectedItem)
-			m.optimizations.ReEvaluate(selectedItem.Id, prefs)
 		}
 	} else {
 		var prefs []*golang.PreferenceItem
 		for _, item := range m.items {
 			prefs = append(prefs, item.pref)
 		}
-		selectedItem.Preferences = prefs
-		selectedItem.Loading = true
-		m.optimizations.SendItem(selectedItem)
-		m.optimizations.ReEvaluate(selectedItem.Id, prefs)
+		switch castedSelectedItem := any(selectedItem).(type) {
+		case *golang.OptimizationItem:
+			castedSelectedItem.Preferences = prefs
+			castedSelectedItem.Loading = true
+			m.optimizations.SendItem(selectedItem)
+			m.optimizations.ReEvaluate(castedSelectedItem.Id, prefs)
+		case *golang.ChartOptimizationItem:
+			castedSelectedItem.Preferences = prefs
+			castedSelectedItem.Loading = true
+			m.optimizations.SendItem(selectedItem)
+			m.optimizations.ReEvaluate(castedSelectedItem.GetOverviewChartRow().GetRowId(), prefs)
+		}
 	}
 	return m
 }
 
-func (m PreferencesPage) Init() tea.Cmd {
+func (m PreferencesPage[T]) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m PreferencesPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PreferencesPage[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -162,7 +193,7 @@ func (m PreferencesPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PreferencesPage) View() string {
+func (m PreferencesPage[T]) View() string {
 	builder := strings.Builder{}
 
 	builder.WriteString(style.SvcDisable.Render("Configure your preferences:"))
@@ -204,7 +235,7 @@ func (m PreferencesPage) View() string {
 	return builder.String()
 }
 
-func (m *PreferencesPage) ChangeService(svc string) {
+func (m *PreferencesPage[T]) ChangeService(svc string) {
 	if svc == "All" {
 		for _, i := range m.items {
 			i.hidden = false
@@ -242,7 +273,7 @@ func numberValidator(s string) error {
 	return nil
 }
 
-func (m *PreferencesPage) fixVisibleStartIdx() {
+func (m *PreferencesPage[T]) fixVisibleStartIdx() {
 	for m.focused < m.visibleStartIdx {
 		m.visibleStartIdx--
 	}
@@ -253,14 +284,14 @@ func (m *PreferencesPage) fixVisibleStartIdx() {
 	}
 }
 
-func (m *PreferencesPage) nextInput() {
+func (m *PreferencesPage[T]) nextInput() {
 	m.focused = (m.focused + 1) % len(m.items)
 	if m.items[m.focused].hidden {
 		m.nextInput()
 	}
 }
 
-func (m *PreferencesPage) prevInput() {
+func (m *PreferencesPage[T]) prevInput() {
 	m.focused--
 	// Wrap around
 	if m.focused < 0 {
@@ -271,7 +302,7 @@ func (m *PreferencesPage) prevInput() {
 	}
 }
 
-func (m PreferencesPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m PreferencesPage[T]) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
