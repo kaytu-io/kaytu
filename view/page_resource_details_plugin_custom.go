@@ -215,8 +215,8 @@ func (m PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd
 		}
 	}
 
-	if m.deviceTable.HighlightedRow().Data["0"] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
-		m.selectedDevice = m.deviceTable.HighlightedRow().Data["0"].(string)
+	if m.deviceTable.HighlightedRow().Data[XKaytuRowId] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data[XKaytuRowId] {
+		m.selectedDevice = m.deviceTable.HighlightedRow().Data[XKaytuRowId].(string)
 
 		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows())
 	}
