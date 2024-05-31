@@ -156,7 +156,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	}
 }
 
-func (m *Manager) Install(addr, token string, unsafe bool) error {
+func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) error {
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -186,14 +186,40 @@ func (m *Manager) Install(addr, token string, unsafe bool) error {
 	}
 
 	api := githubAPI.NewClient(tc)
-	release, _, err := api.Repositories.GetLatestRelease(context.Background(), owner, repository)
-	if err != nil {
-		return err
-	}
 
 	plugins := map[string]*server.Plugin{}
 	for _, plg := range cfg.Plugins {
 		plugins[plg.Config.Name] = plg
+	}
+
+	var release *githubAPI.RepositoryRelease
+	if !pluginDebugMode {
+		release, _, err = api.Repositories.GetLatestRelease(context.Background(), owner, repository)
+		if err != nil {
+			return err
+		}
+	} else {
+		release = &githubAPI.RepositoryRelease{}
+		installed := false
+		for i := 0; i < 30; i++ {
+			for _, runningPlugin := range m.plugins {
+				fmt.Println(runningPlugin.Plugin.Config.Name, addr)
+				if runningPlugin.Plugin.Config.Name == addr {
+					installed = true
+				}
+			}
+
+			if installed {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+
+		if !installed {
+			return errors.New("plugin install timeout")
+		}
+
+		plugins[addr] = &m.GetPlugin(addr).Plugin
 	}
 
 	for _, asset := range release.Assets {
@@ -215,6 +241,7 @@ func (m *Manager) Install(addr, token string, unsafe bool) error {
 			if err != nil {
 				return err
 			}
+
 			if len(url) > 0 {
 				resp, err := http.Get(url)
 				if err != nil {

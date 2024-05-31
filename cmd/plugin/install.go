@@ -11,7 +11,13 @@ import (
 var installCmd = &cobra.Command{
 	Use: "install",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		pluginDebugMode := utils.ReadBooleanFlag(cmd, "plugin-debug-mode")
+
 		manager := plugin.New()
+		if pluginDebugMode {
+			manager.SetListenPort(30422)
+		}
+
 		err := manager.StartServer()
 		if err != nil {
 			return err
@@ -23,7 +29,7 @@ var installCmd = &cobra.Command{
 
 		token := utils.ReadStringFlag(cmd, "token")
 		unsafe := utils.ReadBooleanFlag(cmd, "unsafe")
-		err = manager.Install(args[0], token, unsafe)
+		err = manager.Install(args[0], token, unsafe, pluginDebugMode)
 		if err != nil {
 			fmt.Printf("failed to install plugin due to %v\n", err)
 			return err
