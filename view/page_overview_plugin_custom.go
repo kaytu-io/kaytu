@@ -144,7 +144,7 @@ func (m PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-			selectedRowId := m.table.HighlightedRow().Data[XKaytuRowId]
+			selectedRowId := m.table.HighlightedRow().Data[XKaytuRowId].(string)
 			for _, i := range m.optimizations.Items() {
 				if selectedRowId == i.GetOverviewChartRow().GetRowId() && !i.GetSkipped() && !i.GetLoading() && !i.GetLazyLoadingEnabled() {
 					m.optimizations.SelectItem(i)
