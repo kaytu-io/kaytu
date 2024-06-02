@@ -97,6 +97,9 @@ func (m PreferencesPage[T]) OnClose() Page {
 		for _, selectedItem := range m.optimizations.Items() {
 			switch castedSelectedItem := any(selectedItem).(type) {
 			case *golang.OptimizationItem:
+				if castedSelectedItem == nil {
+					continue
+				}
 				if castedSelectedItem.Skipped || castedSelectedItem.LazyLoadingEnabled {
 					continue
 				}
@@ -106,10 +109,13 @@ func (m PreferencesPage[T]) OnClose() Page {
 				}
 				castedSelectedItem.Preferences = prefs
 				castedSelectedItem.Loading = true
-				var a = any(castedSelectedItem).(T)
+				var a = any(*castedSelectedItem).(T)
 				m.optimizations.SendItem(&a)
 				m.optimizations.ReEvaluate(castedSelectedItem.Id, prefs)
 			case *golang.ChartOptimizationItem:
+				if castedSelectedItem == nil {
+					continue
+				}
 				if castedSelectedItem.GetSkipped() || castedSelectedItem.GetLazyLoadingEnabled() {
 					continue
 				}
@@ -119,7 +125,7 @@ func (m PreferencesPage[T]) OnClose() Page {
 				}
 				castedSelectedItem.Preferences = prefs
 				castedSelectedItem.Loading = true
-				var a = any(castedSelectedItem).(T)
+				var a = any(*castedSelectedItem).(T)
 				m.optimizations.SendItem(&a)
 				m.optimizations.ReEvaluate(castedSelectedItem.GetOverviewChartRow().GetRowId(), prefs)
 			}
