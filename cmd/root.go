@@ -251,8 +251,8 @@ func Execute() {
 							preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
 							manager.SetCustomUI(jobsController, optimizationsController)
 							app = view.NewCustomPluginApp(
-								optimizationsPage,
-								optimizationsDetailsPage,
+								&optimizationsPage,
+								&optimizationsDetailsPage,
 								preferencesPage,
 								jobsPage,
 								contactUsPage,
