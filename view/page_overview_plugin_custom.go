@@ -194,7 +194,8 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PluginCustomOverviewPage) View() string {
-	return fmt.Sprintf("%s\n%s",
+	return fmt.Sprintf("%s\n%s\n%s",
+		m.optimizations.GetResultSummary(),
 		m.table.View(),
 		m.statusBar.View(),
 	)
