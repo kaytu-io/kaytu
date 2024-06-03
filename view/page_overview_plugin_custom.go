@@ -73,6 +73,7 @@ func (m *PluginCustomOverviewPage) OnOpen() Page {
 		"p: change preferences",
 		"P: change preferences for all resources",
 		"r: load all items in current page",
+		"shift+r: load all items in all pages",
 		"ctrl+j: list of jobs",
 		"q/ctrl+c: exit",
 	})
@@ -136,6 +137,7 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 			}
+
 		case "P":
 			if m.table.TotalRows() == 0 {
 				break
@@ -143,9 +145,20 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.optimizations.SelectItem(nil)
 			changePageCmd = m.app.ChangePage(Page_Preferences)
 			m.clearScreen = true
+
 		case "r":
 			start, end := m.table.VisibleIndices()
 			for _, i := range m.optimizations.Items()[start : end+1] {
+				if !i.GetSkipped() && i.GetLazyLoadingEnabled() {
+					i.LazyLoadingEnabled = false
+					i.Loading = true
+					m.optimizations.SendItem(i)
+					m.optimizations.ReEvaluate(i.GetOverviewChartRow().GetRowId(), i.GetPreferences())
+				}
+			}
+
+		case "R":
+			for _, i := range m.optimizations.Items() {
 				if !i.GetSkipped() && i.GetLazyLoadingEnabled() {
 					i.LazyLoadingEnabled = false
 					i.Loading = true
@@ -187,6 +200,7 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	newStatusBar, _ := m.statusBar.Update(msg)
 	m.statusBar = newStatusBar.(StatusBarView)
+	m.statusBar.initialization = m.optimizations.GetInitialization()
 
 	m.table = m.table.WithPageSize(m.GetHeight() - (7 + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
 

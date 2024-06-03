@@ -67,6 +67,7 @@ func (m OverviewPage) OnOpen() Page {
 		"p: change preferences",
 		"P: change preferences for all resources",
 		"r: load all items in current page",
+		"shift+r: load all items in all pages",
 		"ctrl+j: list of jobs",
 		"q/ctrl+c: exit",
 	})
@@ -159,6 +160,16 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
+		case "R":
+			for _, i := range m.optimizations.Items() {
+				if !i.Skipped && i.LazyLoadingEnabled {
+					i.LazyLoadingEnabled = false
+					i.Loading = true
+					m.optimizations.SendItem(i)
+					m.optimizations.ReEvaluate(i.Id, i.Preferences)
+				}
+			}
+
 		case "right":
 			m.table = m.table.ScrollRight()
 		case "left":
@@ -192,6 +203,7 @@ func (m OverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	newStatusBar, _ := m.statusBar.Update(msg)
 	m.statusBar = newStatusBar.(StatusBarView)
+	m.statusBar.initialization = m.optimizations.GetInitialization()
 
 	m.table = m.table.WithPageSize(m.GetHeight() - (7 + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
 
