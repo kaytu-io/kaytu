@@ -14,11 +14,13 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 	selectedItem *T
 
 	reEvaluateFunc func(id string, items []*golang.PreferenceItem)
+	initializing   bool
 }
 
 func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem]() *Optimizations[T] {
 	o := Optimizations[T]{
-		itemsChan:   make(chan *T, 1000),
+		itemsChan:    make(chan *T, 1000),
+		initializing: true,
 		summaryChan: make(chan string),
 	}
 	go o.Process()
@@ -28,6 +30,9 @@ func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem](
 
 func (o *Optimizations[T]) Process() {
 	for newItem := range o.itemsChan {
+		if o.initializing {
+			o.initializing = false
+		}
 		updated := false
 		for idx, i := range o.items {
 			switch castedNewItem := any(newItem).(type) {
@@ -81,6 +86,10 @@ func (o *Optimizations[T]) SelectedItem() *T {
 
 func (o *Optimizations[T]) ReEvaluate(id string, preferences []*golang.PreferenceItem) {
 	o.reEvaluateFunc(id, preferences)
+}
+
+func (o *Optimizations[T]) GetInitialization() bool {
+	return o.initializing
 }
 
 func (o *Optimizations[T]) SetResultSummary(msg string) {

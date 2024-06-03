@@ -11,6 +11,7 @@ import (
 type StatusBarView struct {
 	helpController *controller.Help
 	jobsController *controller.Jobs
+	initialization bool
 	content        string
 	width          int
 }
@@ -33,6 +34,12 @@ func (v StatusBarView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var helpLines []string
 	w := 0
+
+	if v.initialization {
+		line := " initializing "
+		w += len(line)
+		helpLines = append(helpLines, style.JobsStatusStyle.Render(line))
+	}
 
 	if runningCount > 0 {
 		line := fmt.Sprintf(" running jobs: %d ", runningCount)
