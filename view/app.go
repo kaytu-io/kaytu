@@ -57,8 +57,8 @@ func NewApp(
 }
 
 func NewCustomPluginApp(
-	optimizationsPage PluginCustomOverviewPage,
-	optimizationDetailsPage PluginCustomResourceDetailsPage,
+	optimizationsPage *PluginCustomOverviewPage,
+	optimizationDetailsPage *PluginCustomResourceDetailsPage,
 	preferencesPage PreferencesPage[golang.ChartOptimizationItem],
 	jobsPage JobsPage,
 	contactUsPage ContactUsPage,

@@ -249,10 +249,10 @@ func Execute() {
 							optimizationsPage := view.NewPluginCustomOverviewPageView(runningPlg.Plugin.Config.OverviewChart, optimizationsController, helpController, statusBar)
 							optimizationsDetailsPage := view.NewPluginCustomOptimizationDetailsView(runningPlg.Plugin.Config.DevicesChart, optimizationsController, helpController, statusBar)
 							preferencesPage := view.NewPreferencesConfiguration(helpController, optimizationsController, statusBar)
-							manager.SetCustomUI(jobsController, optimizationsController)
+							manager.SetCustomUI(jobsController, optimizationsController, &optimizationsPage, &optimizationsDetailsPage)
 							app = view.NewCustomPluginApp(
-								optimizationsPage,
-								optimizationsDetailsPage,
+								&optimizationsPage,
+								&optimizationsDetailsPage,
 								preferencesPage,
 								jobsPage,
 								contactUsPage,

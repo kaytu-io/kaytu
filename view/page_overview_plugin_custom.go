@@ -19,6 +19,9 @@ type PluginCustomOverviewPage struct {
 	statusBar      StatusBarView
 	app            *App
 
+	chartDefinition      *golang.ChartDefinition
+	chartDefinitionDirty bool
+
 	responsive.ResponsiveView
 }
 
@@ -43,18 +46,25 @@ func NewPluginCustomOverviewPageView(
 		HighlightStyle(style.HighlightStyle)
 
 	return PluginCustomOverviewPage{
-		optimizations:  optimizations,
-		helpController: helpController,
-		table:          t,
-		statusBar:      statusBar,
+		optimizations:        optimizations,
+		helpController:       helpController,
+		table:                t,
+		statusBar:            statusBar,
+		chartDefinition:      chartDefinition,
+		chartDefinitionDirty: false,
 	}
 }
 
-func (m PluginCustomOverviewPage) OnClose() Page {
+func (m *PluginCustomOverviewPage) SetChartDefinition(chartDefinition *golang.ChartDefinition) {
+	m.chartDefinition = chartDefinition
+	m.chartDefinitionDirty = true
+}
+
+func (m *PluginCustomOverviewPage) OnClose() Page {
 	return m
 }
 
-func (m PluginCustomOverviewPage) OnOpen() Page {
+func (m *PluginCustomOverviewPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
 		"pgdown/pgup: next/prev page",
@@ -69,12 +79,21 @@ func (m PluginCustomOverviewPage) OnOpen() Page {
 	return m
 }
 
-func (m PluginCustomOverviewPage) Init() tea.Cmd {
+func (m *PluginCustomOverviewPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var rows RowsWithId
+
+	if m.chartDefinitionDirty {
+		var columns []table.Column
+		for _, column := range m.chartDefinition.GetColumns() {
+			columns = append(columns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
+		}
+		m.table = m.table.WithColumns(columns)
+		m.chartDefinitionDirty = false
+	}
 
 	for _, i := range m.optimizations.Items() {
 		rowValues := make(map[string]string)
@@ -174,19 +193,19 @@ func (m PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PluginCustomOverviewPage) View() string {
+func (m *PluginCustomOverviewPage) View() string {
 	return fmt.Sprintf("%s\n%s",
 		m.table.View(),
 		m.statusBar.View(),
 	)
 }
 
-func (m PluginCustomOverviewPage) SetApp(app *App) PluginCustomOverviewPage {
+func (m *PluginCustomOverviewPage) SetApp(app *App) *PluginCustomOverviewPage {
 	m.app = app
 	return m
 }
 
-func (m PluginCustomOverviewPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m *PluginCustomOverviewPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
