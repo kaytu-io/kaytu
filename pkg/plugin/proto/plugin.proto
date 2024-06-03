@@ -126,6 +126,11 @@ message ResultsReady {
   bool ready = 1;
 }
 
+message UpdateChartDefinition {
+  ChartDefinition overview_chart = 1;
+  ChartDefinition devices_chart = 2;
+}
+
 message PluginMessage {
   oneof plugin_message {
     JobResult job = 1;
@@ -134,6 +139,7 @@ message PluginMessage {
     Error err = 4;
     ResultsReady ready = 5;
     ChartOptimizationItem coi = 6;
+    UpdateChartDefinition update_chart = 7;
   }
 }
 
