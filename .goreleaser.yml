@@ -5,6 +5,8 @@ release:
   github:
     owner: "{{ .Env.REPOSITORY_OWNER }}"
     name:  "{{ .Env.REPOSITORY_NAME }}"
+  prerelease: auto
+  make_latest: "{{ .Env.GORELEASER_MAKE_LATEST}}"
 
 checksum: {}
 

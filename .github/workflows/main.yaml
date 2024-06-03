@@ -91,6 +91,7 @@ jobs:
           REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
           OWNER_EMAIL: ${{ env.OWNER_EMAIL }}
           HOMEBREW_TAP: ${{ env.HOMEBREW_TAP }}
+          GORELEASER_MAKE_LATEST: "true"
 
   sign-windows:
     runs-on: ubuntu-latest
