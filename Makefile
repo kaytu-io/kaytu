@@ -1,5 +1,5 @@
 build:
-	go build -o cli .
+	go build -ldflags "-X github.com/kaytu-io/kaytu/pkg/version.VERSION=99.99.99" -o cli .
 
 release:
 	git tag v1.0.0
