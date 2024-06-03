@@ -43,6 +43,9 @@ type Manager struct {
 	optimizations             *controller.Optimizations[golang.OptimizationItem]
 	pluginCustomOptimizations *controller.Optimizations[golang.ChartOptimizationItem]
 
+	overviewPage *view.PluginCustomOverviewPage
+	detailsPage  *view.PluginCustomResourceDetailsPage
+
 	NonInteractiveView *view.NonInteractiveView
 }
 
@@ -158,6 +161,18 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					return errors.New("custom optimizations controller not set - is plugin running in default ui mode?")
 				}
 				m.pluginCustomOptimizations.SendItem(receivedMsg.GetCoi())
+
+			case receivedMsg.GetUpdateChart() != nil:
+				if m.pluginCustomOptimizations == nil {
+					return errors.New("custom optimizations controller not set - is plugin running in default ui mode?")
+				}
+				updateChart := receivedMsg.GetUpdateChart()
+				if updateChart.GetOverviewChart() != nil && m.overviewPage != nil {
+					m.overviewPage.SetChartDefinition(updateChart.GetOverviewChart())
+				}
+				if updateChart.GetDevicesChart() != nil && m.detailsPage != nil {
+					m.detailsPage.SetChartDefinition(updateChart.GetDevicesChart())
+				}
 
 			case receivedMsg.GetErr() != nil:
 				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
@@ -359,9 +374,12 @@ func (m *Manager) SetDefaultUI(jobs *controller.Jobs, optimizations *controller.
 	})
 }
 
-func (m *Manager) SetCustomUI(jobs *controller.Jobs, optimizations *controller.Optimizations[golang.ChartOptimizationItem]) {
+func (m *Manager) SetCustomUI(jobs *controller.Jobs, optimizations *controller.Optimizations[golang.ChartOptimizationItem],
+	overviewPage *view.PluginCustomOverviewPage, detailsPage *view.PluginCustomResourceDetailsPage) {
 	m.jobs = jobs
 	m.pluginCustomOptimizations = optimizations
+	m.overviewPage = overviewPage
+	m.detailsPage = detailsPage
 
 	optimizations.SetReEvaluateFunc(func(id string, items []*golang.PreferenceItem) {
 		m.stream.Send(&golang.ServerMessage{

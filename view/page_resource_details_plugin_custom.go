@@ -39,7 +39,8 @@ func (r RowWithId) ToTableRow() table.Row {
 }
 
 type PluginCustomResourceDetailsPage struct {
-	chartDefinition *golang.ChartDefinition
+	chartDefinition      *golang.ChartDefinition
+	chartDefinitionDirty bool
 
 	item                *golang.ChartOptimizationItem
 	deviceTable         table.Model
@@ -55,7 +56,7 @@ type PluginCustomResourceDetailsPage struct {
 	responsive.ResponsiveView
 }
 
-func (m PluginCustomResourceDetailsPage) ExtractProperties(item *golang.ChartOptimizationItem) map[string]Rows {
+func (m *PluginCustomResourceDetailsPage) ExtractProperties(item *golang.ChartOptimizationItem) map[string]Rows {
 	res := map[string]Rows{}
 	for devId, dev := range item.GetDevicesProperties() {
 		rows := Rows{}
@@ -101,7 +102,12 @@ func NewPluginCustomOptimizationDetailsView(
 	}
 }
 
-func (m PluginCustomResourceDetailsPage) OnOpen() Page {
+func (m *PluginCustomResourceDetailsPage) SetChartDefinition(chartDefinition *golang.ChartDefinition) {
+	m.chartDefinition = chartDefinition
+	m.chartDefinitionDirty = true
+}
+
+func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 	item := m.optimizationsController.SelectedItem()
 
 	var deviceColumns []table.Column
@@ -147,6 +153,7 @@ func (m PluginCustomResourceDetailsPage) OnOpen() Page {
 		Focused(true).
 		WithPageSize(len(deviceRows)).
 		WithBaseStyle(style.ActiveStyleBase).BorderRounded()
+	m.chartDefinitionDirty = false
 	m.deviceProperties = m.ExtractProperties(item)
 	m.detailTableHasFocus = false
 	m.selectedDevice = ""
@@ -159,14 +166,23 @@ func (m PluginCustomResourceDetailsPage) OnOpen() Page {
 	})
 	return m
 }
-func (m PluginCustomResourceDetailsPage) OnClose() Page {
+func (m *PluginCustomResourceDetailsPage) OnClose() Page {
 	return m
 }
-func (m PluginCustomResourceDetailsPage) Init() tea.Cmd {
+func (m *PluginCustomResourceDetailsPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.chartDefinitionDirty {
+		var columns []table.Column
+		for _, column := range m.chartDefinition.GetColumns() {
+			columns = append(columns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
+		}
+		m.deviceTable = m.deviceTable.WithColumns(columns)
+		m.chartDefinitionDirty = false
+	}
+
 	var cmd, detailCMD tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -240,18 +256,18 @@ func (m PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd
 	return m, tea.Batch(detailCMD, cmd)
 }
 
-func (m PluginCustomResourceDetailsPage) View() string {
+func (m *PluginCustomResourceDetailsPage) View() string {
 	return m.deviceTable.View() + "\n" +
 		wordwrap.String(m.item.GetDescription(), m.GetWidth()) + "\n" +
 		m.detailTable.View() + "\n" +
 		m.statusBar.View()
 }
 
-func (m PluginCustomResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
+func (m *PluginCustomResourceDetailsPage) SetResponsiveView(rv responsive.ResponsiveViewInterface) Page {
 	m.ResponsiveView = rv.(responsive.ResponsiveView)
 	return m
 }
-func (m PluginCustomResourceDetailsPage) SetApp(app *App) PluginCustomResourceDetailsPage {
+func (m *PluginCustomResourceDetailsPage) SetApp(app *App) *PluginCustomResourceDetailsPage {
 	m.app = app
 	return m
 }
