@@ -126,6 +126,10 @@ message ResultsReady {
   bool ready = 1;
 }
 
+message ResultSummary {
+  string message = 1;
+}
+
 message PluginMessage {
   oneof plugin_message {
     JobResult job = 1;
@@ -134,6 +138,7 @@ message PluginMessage {
     Error err = 4;
     ResultsReady ready = 5;
     ChartOptimizationItem coi = 6;
+    ResultSummary summary = 7;
   }
 }
 
