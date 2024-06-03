@@ -8,6 +8,9 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 	itemsChan chan *T
 	items     []*T
 
+	summaryChan chan string
+	summary     string
+
 	selectedItem *T
 
 	reEvaluateFunc func(id string, items []*golang.PreferenceItem)
@@ -15,9 +18,11 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 
 func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem]() *Optimizations[T] {
 	o := Optimizations[T]{
-		itemsChan: make(chan *T, 1000),
+		itemsChan:   make(chan *T, 1000),
+		summaryChan: make(chan string),
 	}
 	go o.Process()
+	go o.SummaryProcess()
 	return &o
 }
 
@@ -48,6 +53,12 @@ func (o *Optimizations[T]) Process() {
 	}
 }
 
+func (o *Optimizations[T]) SummaryProcess() {
+	for msg := range o.summaryChan {
+		o.summary = msg
+	}
+}
+
 func (o *Optimizations[T]) SendItem(item *T) {
 	o.itemsChan <- item
 }
@@ -70,4 +81,12 @@ func (o *Optimizations[T]) SelectedItem() *T {
 
 func (o *Optimizations[T]) ReEvaluate(id string, preferences []*golang.PreferenceItem) {
 	o.reEvaluateFunc(id, preferences)
+}
+
+func (o *Optimizations[T]) SetResultSummary(msg string) {
+	o.summaryChan <- msg
+}
+
+func (o *Optimizations[T]) GetResultSummary() string {
+	return o.summary
 }
