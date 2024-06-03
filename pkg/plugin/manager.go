@@ -161,6 +161,11 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 
 			case receivedMsg.GetErr() != nil:
 				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetSummary() != nil:
+				if m.pluginCustomOptimizations == nil {
+					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
+				}
+				m.pluginCustomOptimizations.SetResultSummary(receivedMsg.GetSummary().Message)
 			}
 		}
 	}
