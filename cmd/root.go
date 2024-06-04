@@ -180,6 +180,7 @@ func Execute() {
 					}
 
 					flagValues := map[string]string{}
+					flagValues["output"] = nonInteractiveFlag
 					for _, flag := range cmd.GetFlags() {
 						value := utils.ReadStringFlag(c, flag.Name)
 						flagValues[flag.Name] = value
