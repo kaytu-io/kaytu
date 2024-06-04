@@ -91,6 +91,7 @@ jobs:
           REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
           COSIGN_PWD: ${{ secrets.COSIGN_PWD }}
           COSIGN_SECRET: ${{ secrets.COSIGN_SECRET }}
+          GORELEASER_MAKE_LATEST: "false"
 
 #      - uses: robinraju/release-downloader@v1.10
 #        id: download_release_amd64
