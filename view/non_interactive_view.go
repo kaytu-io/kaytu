@@ -321,36 +321,48 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 			if strings.HasPrefix(key, "x_kaytu") {
 				continue
 			}
-			row[fmt.Sprintf("Item-%s", key)] = removeANSI(value.Value)
+			row[fmt.Sprintf("Item-%s", toSnakeCase(key))] = removeANSI(value.Value)
 		}
 		for _, d := range i.DevicesChartRows {
 			for key, value := range d.Values {
 				if strings.HasPrefix(key, "x_kaytu") {
 					continue
 				}
-				row[fmt.Sprintf("Device-%s", key)] = removeANSI(value.Value)
+				row[fmt.Sprintf("Device-%s", toSnakeCase(key))] = removeANSI(value.Value)
 			}
-			//for key, value := range i.DevicesProperties {
-			//	if key != d.RowId {
-			//		continue
-			//	}
-			//	for _, p := range value.Properties {
-			//		row[fmt.Sprintf("Device-%s-current", p.Key)] = removeANSI(p.Current)
-			//		row[fmt.Sprintf("Device-%s-recommended", p.Key)] = removeANSI(p.Recommended)
-			//		row[fmt.Sprintf("Device-%s-average", p.Key)] = removeANSI(p.Average)
-			//		row[fmt.Sprintf("Device-%s-max", p.Key)] = removeANSI(p.Max)
-			//	}
-			//} // TODO
+			for key, value := range i.DevicesProperties {
+				if key != d.RowId {
+					continue
+				}
+				for _, p := range value.Properties {
+					rowTmp := make(map[string]string)
+					for k, val := range row {
+						rowTmp[k] = val
+					}
+					rowTmp["Property-name"] = removeANSI(p.Key)
+					rowTmp["Property-current"] = removeANSI(p.Current)
+					rowTmp["Property-recommended"] = removeANSI(p.Recommended)
+					rowTmp["Property-average"] = removeANSI(p.Average)
+					rowTmp["Property-max"] = removeANSI(p.Max)
+
+					rowsMap = append(rowsMap, rowTmp)
+				}
+			}
 		}
-		rowsMap = append(rowsMap, row)
 	}
 	var itemHeaders []string
 	var deviceHeaders []string
 	for _, value := range v.OverviewChart.Columns {
-		itemHeaders = append(itemHeaders, fmt.Sprintf("Item-%s", value.Id))
+		if strings.HasPrefix(value.Id, "x_kaytu") {
+			continue
+		}
+		itemHeaders = append(itemHeaders, fmt.Sprintf("Item-%s", toSnakeCase(value.Id)))
 	}
 	for _, value := range v.DevicesChart.Columns {
-		deviceHeaders = append(deviceHeaders, fmt.Sprintf("Device-%s", value.Id))
+		if strings.HasPrefix(value.Id, "x_kaytu") {
+			continue
+		}
+		deviceHeaders = append(deviceHeaders, fmt.Sprintf("Device-%s", toSnakeCase(value.Id)))
 	}
 	var rows [][]string
 	for _, row := range rowsMap {
@@ -370,9 +382,10 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 				deviceRow = append(deviceRow, "")
 			}
 		}
+		deviceRow = append(deviceRow, []string{row["Property-name"], row["Property-current"], row["Property-average"], row["Property-max"], row["Property-recommended"]}...)
 		rows = append(rows, append(itemRow, deviceRow...))
 	}
-	return append(itemHeaders, deviceHeaders...), rows
+	return append(itemHeaders, append(deviceHeaders, []string{"Property-Name", "Property-Current", "Property-Average", "Property-Max", "Property-Recommendation"}...)...), rows
 }
 
 func convertOptimizeJson(items []*golang.ChartOptimizationItem) []map[string]any {
