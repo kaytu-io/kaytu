@@ -10,10 +10,8 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"github.com/kaytu-io/kaytu/pkg/utils"
-	"github.com/kaytu-io/kaytu/pkg/version"
 	"github.com/kaytu-io/kaytu/preferences"
 	"github.com/kaytu-io/kaytu/view"
-	"github.com/rogpeppe/go-internal/semver"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -175,8 +173,18 @@ func Execute() {
 					if runningPlg == nil {
 						return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
 					}
-					if runningPlg.Plugin.Config.MinKaytuVersion != "" && semver.Compare("v"+version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
-						return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", runningPlg.Plugin.Config.MinKaytuVersion)
+					//if runningPlg.Plugin.Config.MinKaytuVersion != "" && semver.Compare("v"+version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
+					//	return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", runningPlg.Plugin.Config.MinKaytuVersion)
+					//}
+
+					if nonInteractiveFlag != "interactive" {
+						if runningPlg.Plugin.Config.DevicesChart != nil && runningPlg.Plugin.Config.OverviewChart != nil {
+							manager.NonInteractiveView.SetOptimizations(nil, controller.NewOptimizations[golang.ChartOptimizationItem](),
+								runningPlg.Plugin.Config.OverviewChart, runningPlg.Plugin.Config.DevicesChart)
+						} else {
+							manager.NonInteractiveView.SetOptimizations(controller.NewOptimizations[golang.OptimizationItem](),
+								nil, nil, nil)
+						}
 					}
 
 					flagValues := map[string]string{}

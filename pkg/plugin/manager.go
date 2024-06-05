@@ -6,8 +6,6 @@ import (
 	"fmt"
 	githubAPI "github.com/google/go-github/v62/github"
 	"github.com/kaytu-io/kaytu/controller"
-	"github.com/kaytu-io/kaytu/pkg/version"
-	"github.com/rogpeppe/go-internal/semver"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"net"
@@ -122,7 +120,9 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					Stream: stream,
 				})
 			case receivedMsg.GetOi() != nil:
-				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+				m.NonInteractiveView.Optimizations.SendItem(receivedMsg.GetOi())
+			case receivedMsg.GetCoi() != nil:
+				m.NonInteractiveView.PluginCustomOptimizations.SendItem(receivedMsg.GetCoi())
 			case receivedMsg.GetJob() != nil:
 				m.NonInteractiveView.PublishJobs(receivedMsg.GetJob())
 			case receivedMsg.GetErr() != nil:
@@ -340,9 +340,9 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 
 			plugins[addr] = &m.GetPlugin(addr).Plugin
 
-			if semver.Compare("v"+version.VERSION, plugins[addr].Config.MinKaytuVersion) == -1 {
-				return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plugins[addr].Config.MinKaytuVersion)
-			}
+			//if semver.Compare("v"+version.VERSION, plugins[addr].Config.MinKaytuVersion) == -1 {
+			//	return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", plugins[addr].Config.MinKaytuVersion)
+			//}
 			break
 		}
 	}
