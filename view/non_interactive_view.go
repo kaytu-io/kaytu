@@ -54,18 +54,6 @@ func NewNonInteractiveView() *NonInteractiveView {
 var bold = color.New(color.Bold)
 var underline = color.New(color.Underline)
 
-// OptimizationsString returns a string to show the optimization results and details
-func (v *NonInteractiveView) OptimizationsString() (string, error) {
-	var resultsString string
-
-	for _, item := range v.Optimizations.Items() {
-		resultsString += getItemString(item)
-		resultsString += "\n──────────────────────────────────\n"
-	}
-
-	return resultsString, nil
-}
-
 func (v *NonInteractiveView) SetOptimizations(optimizations *controller.Optimizations[golang.OptimizationItem],
 	pluginCustomOptimizations *controller.Optimizations[golang.ChartOptimizationItem],
 	overviewChart *golang.ChartDefinition, devicesChart *golang.ChartDefinition) {
@@ -73,216 +61,6 @@ func (v *NonInteractiveView) SetOptimizations(optimizations *controller.Optimiza
 	v.PluginCustomOptimizations = pluginCustomOptimizations
 	v.OverviewChart = overviewChart
 	v.DevicesChart = devicesChart
-}
-
-func getItemString(item *golang.OptimizationItem) string {
-	t := table.NewWriter()
-	t.Style().Options.DrawBorder = false
-	t.Style().Options.SeparateColumns = false
-	t.Style().Options.SeparateRows = false
-	t.Style().Options.SeparateHeader = false
-	t.Style().Format.Header = text.FormatDefault
-
-	var columns []table.ColumnConfig
-	i := 1
-	var headers table.Row
-	headers = append(headers, underline.Sprint("ID"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Resource Type"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Region"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Platform"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Total Save"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignRight,
-		AlignHeader: text.AlignRight,
-	})
-	i++
-
-	t.SetColumnConfigs(columns)
-	t.AppendHeader(headers)
-	var row table.Row
-	var itemString string
-	if item.Skipped {
-		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, "Row Skipped")
-		t.AppendRow(row)
-		itemString += t.Render()
-	} else {
-		totalSaving := 0.0
-		if !item.Loading && !item.Skipped && !item.LazyLoadingEnabled {
-			for _, dev := range item.Devices {
-				totalSaving += dev.CurrentCost - dev.RightSizedCost
-			}
-		}
-		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)))
-		t.AppendRow(row)
-		itemString += t.Render()
-		itemString += "\n    " + bold.Sprint("Devices") + ":"
-		for _, dev := range item.Devices {
-			itemString += "\n"
-			itemString += getDeviceString(dev)
-		}
-	}
-
-	return itemString
-}
-
-func getDeviceString(dev *golang.Device) string {
-	t := table.NewWriter()
-	t.Style().Options.DrawBorder = false
-	t.Style().Options.SeparateColumns = false
-	t.Style().Options.SeparateRows = false
-	t.Style().Options.SeparateHeader = false
-	t.Style().Format.Header = text.FormatDefault
-
-	var columns []table.ColumnConfig
-	i := 1
-	var headers table.Row
-	headers = append(headers, underline.Sprint(""))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("ResourceType"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Runtime"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Current Cost"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Right Sized Cost"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignRight,
-		AlignHeader: text.AlignRight,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Savings"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignRight,
-		AlignHeader: text.AlignRight,
-	})
-	i++
-
-	t.SetColumnConfigs(columns)
-	t.AppendHeader(headers)
-	var row table.Row
-	var itemString string
-	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost-dev.RightSizedCost)))
-	t.AppendRow(row)
-	itemString += t.Render()
-	itemString += "\n        " + bold.Sprint("Properties") + ":\n" + getPropertiesString(dev.Properties)
-	return itemString
-}
-
-func getPropertiesString(properties []*golang.Property) string {
-	t := table.NewWriter()
-	t.Style().Options.DrawBorder = false
-	t.Style().Options.SeparateColumns = false
-	t.Style().Options.SeparateRows = false
-	t.Style().Options.SeparateHeader = false
-	t.Style().Format.Header = text.FormatDefault
-
-	var columns []table.ColumnConfig
-	i := 1
-	var headers table.Row
-	headers = append(headers, underline.Sprint(""))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Current"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Average Usage"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-	headers = append(headers, underline.Sprint("Max Usage"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignLeft,
-		AlignHeader: text.AlignLeft,
-	})
-	i++
-
-	headers = append(headers, underline.Sprint("Recommendation"))
-	columns = append(columns, table.ColumnConfig{
-		Number:      i,
-		Align:       text.AlignRight,
-		AlignHeader: text.AlignRight,
-	})
-	i++
-
-	t.SetColumnConfigs(columns)
-	t.AppendHeader(headers)
-
-	var itemString string
-	for _, p := range properties {
-		if p.Hidden {
-			continue
-		}
-		var row table.Row
-		row = append(row, "└───── "+p.Key, p.Current, p.Average, p.Max, p.Recommended)
-		t.AppendRow(row)
-	}
-	itemString += t.Render()
-	return itemString
 }
 
 func (v *NonInteractiveView) PublishJobs(jobs *golang.JobResult) {
@@ -304,9 +82,18 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 		case ready := <-v.resultsReady:
 			if ready == true {
 				if nonInteractiveFlag == "table" {
-					str, err := v.OptimizationsString()
-					if err != nil {
-						return err
+					var str string
+					var err error
+					if v.Optimizations != nil {
+						str, err = v.OptimizationsString()
+						if err != nil {
+							return err
+						}
+					} else {
+						str, err = v.CustomOptimizationsString()
+						if err != nil {
+							return err
+						}
 					}
 					os.Stdout.WriteString(str)
 				} else if nonInteractiveFlag == "csv" {
@@ -393,9 +180,18 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 		case ready := <-v.resultsReady:
 			if ready == true {
 				if nonInteractiveFlag == "table" {
-					str, err := v.OptimizationsString()
-					if err != nil {
-						return "", err
+					var str string
+					var err error
+					if v.Optimizations != nil {
+						str, err = v.OptimizationsString()
+						if err != nil {
+							return "", err
+						}
+					} else {
+						str, err = v.CustomOptimizationsString()
+						if err != nil {
+							return "", err
+						}
 					}
 					return str, nil
 				} else if nonInteractiveFlag == "csv" {
@@ -623,6 +419,334 @@ func convertOptimizeJson(items []*golang.ChartOptimizationItem) []map[string]any
 		mappedItems = append(mappedItems, item)
 	}
 	return mappedItems
+}
+
+// OptimizationsString returns a string to show the optimization results and details
+func (v *NonInteractiveView) OptimizationsString() (string, error) {
+	var resultsString string
+
+	for _, item := range v.Optimizations.Items() {
+		resultsString += getItemString(item)
+		resultsString += "\n──────────────────────────────────\n"
+	}
+
+	return resultsString, nil
+}
+
+func getItemString(item *golang.OptimizationItem) string {
+	t := table.NewWriter()
+	t.Style().Options.DrawBorder = false
+	t.Style().Options.SeparateColumns = false
+	t.Style().Options.SeparateRows = false
+	t.Style().Options.SeparateHeader = false
+	t.Style().Format.Header = text.FormatDefault
+
+	var columns []table.ColumnConfig
+	i := 1
+	var headers table.Row
+	headers = append(headers, underline.Sprint("ID"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Resource Type"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Region"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Platform"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Total Save"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignRight,
+		AlignHeader: text.AlignRight,
+	})
+	i++
+
+	t.SetColumnConfigs(columns)
+	t.AppendHeader(headers)
+	var row table.Row
+	var itemString string
+	if item.Skipped {
+		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, "Row Skipped")
+		t.AppendRow(row)
+		itemString += t.Render()
+	} else {
+		totalSaving := 0.0
+		if !item.Loading && !item.Skipped && !item.LazyLoadingEnabled {
+			for _, dev := range item.Devices {
+				totalSaving += dev.CurrentCost - dev.RightSizedCost
+			}
+		}
+		row = append(row, item.Id, item.ResourceType, item.Region, item.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)))
+		t.AppendRow(row)
+		itemString += t.Render()
+		itemString += "\n    " + bold.Sprint("Devices") + ":"
+		for _, dev := range item.Devices {
+			itemString += "\n"
+			itemString += getDeviceString(dev)
+		}
+	}
+
+	return itemString
+}
+
+func getDeviceString(dev *golang.Device) string {
+	t := table.NewWriter()
+	t.Style().Options.DrawBorder = false
+	t.Style().Options.SeparateColumns = false
+	t.Style().Options.SeparateRows = false
+	t.Style().Options.SeparateHeader = false
+	t.Style().Format.Header = text.FormatDefault
+
+	var columns []table.ColumnConfig
+	i := 1
+	var headers table.Row
+	headers = append(headers, underline.Sprint(""))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("ResourceType"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Runtime"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Current Cost"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Right Sized Cost"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignRight,
+		AlignHeader: text.AlignRight,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Savings"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignRight,
+		AlignHeader: text.AlignRight,
+	})
+	i++
+
+	t.SetColumnConfigs(columns)
+	t.AppendHeader(headers)
+	var row table.Row
+	var itemString string
+	row = append(row, "└─ "+dev.DeviceId, dev.ResourceType, dev.Runtime, dev.CurrentCost, dev.RightSizedCost, fmt.Sprintf("%s", utils.FormatPriceFloat(dev.CurrentCost-dev.RightSizedCost)))
+	t.AppendRow(row)
+	itemString += t.Render()
+	itemString += "\n        " + bold.Sprint("Properties") + ":\n" + getPropertiesString(dev.Properties)
+	return itemString
+}
+
+func getPropertiesString(properties []*golang.Property) string {
+	t := table.NewWriter()
+	t.Style().Options.DrawBorder = false
+	t.Style().Options.SeparateColumns = false
+	t.Style().Options.SeparateRows = false
+	t.Style().Options.SeparateHeader = false
+	t.Style().Format.Header = text.FormatDefault
+
+	var columns []table.ColumnConfig
+	i := 1
+	var headers table.Row
+	headers = append(headers, underline.Sprint(""))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Current"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Average Usage"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+	headers = append(headers, underline.Sprint("Max Usage"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	headers = append(headers, underline.Sprint("Recommendation"))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignRight,
+		AlignHeader: text.AlignRight,
+	})
+	i++
+
+	t.SetColumnConfigs(columns)
+	t.AppendHeader(headers)
+
+	var itemString string
+	for _, p := range properties {
+		if p.Hidden {
+			continue
+		}
+		var row table.Row
+		row = append(row, "└───── "+p.Key, p.Current, p.Average, p.Max, p.Recommended)
+		t.AppendRow(row)
+	}
+	itemString += t.Render()
+	return itemString
+}
+
+// CustomOptimizationsString returns a string to show the optimization results and details for a custom chart
+func (v *NonInteractiveView) CustomOptimizationsString() (string, error) {
+	var resultsString string
+
+	for _, item := range v.PluginCustomOptimizations.Items() {
+		resultsString += getCustomItemString(item)
+		resultsString += "\n──────────────────────────────────\n"
+	}
+
+	return resultsString, nil
+}
+
+func getCustomItemString(item *golang.ChartOptimizationItem) string {
+	t := table.NewWriter()
+	t.Style().Options.DrawBorder = false
+	t.Style().Options.SeparateColumns = false
+	t.Style().Options.SeparateRows = false
+	t.Style().Options.SeparateHeader = false
+	t.Style().Format.Header = text.FormatDefault
+
+	var columns []table.ColumnConfig
+	i := 1
+	var headers table.Row
+	var row table.Row
+	for key, val := range item.OverviewChartRow.Values {
+		if strings.HasPrefix(key, "x_kaytu") {
+			continue
+		}
+		headers = append(headers, underline.Sprint(key))
+		columns = append(columns, table.ColumnConfig{
+			Number:      i,
+			Align:       text.AlignLeft,
+			AlignHeader: text.AlignLeft,
+		})
+		i++
+		row = append(row, removeANSI(val.Value))
+	}
+
+	t.SetColumnConfigs(columns)
+	t.AppendHeader(headers)
+	t.AppendRow(row)
+
+	var itemString string
+	itemString += t.Render()
+	itemString += "\n    " + bold.Sprint("Devices") + ":"
+	for _, dev := range item.DevicesChartRows {
+		itemString += "\n"
+		itemString += getCustomDeviceString(item, dev)
+	}
+
+	return itemString
+}
+
+func getCustomDeviceString(item *golang.ChartOptimizationItem, dev *golang.ChartRow) string {
+	t := table.NewWriter()
+	t.Style().Options.DrawBorder = false
+	t.Style().Options.SeparateColumns = false
+	t.Style().Options.SeparateRows = false
+	t.Style().Options.SeparateHeader = false
+	t.Style().Format.Header = text.FormatDefault
+
+	var columns []table.ColumnConfig
+	i := 1
+	var headers table.Row
+	headers = append(headers, underline.Sprint(""))
+	columns = append(columns, table.ColumnConfig{
+		Number:      i,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+	})
+	i++
+
+	var row table.Row
+	row = append(row, "└─ ")
+	for key, val := range dev.Values {
+		if strings.HasPrefix(key, "x_kaytu") {
+			continue
+		}
+		headers = append(headers, underline.Sprint(key))
+		columns = append(columns, table.ColumnConfig{
+			Number:      i,
+			Align:       text.AlignLeft,
+			AlignHeader: text.AlignLeft,
+		})
+		i++
+		row = append(row, removeANSI(val.Value))
+	}
+
+	t.SetColumnConfigs(columns)
+	t.AppendHeader(headers)
+	t.AppendRow(row)
+
+	var itemString string
+	itemString += t.Render()
+
+	var properties []*golang.Property
+	for key, prop := range item.DevicesProperties {
+		if key == dev.RowId {
+			properties = prop.Properties
+		}
+	}
+
+	itemString += "\n        " + bold.Sprint("Properties") + ":\n" + getPropertiesString(properties)
+	return itemString
 }
 
 func removeANSI(text string) string {
