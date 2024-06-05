@@ -648,14 +648,14 @@ func (v *NonInteractiveView) CustomOptimizationsString() (string, error) {
 	var resultsString string
 
 	for _, item := range v.PluginCustomOptimizations.Items() {
-		resultsString += getCustomItemString(item)
+		resultsString += v.getCustomItemString(item)
 		resultsString += "\n──────────────────────────────────\n"
 	}
 
 	return resultsString, nil
 }
 
-func getCustomItemString(item *golang.ChartOptimizationItem) string {
+func (v *NonInteractiveView) getCustomItemString(item *golang.ChartOptimizationItem) string {
 	t := table.NewWriter()
 	t.Style().Options.DrawBorder = false
 	t.Style().Options.SeparateColumns = false
@@ -667,18 +667,23 @@ func getCustomItemString(item *golang.ChartOptimizationItem) string {
 	i := 1
 	var headers table.Row
 	var row table.Row
+	var rowMap = make(map[string]string)
 	for key, val := range item.OverviewChartRow.Values {
-		if strings.HasPrefix(key, "x_kaytu") {
+		rowMap[key] = val.Value
+	}
+
+	for _, column := range v.OverviewChart.Columns {
+		if strings.HasPrefix(column.Id, "x_kaytu") {
 			continue
 		}
-		headers = append(headers, underline.Sprint(key))
+		headers = append(headers, underline.Sprint(column.Name))
 		columns = append(columns, table.ColumnConfig{
 			Number:      i,
 			Align:       text.AlignLeft,
 			AlignHeader: text.AlignLeft,
 		})
 		i++
-		row = append(row, removeANSI(val.Value))
+		row = append(row, removeANSI(rowMap[column.Id]))
 	}
 
 	t.SetColumnConfigs(columns)
@@ -690,13 +695,13 @@ func getCustomItemString(item *golang.ChartOptimizationItem) string {
 	itemString += "\n    " + bold.Sprint("Devices") + ":"
 	for _, dev := range item.DevicesChartRows {
 		itemString += "\n"
-		itemString += getCustomDeviceString(item, dev)
+		itemString += v.getCustomDeviceString(item, dev)
 	}
 
 	return itemString
 }
 
-func getCustomDeviceString(item *golang.ChartOptimizationItem, dev *golang.ChartRow) string {
+func (v *NonInteractiveView) getCustomDeviceString(item *golang.ChartOptimizationItem, dev *golang.ChartRow) string {
 	t := table.NewWriter()
 	t.Style().Options.DrawBorder = false
 	t.Style().Options.SeparateColumns = false
@@ -717,18 +722,23 @@ func getCustomDeviceString(item *golang.ChartOptimizationItem, dev *golang.Chart
 
 	var row table.Row
 	row = append(row, "└─ ")
+	var rowMap = make(map[string]string)
 	for key, val := range dev.Values {
-		if strings.HasPrefix(key, "x_kaytu") {
+		rowMap[key] = val.Value
+	}
+
+	for _, column := range v.DevicesChart.Columns {
+		if strings.HasPrefix(column.Id, "x_kaytu") {
 			continue
 		}
-		headers = append(headers, underline.Sprint(key))
+		headers = append(headers, underline.Sprint(column.Name))
 		columns = append(columns, table.ColumnConfig{
 			Number:      i,
 			Align:       text.AlignLeft,
 			AlignHeader: text.AlignLeft,
 		})
 		i++
-		row = append(row, removeANSI(val.Value))
+		row = append(row, removeANSI(rowMap[column.Id]))
 	}
 
 	t.SetColumnConfigs(columns)
