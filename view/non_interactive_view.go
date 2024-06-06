@@ -288,8 +288,8 @@ func (v *NonInteractiveView) WaitForJobs() {
 func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 	headers := []string{
 		"Item-ID", "Item-ResourceType", "Item-Region", "Item-Platform", "Item-TotalSave",
-		"Device-ID", "Device-ResourceType", "Device-Runtime", "Device-CurrentCost", "Device-RightSizedCost", "Device-Savings",
-		"Property-Name", "Property-Current", "Property-Average", "Property-Max", "Property-Recommendation",
+		"Device-ID", "Parent-Item-ID", "Device-ResourceType", "Device-Runtime", "Device-CurrentCost", "Device-RightSizedCost", "Device-Savings",
+		"Device-Additional-Details",
 	}
 	var rows [][]string
 	for _, i := range items {
@@ -297,17 +297,43 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 		for _, d := range i.Devices {
 			totalSaving = totalSaving + (d.CurrentCost - d.RightSizedCost)
 		}
+		rows = append(rows, []string{
+			i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
+			"", "", "", "", "", "", "",
+			"",
+		})
 		for _, d := range i.Devices {
+			var additionalDetails []string
 			for _, p := range d.Properties {
 				if p.Hidden {
 					continue
 				}
-				rows = append(rows, []string{
-					i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
-					d.DeviceId, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
-					p.Key, p.Current, p.Average, p.Max, p.Recommended,
-				})
+				detail := fmt.Sprintf("%s:: ", p.Key)
+				if p.Current != "" && p.Max == "" && p.Average == "" && p.Recommended == "" {
+					detail += p.Current
+				} else {
+					var detailArr []string
+					if p.Current != "" {
+						detailArr = append(detailArr, fmt.Sprintf(" Current: %s", p.Current))
+					}
+					if p.Max != "" {
+						detailArr = append(detailArr, fmt.Sprintf(" Max: %s", p.Max))
+					}
+					if p.Average != "" {
+						detailArr = append(detailArr, fmt.Sprintf(" Avg: %s", p.Average))
+					}
+					if p.Recommended != "" {
+						detailArr = append(detailArr, fmt.Sprintf(" Recommended: %s", p.Recommended))
+					}
+					detail += strings.Join(detailArr, ",")
+				}
+				additionalDetails = append(additionalDetails, detail)
 			}
+			rows = append(rows, []string{
+				"", "", "", "", "",
+				d.DeviceId, i.Id, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
+				strings.Join(additionalDetails, "; "),
+			})
 		}
 	}
 	return headers, rows
@@ -323,31 +349,47 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 			}
 			row[fmt.Sprintf("Item-%s", toSnakeCase(key))] = removeANSI(value.Value)
 		}
+		rowsMap = append(rowsMap, row)
 		for _, d := range i.DevicesChartRows {
+			rowDevice := make(map[string]string)
 			for key, value := range d.Values {
 				if strings.HasPrefix(key, "x_kaytu") {
 					continue
 				}
-				row[fmt.Sprintf("Device-%s", toSnakeCase(key))] = removeANSI(value.Value)
+				rowDevice[fmt.Sprintf("Device-%s", toSnakeCase(key))] = removeANSI(value.Value)
 			}
+			var additionalDetails []string
 			for key, value := range i.DevicesProperties {
-				if key != d.RowId {
-					continue
-				}
-				for _, p := range value.Properties {
-					rowTmp := make(map[string]string)
-					for k, val := range row {
-						rowTmp[k] = val
+				if key == d.RowId {
+					for _, p := range value.Properties {
+						if p.Hidden {
+							continue
+						}
+						detail := fmt.Sprintf("%s:: ", p.Key)
+						if p.Current != "" && p.Max == "" && p.Average == "" && p.Recommended == "" {
+							detail += p.Current
+						} else {
+							var detailArr []string
+							if p.Current != "" {
+								detailArr = append(detailArr, fmt.Sprintf(" Current: %s", p.Current))
+							}
+							if p.Max != "" {
+								detailArr = append(detailArr, fmt.Sprintf(" Max: %s", p.Max))
+							}
+							if p.Average != "" {
+								detailArr = append(detailArr, fmt.Sprintf(" Avg: %s", p.Average))
+							}
+							if p.Recommended != "" {
+								detailArr = append(detailArr, fmt.Sprintf(" Recommended: %s", p.Recommended))
+							}
+							detail += strings.Join(detailArr, ",")
+						}
+						additionalDetails = append(additionalDetails, detail)
 					}
-					rowTmp["Property-name"] = removeANSI(p.Key)
-					rowTmp["Property-current"] = removeANSI(p.Current)
-					rowTmp["Property-recommended"] = removeANSI(p.Recommended)
-					rowTmp["Property-average"] = removeANSI(p.Average)
-					rowTmp["Property-max"] = removeANSI(p.Max)
-
-					rowsMap = append(rowsMap, rowTmp)
 				}
 			}
+			rowDevice["Device-Additional-Details"] = strings.Join(additionalDetails, "; ")
+			rowsMap = append(rowsMap, rowDevice)
 		}
 	}
 	var itemHeaders []string
@@ -382,10 +424,10 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 				deviceRow = append(deviceRow, "")
 			}
 		}
-		deviceRow = append(deviceRow, []string{row["Property-name"], row["Property-current"], row["Property-average"], row["Property-max"], row["Property-recommended"]}...)
+		deviceRow = append(deviceRow, []string{row["Device-Additional-Details"]}...)
 		rows = append(rows, append(itemRow, deviceRow...))
 	}
-	return append(itemHeaders, append(deviceHeaders, []string{"Property-Name", "Property-Current", "Property-Average", "Property-Max", "Property-Recommendation"}...)...), rows
+	return append(itemHeaders, append(deviceHeaders, "Device-Additional-Details")...), rows
 }
 
 func convertOptimizeJson(items []*golang.ChartOptimizationItem) []map[string]any {
