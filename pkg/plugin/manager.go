@@ -235,7 +235,6 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 		installed := false
 		for i := 0; i < 30; i++ {
 			for _, runningPlugin := range m.plugins {
-				fmt.Println(runningPlugin.Plugin.Config.Name, addr)
 				if runningPlugin.Plugin.Config.Name == addr {
 					installed = true
 				}

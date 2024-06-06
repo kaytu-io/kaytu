@@ -25,8 +25,9 @@ func (r RowsWithId) ToTableRows() []table.Row {
 }
 
 type RowWithId struct {
-	ID  string
-	Row map[string]string
+	ID        string
+	SortValue float64
+	Row       map[string]string
 }
 
 func (r RowWithId) ToTableRow() table.Row {
@@ -54,6 +55,8 @@ type PluginCustomResourceDetailsPage struct {
 	statusBar               StatusBarView
 	app                     *App
 	responsive.ResponsiveView
+	deviceRows    RowsWithId
+	detailColumns []table.Column
 }
 
 func (m *PluginCustomResourceDetailsPage) ExtractProperties(item *golang.ChartOptimizationItem) map[string]Rows {
@@ -120,22 +123,31 @@ func (m *PluginCustomResourceDetailsPage) SetChartDefinition(chartDefinition *go
 func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 	item := m.optimizationsController.SelectedItem()
 
-	var deviceColumns []table.Column
-	for _, column := range m.chartDefinition.GetColumns() {
-		deviceColumns = append(deviceColumns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
-	}
-
-	deviceRows := RowsWithId{}
+	m.deviceRows = RowsWithId{}
 	for _, deviceChartRow := range item.GetDevicesChartRows() {
 		rowValues := make(map[string]string)
 		for key, value := range deviceChartRow.GetValues() {
 			rowValues[key] = value.GetValue()
 		}
 
-		deviceRows = append(deviceRows, RowWithId{
+		m.deviceRows = append(m.deviceRows, RowWithId{
 			ID:  deviceChartRow.GetRowId(),
 			Row: rowValues,
 		})
+	}
+
+	var deviceColumns []table.Column
+	for _, column := range m.chartDefinition.GetColumns() {
+		width := len(column.GetName())
+		for _, row := range m.deviceRows {
+			cell := row.Row[column.GetId()]
+			cell = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell, ""))
+			if len(cell) > width {
+				width = len(cell)
+			}
+		}
+
+		deviceColumns = append(deviceColumns, table.NewColumn(column.GetId(), column.GetName(), width))
 	}
 
 	days := "7"
@@ -144,7 +156,7 @@ func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 			days = p.Value.Value
 		}
 	}
-	detailColumns := []table.Column{
+	m.detailColumns = []table.Column{
 		table.NewColumn("0", "", 30),
 		table.NewColumn("1", "Current", 30),
 		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
@@ -152,16 +164,16 @@ func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 	}
 
 	m.item = item
-	m.detailTable = table.New(detailColumns).
+	m.detailTable = table.New(m.detailColumns).
 		WithPageSize(1).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(style.Base).BorderRounded()
 	m.deviceTable = table.New(deviceColumns).
-		WithRows(deviceRows.ToTableRows()).
+		WithRows(m.deviceRows.ToTableRows()).
 		WithHighlightedRow(0).
 		WithHorizontalFreezeColumnCount(1).
 		Focused(true).
-		WithPageSize(len(deviceRows)).
+		WithPageSize(len(m.deviceRows)).
 		WithBaseStyle(style.ActiveStyleBase).BorderRounded()
 	m.chartDefinitionDirty = false
 	m.deviceProperties = m.ExtractProperties(item)
@@ -187,7 +199,16 @@ func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cm
 	if m.chartDefinitionDirty {
 		var columns []table.Column
 		for _, column := range m.chartDefinition.GetColumns() {
-			columns = append(columns, table.NewColumn(column.GetId(), column.GetName(), int(column.GetWidth())))
+			width := len(column.GetName())
+			for _, row := range m.deviceRows {
+				cell := row.Row[column.GetId()]
+				cell = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell, ""))
+				if len(cell) > width {
+					width = len(cell)
+				}
+			}
+
+			columns = append(columns, table.NewColumn(column.GetId(), column.GetName(), width))
 		}
 		m.deviceTable = m.deviceTable.WithColumns(columns)
 		m.chartDefinitionDirty = false
@@ -244,7 +265,26 @@ func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cm
 	if m.deviceTable.HighlightedRow().Data[XKaytuRowId] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data[XKaytuRowId] {
 		m.selectedDevice = m.deviceTable.HighlightedRow().Data[XKaytuRowId].(string)
 
-		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows())
+		detailRows := m.deviceProperties[m.selectedDevice].ToTableRows()
+		m.detailTable = m.detailTable.WithRows(detailRows)
+		var columns []table.Column
+		for _, column := range m.detailColumns {
+			width := len(column.Title())
+			for _, row := range detailRows {
+				cell := row.Data[column.Key()]
+				cellContent := ""
+				if cell != nil {
+					cellContent = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell.(string), ""))
+				}
+				if len(cellContent) > width {
+					width = len(cellContent)
+				}
+			}
+
+			columns = append(columns, table.NewColumn(column.Key(), column.Title(), width+2))
+		}
+
+		m.detailTable = m.detailTable.WithColumns(columns)
 	}
 
 	lineCount := strings.Count(wordwrap.String(m.item.GetDescription(), m.GetWidth()), "\n") + 1
