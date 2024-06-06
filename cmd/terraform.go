@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/github"
 	plugin2 "github.com/kaytu-io/kaytu/pkg/plugin"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
@@ -39,6 +40,7 @@ var terraformCmd = &cobra.Command{
 
 		manager := plugin2.New()
 		manager.SetNonInteractiveView()
+		manager.NonInteractiveView.SetOptimizations(controller.NewOptimizations[golang.OptimizationItem](), nil, nil, nil)
 		err = manager.StartServer()
 		if err != nil {
 			return err
