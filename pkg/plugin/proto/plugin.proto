@@ -32,6 +32,7 @@ message RegisterConfig {
 
 message ChartRowItem {
   string value = 1;
+  double sort_value = 2;
 }
 
 message ChartRow {
@@ -43,6 +44,7 @@ message ChartColumnItem {
   string id = 1;
   string name = 2;
   uint32 width = 3;
+  bool sortable = 4;
 }
 
 message ChartDefinition {
