@@ -68,20 +68,10 @@ func (m *PluginCustomResourceDetailsPage) ExtractProperties(item *golang.ChartOp
 			if !strings.HasPrefix(prop.Key, " ") {
 				prop.Key = style.Bold.Render(prop.Key)
 			}
-			usageColumn := ""
-			if prop.Average != "" {
-				usageColumn += fmt.Sprintf("Avg: %s", prop.Average)
-			}
-			if prop.Max != "" {
-				if usageColumn != "" {
-					usageColumn += " | "
-				}
-				usageColumn += fmt.Sprintf("Max: %s", prop.Max)
-			}
 			rows = append(rows, Row{
 				prop.Key,
 				prop.Current,
-				usageColumn,
+				prop.Average,
 				prop.Recommended,
 			})
 		}
