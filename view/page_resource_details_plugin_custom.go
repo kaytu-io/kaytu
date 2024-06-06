@@ -140,7 +140,7 @@ func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 		deviceColumns = append(deviceColumns, table.NewColumn(column.GetId(), column.GetName(), width))
 	}
 
-	days := "7"
+	days := "1"
 	for _, p := range item.Preferences {
 		if p.Key == "ObservabilityTimePeriod" && p.Value != nil {
 			days = p.Value.Value
