@@ -122,7 +122,9 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					Stream: stream,
 				})
 			case receivedMsg.GetOi() != nil:
-				m.NonInteractiveView.PublishItem(receivedMsg.GetOi())
+				m.NonInteractiveView.Optimizations.SendItem(receivedMsg.GetOi())
+			case receivedMsg.GetCoi() != nil:
+				m.NonInteractiveView.PluginCustomOptimizations.SendItem(receivedMsg.GetCoi())
 			case receivedMsg.GetJob() != nil:
 				m.NonInteractiveView.PublishJobs(receivedMsg.GetJob())
 			case receivedMsg.GetErr() != nil:

@@ -179,6 +179,16 @@ func Execute() {
 						return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", runningPlg.Plugin.Config.MinKaytuVersion)
 					}
 
+					if nonInteractiveFlag != "interactive" {
+						if runningPlg.Plugin.Config.DevicesChart != nil && runningPlg.Plugin.Config.OverviewChart != nil {
+							manager.NonInteractiveView.SetOptimizations(nil, controller.NewOptimizations[golang.ChartOptimizationItem](),
+								runningPlg.Plugin.Config.OverviewChart, runningPlg.Plugin.Config.DevicesChart)
+						} else {
+							manager.NonInteractiveView.SetOptimizations(controller.NewOptimizations[golang.OptimizationItem](),
+								nil, nil, nil)
+						}
+					}
+
 					flagValues := map[string]string{}
 					flagValues["output"] = nonInteractiveFlag
 					for _, flag := range cmd.GetFlags() {
