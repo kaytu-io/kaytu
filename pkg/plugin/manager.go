@@ -266,8 +266,8 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 			if p, ok := plugins[addr]; ok && p.Config.Version == assetVersion {
 				return nil
 			}
-			fmt.Printf("Installing plugin %s, version %s\n", addr, assetVersion)
-			fmt.Println("Downloading the plugin...")
+			os.Stderr.WriteString(fmt.Sprintf("Installing plugin %s, version %s\n", addr, assetVersion))
+			os.Stderr.WriteString("Downloading the plugin...\n")
 
 			rc, url, err := api.Repositories.DownloadReleaseAsset(context.Background(), owner, repository, *asset.ID, nil)
 			if err != nil {
@@ -315,13 +315,13 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 					Commands: nil,
 				},
 			}
-			fmt.Println("Starting the plugin...")
+			os.Stderr.WriteString("Starting the plugin...\n")
 			err = startPlugin(&plugin, fmt.Sprintf("localhost:%d", m.port))
 			if err != nil {
 				return err
 			}
 
-			fmt.Println("Waiting for plugin to load...")
+			os.Stderr.WriteString("Waiting for plugin to load...\n")
 			installed := false
 			for i := 0; i < 30; i++ {
 				for _, runningPlugin := range m.plugins {

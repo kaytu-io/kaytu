@@ -287,7 +287,7 @@ func (v *NonInteractiveView) WaitForJobs() {
 
 func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 	headers := []string{
-		"Item-ID", "Item-ResourceType", "Item-Region", "Item-Platform", "Item-TotalSave",
+		"Item-ID", "Item-Name", "Item-Type", "Item-Region", "Item-Platform", "Item-TotalSave",
 		"Device-ID", "Parent-Item-ID", "Device-ResourceType", "Device-Runtime", "Device-CurrentCost", "Device-RightSizedCost", "Device-Savings",
 		"Device-Additional-Details",
 	}
@@ -298,7 +298,7 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 			totalSaving = totalSaving + (d.CurrentCost - d.RightSizedCost)
 		}
 		rows = append(rows, []string{
-			i.Id, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
+			i.Id, i.Name, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
 			"", "", "", "", "", "", "",
 			"",
 		})
@@ -330,7 +330,7 @@ func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
 				additionalDetails = append(additionalDetails, detail)
 			}
 			rows = append(rows, []string{
-				"", "", "", "", "",
+				"", "", "", "", "", "",
 				d.DeviceId, i.Id, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
 				strings.Join(additionalDetails, "; "),
 			})
