@@ -53,6 +53,10 @@ func NewNonInteractiveView() *NonInteractiveView {
 	return v
 }
 
+func (v *NonInteractiveView) SetOutput(f *os.File) {
+	v.output = f
+}
+
 var bold = color.New(color.Bold)
 var underline = color.New(color.Underline)
 
