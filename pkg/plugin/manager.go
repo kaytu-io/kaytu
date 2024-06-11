@@ -131,6 +131,8 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
 				m.NonInteractiveView.PublishResultsReady(receivedMsg.GetReady())
+			case receivedMsg.GetProfile() != nil:
+				m.NonInteractiveView.SetAccountID(receivedMsg.GetProfile())
 			}
 		}
 	} else {

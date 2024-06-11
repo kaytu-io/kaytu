@@ -135,6 +135,10 @@ message ResultSummary {
   string message = 1;
 }
 
+message ProfileDetail {
+  string account_id = 1;
+}
+
 message PluginMessage {
   oneof plugin_message {
     JobResult job = 1;
@@ -145,6 +149,7 @@ message PluginMessage {
     ChartOptimizationItem coi = 6;
     UpdateChartDefinition update_chart = 7;
     ResultSummary summary = 8;
+    ProfileDetail profile = 9;
   }
 }
 

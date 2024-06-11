@@ -23,6 +23,7 @@ type NonInteractiveView struct {
 	runningJobsMap map[string]string
 	failedJobsMap  map[string]string
 	statusErr      string
+	accountID      string
 
 	Optimizations *controller.Optimizations[golang.OptimizationItem]
 
@@ -75,6 +76,12 @@ func (v *NonInteractiveView) PublishResultsReady(ready *golang.ResultsReady) {
 	v.resultsReady <- ready.Ready
 }
 
+func (v *NonInteractiveView) SetAccountID(profile *golang.ProfileDetail) {
+	if profile != nil {
+		v.accountID = profile.AccountId
+	}
+}
+
 func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error {
 	go v.WaitForJobs()
 	for {
@@ -100,7 +107,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 					var csvHeaders []string
 					var csvRows [][]string
 					if v.Optimizations != nil {
-						csvHeaders, csvRows = exportCsv(v.Optimizations.Items())
+						csvHeaders, csvRows = exportCsv(v.accountID, v.Optimizations.Items())
 					} else {
 						csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
 					}
@@ -198,7 +205,7 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 					var csvHeaders []string
 					var csvRows [][]string
 					if v.Optimizations != nil {
-						csvHeaders, csvRows = exportCsv(v.Optimizations.Items())
+						csvHeaders, csvRows = exportCsv(v.accountID, v.Optimizations.Items())
 					} else {
 						csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
 					}
@@ -285,55 +292,94 @@ func (v *NonInteractiveView) WaitForJobs() {
 	}
 }
 
-func exportCsv(items []*golang.OptimizationItem) ([]string, [][]string) {
+func exportCsv(accountID string, items []*golang.OptimizationItem) ([]string, [][]string) {
 	headers := []string{
-		"Item-ID", "Item-Name", "Item-Type", "Item-Region", "Item-Platform", "Item-TotalSave",
-		"Device-ID", "Parent-Item-ID", "Device-ResourceType", "Device-Runtime", "Device-CurrentCost", "Device-RightSizedCost", "Device-Savings",
-		"Device-Additional-Details",
+		"AccountID", "Region / AZ", "Resource Type", "Device ID", "Device Name", "Platform / Runtime Engine",
+		"Device Runtime (Hrs)", "Current Cost", "Recommendation Cost", "Net Savings", "Current Spec",
+		"Suggested Spec", "Parent Device", "Justification", "Additional Details",
 	}
 	var rows [][]string
 	for _, i := range items {
-		totalSaving := float64(0)
 		for _, d := range i.Devices {
-			totalSaving = totalSaving + (d.CurrentCost - d.RightSizedCost)
-		}
-		rows = append(rows, []string{
-			i.Id, i.Name, i.ResourceType, i.Region, i.Platform, fmt.Sprintf("%s", utils.FormatPriceFloat(totalSaving)),
-			"", "", "", "", "", "", "",
-			"",
-		})
-		for _, d := range i.Devices {
+			var parentDevice string
+			if i.Id == d.DeviceId {
+				parentDevice = "None"
+			} else {
+				parentDevice = i.Id
+			}
+			var currentSpec, suggestedSpec []string
 			var additionalDetails []string
 			for _, p := range d.Properties {
 				if p.Hidden {
 					continue
 				}
-				detail := fmt.Sprintf("%s:: ", p.Key)
+				if d.ResourceType == "EC2 Instance" {
+					if p.Key == "Instance Size" {
+						currentSpec = append(currentSpec, p.Current)
+						suggestedSpec = append(suggestedSpec, p.Recommended)
+					}
+				} else if d.ResourceType == "EBS Volume" {
+					if p.Key == "  EBS Storage Tier" || p.Key == "  Volume Size (GB)" || p.Key == "IOPS" {
+						if p.Key == "IOPS" {
+							currentSpec = append(currentSpec, p.Current+"IOPS")
+							suggestedSpec = append(suggestedSpec, p.Recommended+"IOPS")
+						} else {
+							currentSpec = append(currentSpec, p.Current)
+							suggestedSpec = append(suggestedSpec, p.Recommended)
+						}
+					}
+				} else if d.ResourceType == "RDS Instance Compute" {
+					if p.Key == "Instance Size" {
+						currentSpec = append(currentSpec, p.Current)
+						suggestedSpec = append(suggestedSpec, p.Recommended)
+					}
+				} else if d.ResourceType == "RDS Instance Storage" {
+					if p.Key == "Type" || p.Key == "Size" {
+						currentSpec = append(currentSpec, p.Current)
+						suggestedSpec = append(suggestedSpec, p.Recommended)
+					}
+				}
+				var detail string
+				if p.Current != "" || p.Max != "" || p.Average != "" || p.Recommended != "" {
+					detail = fmt.Sprintf("%s:: ", p.Key)
+				}
 				if p.Current != "" && p.Max == "" && p.Average == "" && p.Recommended == "" {
 					detail += p.Current
 				} else {
 					var detailArr []string
 					if p.Current != "" {
-						detailArr = append(detailArr, fmt.Sprintf(" Current: %s", p.Current))
+						detailArr = append(detailArr, fmt.Sprintf("Current: %s", p.Current))
 					}
 					if p.Max != "" {
-						detailArr = append(detailArr, fmt.Sprintf(" Max: %s", p.Max))
+						detailArr = append(detailArr, fmt.Sprintf("Max: %s", p.Max))
 					}
 					if p.Average != "" {
-						detailArr = append(detailArr, fmt.Sprintf(" Avg: %s", p.Average))
+						detailArr = append(detailArr, fmt.Sprintf("Avg: %s", p.Average))
 					}
 					if p.Recommended != "" {
-						detailArr = append(detailArr, fmt.Sprintf(" Recommended: %s", p.Recommended))
+						detailArr = append(detailArr, fmt.Sprintf("Recommended: %s", p.Recommended))
 					}
-					detail += strings.Join(detailArr, ",")
+					detail += strings.Join(detailArr, "-")
 				}
-				additionalDetails = append(additionalDetails, detail)
+				if detail != "" {
+					additionalDetails = append(additionalDetails, detail)
+				}
 			}
-			rows = append(rows, []string{
-				"", "", "", "", "", "",
-				d.DeviceId, i.Id, d.ResourceType, d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
-				strings.Join(additionalDetails, "; "),
-			})
+			if d.ResourceType == "RDS Instance Storage" || d.ResourceType == "EBS Volume" {
+				rows = append(rows, []string{
+					accountID, i.Region, d.ResourceType, d.DeviceId, d.DeviceId, "N/A",
+					d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
+					strings.Join(currentSpec, "/"), strings.Join(suggestedSpec, "/"), parentDevice, i.Description,
+					strings.Join(additionalDetails, "\";\""),
+				})
+			} else {
+				rows = append(rows, []string{
+					accountID, i.Region, d.ResourceType, d.DeviceId, d.DeviceId, i.Platform,
+					d.Runtime, fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.RightSizedCost)), fmt.Sprintf("%s", utils.FormatPriceFloat(d.CurrentCost-d.RightSizedCost)),
+					strings.Join(currentSpec, "/"), strings.Join(suggestedSpec, "/"), parentDevice, i.Description,
+					strings.Join(additionalDetails, "\";\""),
+				})
+			}
 		}
 	}
 	return headers, rows
