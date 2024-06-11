@@ -1,6 +1,9 @@
 package style
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"regexp"
+)
 
 const (
 	hotPink  = lipgloss.Color("#FF06B7")
@@ -35,3 +38,5 @@ var (
 	InfoStatusStyle  = lipgloss.NewStyle().Background(lipgloss.Color("#3a3835")).Foreground(lipgloss.Color("#ffffff"))
 	InfoStatusStyle2 = lipgloss.NewStyle().Background(lipgloss.Color("#006d69")).Foreground(lipgloss.Color("#ffffff"))
 )
+
+var StyleSelector = regexp.MustCompile(`\x1b\[[0-9;]*m`)

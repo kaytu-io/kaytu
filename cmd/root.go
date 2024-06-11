@@ -153,9 +153,12 @@ func Execute() {
 							fmt.Println("failed due to", err)
 						}
 
-						err = manager.StartPlugin(cmd.Name)
-						if err != nil {
-							return err
+						runningPlg := manager.GetPlugin(plg.Config.Name)
+						if runningPlg == nil {
+							err = manager.StartPlugin(cmd.Name)
+							if err != nil {
+								return err
+							}
 						}
 					}
 

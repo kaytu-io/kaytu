@@ -26,6 +26,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	patternVersionRegex, _ = regexp.Compile(fmt.Sprintf("plugin_([a-z0-9\\.]+)_%s_%s", runtime.GOOS, runtime.GOARCH))
+)
+
 type RunningPlugin struct {
 	Plugin server.Plugin
 	Stream golang.Plugin_RegisterServer
@@ -47,6 +51,8 @@ type Manager struct {
 	detailsPage  *view.PluginCustomResourceDetailsPage
 
 	NonInteractiveView *view.NonInteractiveView
+	lis                net.Listener
+	grpcServer         *grpc.Server
 }
 
 func New() *Manager {
@@ -78,7 +84,8 @@ func (m *Manager) StartPlugin(cmd string) error {
 	for _, plg := range plugins {
 		for _, c := range plg.Config.Commands {
 			if cmd == c.Name {
-				return startPlugin(plg, fmt.Sprintf("localhost:%d", m.port))
+				_, err := startPlugin(plg, fmt.Sprintf("localhost:%d", m.port))
+				return err
 			}
 		}
 	}
@@ -87,22 +94,29 @@ func (m *Manager) StartPlugin(cmd string) error {
 }
 
 func (m *Manager) StartServer() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", m.port))
+	var err error
+
+	m.lis, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", m.port))
 	if err != nil {
 		return err
 	}
 
-	m.port = lis.Addr().(*net.TCPAddr).Port
+	m.port = m.lis.Addr().(*net.TCPAddr).Port
 
-	grpcServer := grpc.NewServer()
-	golang.RegisterPluginServer(grpcServer, m)
+	m.grpcServer = grpc.NewServer()
+	golang.RegisterPluginServer(m.grpcServer, m)
 	go func() {
-		err = grpcServer.Serve(lis)
+		err = m.grpcServer.Serve(m.lis)
 		if err != nil {
 			panic(err)
 		}
 	}()
 	return nil
+}
+
+func (m *Manager) StopServer() error {
+	m.grpcServer.Stop()
+	return m.lis.Close()
 }
 
 func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
@@ -131,15 +145,15 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
 				m.NonInteractiveView.PublishResultsReady(receivedMsg.GetReady())
-			case receivedMsg.GetProfile() != nil:
-				m.NonInteractiveView.SetAccountID(receivedMsg.GetProfile())
 			}
 		}
 	} else {
 		for {
 			receivedMsg, err := stream.Recv()
 			if err != nil {
-				m.jobs.PublishError(err)
+				if m.jobs != nil {
+					m.jobs.PublishError(err)
+				}
 				return err
 			}
 
@@ -179,7 +193,10 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				}
 
 			case receivedMsg.GetErr() != nil:
-				m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+				if m.jobs != nil {
+					m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+				}
+
 			case receivedMsg.GetSummary() != nil:
 				if m.pluginCustomOptimizations == nil {
 					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
@@ -199,7 +216,6 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 	if !strings.HasPrefix(addr, "github.com") {
 		addr = fmt.Sprintf("github.com/kaytu-io/plugin-%s", addr)
 	}
-
 	addr = strings.TrimPrefix(addr, "github.com/")
 	owner, repository, _ := strings.Cut(addr, "/")
 
@@ -210,17 +226,16 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 		)
 		tc = oauth2.NewClient(context.Background(), ts)
 	}
-
-	approved, err := m.pluginApproved(tc, addr)
+	approved, err := m.isPluginApproved(tc, addr)
 	if err != nil {
 		return err
 	}
+
 	if !approved && !unsafe {
-		return fmt.Errorf("plugin not approved")
+		return fmt.Errorf("plugin not approved. either use --unsafe or make a pull request on github.com/kaytu-io/kaytu to approve your plugin")
 	}
 
 	api := githubAPI.NewClient(tc)
-
 	plugins := map[string]*server.Plugin{}
 	for _, plg := range cfg.Plugins {
 		plugins[plg.Config.Name] = plg
@@ -237,7 +252,6 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 		installed := false
 		for i := 0; i < 30; i++ {
 			for _, runningPlugin := range m.plugins {
-				fmt.Println(runningPlugin.Plugin.Config.Name, addr)
 				if runningPlugin.Plugin.Config.Name == addr {
 					installed = true
 				}
@@ -257,13 +271,7 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 	}
 
 	for _, asset := range release.Assets {
-		pattern := fmt.Sprintf("plugin_([a-z0-9\\.]+)_%s_%s", runtime.GOOS, runtime.GOARCH)
-		r, err := regexp.Compile(pattern)
-		if err != nil {
-			return err
-		}
-
-		if asset.ID != nil && asset.Name != nil && r.MatchString(*asset.Name) {
+		if asset.ID != nil && asset.Name != nil && patternVersionRegex.MatchString(*asset.Name) {
 			assetVersion := strings.Split(*asset.Name, "_")[1]
 			if p, ok := plugins[addr]; ok && p.Config.Version == assetVersion {
 				return nil
@@ -318,10 +326,14 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 				},
 			}
 			os.Stderr.WriteString("Starting the plugin...\n")
-			err = startPlugin(&plugin, fmt.Sprintf("localhost:%d", m.port))
+			runningCmd, err := startPlugin(&plugin, fmt.Sprintf("localhost:%d", m.port))
 			if err != nil {
 				return err
 			}
+			defer runningCmd.Process.Kill()
+			defer func() {
+				m.plugins = nil
+			}()
 
 			os.Stderr.WriteString("Waiting for plugin to load...\n")
 			installed := false
@@ -359,6 +371,7 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -401,7 +414,7 @@ func (m *Manager) SetNonInteractiveView() {
 	m.NonInteractiveView = view.NewNonInteractiveView()
 }
 
-func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, error) {
+func (m *Manager) isPluginApproved(tc *http.Client, pluginName string) (bool, error) {
 	if pluginName == "kaytu-io/plugin-aws" {
 		return true, nil
 	}
@@ -412,7 +425,7 @@ func (m *Manager) pluginApproved(tc *http.Client, pluginName string) (bool, erro
 	}
 
 	if resp.StatusCode != 200 {
-		return false, err
+		return false, fmt.Errorf("invalid status code: %d", resp.StatusCode)
 	}
 
 	content, err := fileContent.GetContent()

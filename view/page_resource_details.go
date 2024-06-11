@@ -45,6 +45,7 @@ type ResourceDetailsPage struct {
 	statusBar               StatusBarView
 	app                     *App
 	responsive.ResponsiveView
+	detailColumns []table.Column
 }
 
 func (m ResourceDetailsPage) ExtractProperties(item *golang.OptimizationItem) map[string]Rows {
@@ -56,17 +57,10 @@ func (m ResourceDetailsPage) ExtractProperties(item *golang.OptimizationItem) ma
 			if !strings.HasPrefix(prop.Key, " ") {
 				prop.Key = style.Bold.Render(prop.Key)
 			}
-			usageColumn := ""
-			if prop.Average != "" {
-				usageColumn += fmt.Sprintf("Avg: %s", prop.Average)
-			}
-			if prop.Max != "" {
-				usageColumn += fmt.Sprintf(" Max: %s", prop.Max)
-			}
 			rows = append(rows, Row{
 				prop.Key,
 				prop.Current,
-				usageColumn,
+				prop.Average,
 				prop.Recommended,
 			})
 		}
@@ -109,13 +103,13 @@ func (m ResourceDetailsPage) OnOpen() Page {
 	}
 
 	deviceColumns := []table.Column{
-		table.NewColumn("0", "Resource ID", 30),
-		table.NewColumn("1", "Resource Name", 23),
-		table.NewColumn("2", "ResourceType", 20),
-		table.NewColumn("3", "Runtime", 13),
-		table.NewColumn("4", "Current Cost", 20),
-		table.NewColumn("5", "Right sized Cost", 20),
-		table.NewColumn("6", "Savings", 20),
+		table.NewColumn("0", "Resource ID", 0),
+		table.NewColumn("1", "Resource Name", 0),
+		table.NewColumn("2", "ResourceType", 0),
+		table.NewColumn("3", "Runtime", 0),
+		table.NewColumn("4", "Current Cost", 0),
+		table.NewColumn("5", "Right sized Cost", 0),
+		table.NewColumn("6", "Savings", 0),
 	}
 
 	deviceRows := Rows{}
@@ -135,13 +129,29 @@ func (m ResourceDetailsPage) OnOpen() Page {
 		})
 	}
 
+	for idx, column := range deviceColumns {
+		width := len(column.Title())
+		for _, row := range deviceRows.ToTableRows() {
+			cell := row.Data[column.Key()]
+			cellContent := ""
+			if cell != nil {
+				cellContent = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell.(string), ""))
+			}
+			if len(cellContent) > width {
+				width = len(cellContent)
+			}
+		}
+		column = table.NewColumn(column.Key(), column.Title(), width)
+		deviceColumns[idx] = column
+	}
+
 	days := "7"
 	for _, p := range item.Preferences {
 		if p.Key == "ObservabilityTimePeriod" && p.Value != nil {
 			days = p.Value.Value
 		}
 	}
-	detailColumns := []table.Column{
+	m.detailColumns = []table.Column{
 		table.NewColumn("0", "", 30),
 		table.NewColumn("1", "Current", 30),
 		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
@@ -149,7 +159,7 @@ func (m ResourceDetailsPage) OnOpen() Page {
 	}
 
 	m.item = item
-	m.detailTable = table.New(detailColumns).
+	m.detailTable = table.New(m.detailColumns).
 		WithPageSize(1).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(style.Base).BorderRounded()
@@ -230,8 +240,23 @@ func (m ResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.deviceTable.HighlightedRow().Data["0"] != nil && m.selectedDevice != m.deviceTable.HighlightedRow().Data["0"] {
 		m.selectedDevice = m.deviceTable.HighlightedRow().Data["0"].(string)
-
-		m.detailTable = m.detailTable.WithRows(m.deviceProperties[m.selectedDevice].ToTableRows())
+		rows := m.deviceProperties[m.selectedDevice].ToTableRows()
+		var columns []table.Column
+		for _, column := range m.detailColumns {
+			width := len(column.Title())
+			for _, row := range rows {
+				cell := row.Data[column.Key()]
+				cellContent := ""
+				if cell != nil {
+					cellContent = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell.(string), ""))
+				}
+				if len(cellContent) > width {
+					width = len(cellContent)
+				}
+			}
+			columns = append(columns, table.NewColumn(column.Key(), column.Title(), width+2))
+		}
+		m.detailTable = m.detailTable.WithColumns(columns).WithRows(rows)
 	}
 
 	lineCount := strings.Count(wordwrap.String(m.item.Description, m.GetWidth()), "\n") + 1

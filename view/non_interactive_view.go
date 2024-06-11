@@ -19,6 +19,23 @@ import (
 	"unicode"
 )
 
+type PluginResult struct {
+	Properties map[string]string      `json:"properties"`
+	Resources  []PluginResourceResult `json:"devices"`
+}
+
+type PluginResourceResult struct {
+	Overview map[string]string                `json:"overview"`
+	Details  map[string]PluginResourceDetails `json:"details"`
+}
+
+type PluginResourceDetails struct {
+	Current     string `json:"current"`
+	Average     string `json:"average"`
+	Max         string `json:"max"`
+	Recommended string `json:"recommended"`
+}
+
 type NonInteractiveView struct {
 	runningJobsMap map[string]string
 	failedJobsMap  map[string]string
@@ -38,6 +55,7 @@ type NonInteractiveView struct {
 	jobMutex sync.RWMutex
 
 	resultsReady chan bool
+	output       *os.File
 }
 
 func NewNonInteractiveView() *NonInteractiveView {
@@ -48,8 +66,13 @@ func NewNonInteractiveView() *NonInteractiveView {
 		jobChan:        make(chan *golang.JobResult, 10000),
 		errorChan:      make(chan error, 10000),
 		resultsReady:   make(chan bool),
+		output:         os.Stdout,
 	}
 	return v
+}
+
+func (v *NonInteractiveView) SetOutput(f *os.File) {
+	v.output = f
 }
 
 var bold = color.New(color.Bold)
@@ -102,7 +125,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 							return err
 						}
 					}
-					os.Stdout.WriteString(str)
+					v.output.WriteString(str)
 				} else if nonInteractiveFlag == "csv" {
 					var csvHeaders []string
 					var csvRows [][]string
@@ -111,8 +134,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 					} else {
 						csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
 					}
-					out := os.Stdout
-					writer := csv.NewWriter(out)
+					writer := csv.NewWriter(v.output)
 
 					err := writer.Write(csvHeaders)
 					if err != nil {
@@ -126,7 +148,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 						}
 					}
 					writer.Flush()
-					err = out.Close()
+					err = v.output.Close()
 					if err != nil {
 						return err
 					}
@@ -144,27 +166,17 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 							return err
 						}
 					} else {
-						jsonValue := struct {
-							Items []map[string]any
-						}{
-							Items: convertOptimizeJson(v.PluginCustomOptimizations.Items()),
-						}
-						jsonData, err = json.Marshal(jsonValue)
+						jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
 						if err != nil {
 							return err
 						}
 					}
 
-					out := os.Stdout
+					_, err = v.output.Write(jsonData)
 					if err != nil {
 						return err
 					}
-
-					_, err = out.Write(jsonData)
-					if err != nil {
-						return err
-					}
-					err = out.Close()
+					err = v.output.Close()
 					if err != nil {
 						return err
 					}
@@ -239,12 +251,7 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 							return "", err
 						}
 					} else {
-						jsonValue := struct {
-							Items []map[string]any
-						}{
-							Items: convertOptimizeJson(v.PluginCustomOptimizations.Items()),
-						}
-						jsonData, err = json.Marshal(jsonValue)
+						jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
 						if err != nil {
 							return "", err
 						}
@@ -476,35 +483,36 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 	return append(itemHeaders, append(deviceHeaders, "Device-Additional-Details")...), rows
 }
 
-func convertOptimizeJson(items []*golang.ChartOptimizationItem) []map[string]any {
-	var mappedItems []map[string]any
+func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
+	var mappedItems []PluginResult
 	for _, i := range items {
-		item := make(map[string]any)
+		item := PluginResult{
+			Properties: map[string]string{},
+			Resources:  nil,
+		}
 		for key, value := range i.OverviewChartRow.Values {
 			if strings.HasPrefix(key, "x_kaytu") {
 				continue
 			}
-			item[key] = removeANSI(value.Value)
+			item.Properties[key] = removeANSI(value.Value)
 		}
-		devices := make(map[string]map[string]any)
+		resources := make(map[string]PluginResourceResult)
 		for _, d := range i.DevicesChartRows {
-			device := make(map[string]any)
+			resource := PluginResourceResult{
+				Overview: map[string]string{},
+				Details:  map[string]PluginResourceDetails{},
+			}
 			for key, value := range d.Values {
 				if strings.HasPrefix(key, "x_kaytu") {
 					continue
 				}
-				device[key] = removeANSI(value.Value)
+				resource.Overview[key] = removeANSI(value.Value)
 			}
-			devices[d.RowId] = device
+			resources[d.RowId] = resource
 		}
 		for k, d := range i.DevicesProperties {
 			for _, p := range d.Properties {
-				devices[k][toSnakeCase(p.Key)] = struct {
-					Current     string `json:"current"`
-					Average     string `json:"average"`
-					Max         string `json:"max"`
-					Recommended string `json:"recommended"`
-				}{
+				resources[k].Details[toSnakeCase(p.Key)] = PluginResourceDetails{
 					Current:     p.Current,
 					Average:     p.Average,
 					Max:         p.Max,
@@ -512,11 +520,11 @@ func convertOptimizeJson(items []*golang.ChartOptimizationItem) []map[string]any
 				}
 			}
 		}
-		var devicesArray []map[string]any
-		for _, d := range devices {
-			devicesArray = append(devicesArray, d)
+		var resourcesArray []PluginResourceResult
+		for _, d := range resources {
+			resourcesArray = append(resourcesArray, d)
 		}
-		item["devices"] = devicesArray
+		item.Resources = resourcesArray
 		mappedItems = append(mappedItems, item)
 	}
 	return mappedItems
