@@ -37,6 +37,7 @@ type NonInteractiveView struct {
 	jobMutex sync.RWMutex
 
 	resultsReady chan bool
+	output       *os.File
 }
 
 func NewNonInteractiveView() *NonInteractiveView {
@@ -47,6 +48,7 @@ func NewNonInteractiveView() *NonInteractiveView {
 		jobChan:        make(chan *golang.JobResult, 10000),
 		errorChan:      make(chan error, 10000),
 		resultsReady:   make(chan bool),
+		output:         os.Stdout,
 	}
 	return v
 }
@@ -95,7 +97,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 							return err
 						}
 					}
-					os.Stdout.WriteString(str)
+					v.output.WriteString(str)
 				} else if nonInteractiveFlag == "csv" {
 					var csvHeaders []string
 					var csvRows [][]string
@@ -104,8 +106,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 					} else {
 						csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
 					}
-					out := os.Stdout
-					writer := csv.NewWriter(out)
+					writer := csv.NewWriter(v.output)
 
 					err := writer.Write(csvHeaders)
 					if err != nil {
@@ -119,7 +120,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 						}
 					}
 					writer.Flush()
-					err = out.Close()
+					err = v.output.Close()
 					if err != nil {
 						return err
 					}
@@ -148,16 +149,11 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 						}
 					}
 
-					out := os.Stdout
+					_, err = v.output.Write(jsonData)
 					if err != nil {
 						return err
 					}
-
-					_, err = out.Write(jsonData)
-					if err != nil {
-						return err
-					}
-					err = out.Close()
+					err = v.output.Close()
 					if err != nil {
 						return err
 					}
