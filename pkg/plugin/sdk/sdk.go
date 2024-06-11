@@ -8,9 +8,12 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"math"
 	"os"
 	"time"
 )
+
+const grpcMaxMessageSize = 50 * 1024 * 1024
 
 type Plugin struct {
 	jobMaxConcurrent int
@@ -43,7 +46,7 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	defer conn.Close()
 
 	client := golang.NewPluginClient(conn)
-	stream, err := client.Register(context.Background())
+	stream, err := client.Register(context.Background(), grpc.MaxCallRecvMsgSize(math.MaxInt32))
 	if err != nil {
 		return err
 	}
