@@ -398,7 +398,10 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
 	var mappedItems []PluginResult
 	for _, i := range items {
-		item := PluginResult{}
+		item := PluginResult{
+			Properties: map[string]string{},
+			Resources:  nil,
+		}
 		for key, value := range i.OverviewChartRow.Values {
 			if strings.HasPrefix(key, "x_kaytu") {
 				continue
@@ -407,7 +410,10 @@ func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
 		}
 		resources := make(map[string]PluginResourceResult)
 		for _, d := range i.DevicesChartRows {
-			resource := PluginResourceResult{}
+			resource := PluginResourceResult{
+				Overview: map[string]string{},
+				Details:  map[string]PluginResourceDetails{},
+			}
 			for key, value := range d.Values {
 				if strings.HasPrefix(key, "x_kaytu") {
 					continue
