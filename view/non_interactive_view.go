@@ -47,6 +47,8 @@ type NonInteractiveView struct {
 	OverviewChart             *golang.ChartDefinition
 	DevicesChart              *golang.ChartDefinition
 
+	NonInteractiveExport *golang.NonInteractiveExport
+
 	errorChan chan error
 
 	jobChan  chan *golang.JobResult
@@ -98,6 +100,10 @@ func (v *NonInteractiveView) PublishResultsReady(ready *golang.ResultsReady) {
 	v.resultsReady <- ready.Ready
 }
 
+func (v *NonInteractiveView) PublishNonInteractiveExport(nonInteractiveExport *golang.NonInteractiveExport) {
+	v.NonInteractiveExport = nonInteractiveExport
+}
+
 func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error {
 	go v.WaitForJobs()
 	for {
@@ -105,73 +111,107 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 		case ready := <-v.resultsReady:
 			if ready == true {
 				if nonInteractiveFlag == "table" {
-					var str string
-					var err error
-					if v.Optimizations != nil {
-						str, err = v.OptimizationsString()
-						if err != nil {
-							return err
-						}
+					if v.NonInteractiveExport != nil && v.NonInteractiveExport.Table != "" {
+						v.output.WriteString(v.NonInteractiveExport.Table)
 					} else {
-						str, err = v.CustomOptimizationsString()
-						if err != nil {
-							return err
+						var str string
+						var err error
+						if v.Optimizations != nil {
+							str, err = v.OptimizationsString()
+							if err != nil {
+								return err
+							}
+						} else {
+							str, err = v.CustomOptimizationsString()
+							if err != nil {
+								return err
+							}
 						}
+						v.output.WriteString(str)
 					}
-					v.output.WriteString(str)
 				} else if nonInteractiveFlag == "csv" {
-					var csvHeaders []string
-					var csvRows [][]string
-					if v.Optimizations != nil {
-						csvHeaders, csvRows = exportCsv(v.Optimizations.Items())
-					} else {
-						csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
-					}
-					writer := csv.NewWriter(v.output)
+					if v.NonInteractiveExport != nil && v.NonInteractiveExport.Csv != nil {
+						writer := csv.NewWriter(v.output)
 
-					err := writer.Write(csvHeaders)
-					if err != nil {
-						return err
-					}
-
-					for _, row := range csvRows {
-						err := writer.Write(row)
+						for _, row := range v.NonInteractiveExport.Csv {
+							if row == nil {
+								continue
+							}
+							err := writer.Write(row.Row)
+							if err != nil {
+								return err
+							}
+						}
+						writer.Flush()
+						err := v.output.Close()
 						if err != nil {
 							return err
 						}
-					}
-					writer.Flush()
-					err = v.output.Close()
-					if err != nil {
-						return err
+					} else {
+						var csvHeaders []string
+						var csvRows [][]string
+						if v.Optimizations != nil {
+							csvHeaders, csvRows = exportCsv(v.Optimizations.Items())
+						} else {
+							csvHeaders, csvRows = v.exportCustomCsv(v.PluginCustomOptimizations.Items())
+						}
+						writer := csv.NewWriter(v.output)
+
+						err := writer.Write(csvHeaders)
+						if err != nil {
+							return err
+						}
+
+						for _, row := range csvRows {
+							err := writer.Write(row)
+							if err != nil {
+								return err
+							}
+						}
+						writer.Flush()
+						err = v.output.Close()
+						if err != nil {
+							return err
+						}
 					}
 				} else if nonInteractiveFlag == "json" {
-					var jsonData []byte
-					var err error
-					if v.Optimizations != nil {
-						jsonValue := struct {
-							Items []*golang.OptimizationItem
-						}{
-							Items: v.Optimizations.Items(),
+					if v.NonInteractiveExport != nil && v.NonInteractiveExport.Json != "" {
+						_, err := v.output.Write([]byte(v.NonInteractiveExport.Json))
+						if err != nil {
+							return err
 						}
-						jsonData, err = json.Marshal(jsonValue)
+						err = v.output.Close()
 						if err != nil {
 							return err
 						}
 					} else {
-						jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
+						var jsonData []byte
+						var err error
+						if v.Optimizations != nil {
+							jsonValue := struct {
+								Items []*golang.OptimizationItem
+							}{
+								Items: v.Optimizations.Items(),
+							}
+							jsonData, err = json.Marshal(jsonValue)
+							if err != nil {
+								return err
+							}
+						} else {
+							jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
+							if err != nil {
+								return err
+							}
+						}
+
+						_, err = v.output.Write(jsonData)
 						if err != nil {
 							return err
 						}
-					}
-
-					_, err = v.output.Write(jsonData)
-					if err != nil {
-						return err
-					}
-					err = v.output.Close()
-					if err != nil {
-						return err
+						err = v.output.Close()
+						if err != nil {
+							return err
+						}
 					}
 				} else {
 					os.Stderr.WriteString("output mode not recognized!")
