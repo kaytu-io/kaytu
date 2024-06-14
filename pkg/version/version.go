@@ -1,3 +1,3 @@
 package version
 
-var VERSION string
+var VERSION = "0.9.0"
