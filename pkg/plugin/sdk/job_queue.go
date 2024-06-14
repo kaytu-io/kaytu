@@ -55,6 +55,7 @@ func (q *JobQueue) Start() {
 	go func() {
 		for {
 			if q.finishedCounter.Get() == q.pendingCounter.Get() && q.onFinish != nil {
+				time.Sleep(500 * time.Millisecond)
 				q.onFinish()
 			}
 			time.Sleep(500 * time.Millisecond)
