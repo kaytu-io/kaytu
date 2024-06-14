@@ -104,6 +104,14 @@ func (v *NonInteractiveView) PublishNonInteractiveExport(nonInteractiveExport *g
 	v.NonInteractiveExport = nonInteractiveExport
 }
 
+func (v *NonInteractiveView) SetChartDefinition(overviewChart *golang.ChartDefinition) {
+	v.OverviewChart = overviewChart
+}
+
+func (v *NonInteractiveView) SetDevicesChartDefinition(devicesChart *golang.ChartDefinition) {
+	v.DevicesChart = devicesChart
+}
+
 func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error {
 	go v.WaitForJobs()
 	for {
