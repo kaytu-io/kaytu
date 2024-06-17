@@ -40,7 +40,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(plugin.PluginCmd)
 	rootCmd.AddCommand(predef.VersionCmd)
-	rootCmd.AddCommand(predef.LoginCmd)
+	rootCmd.AddCommand(predef.LoginCmd())
 	rootCmd.AddCommand(predef.LogoutCmd)
 	rootCmd.AddCommand(optimizeCmd)
 	rootCmd.AddCommand(terraformCmd)
@@ -205,7 +205,7 @@ func Execute() {
 
 							if rcmd.LoginRequired && cfg.AccessToken == "" {
 								// login
-								err := predef.LoginCmd.RunE(c, args)
+								err := predef.LoginCmd().RunE(c, args)
 								if err != nil {
 									return err
 								}
