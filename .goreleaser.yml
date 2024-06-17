@@ -23,7 +23,7 @@ builds:
     env:
       - CC=/usr/bin/musl-gcc
     main: ./main.go
-  - id: darwin
+  - id: darwin_amd64
     binary: kaytu
     ldflags:
       - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
@@ -31,9 +31,17 @@ builds:
       - darwin
     goarch:
       - amd64
-      - arm64
     env:
       - CC=/usr/bin/musl-gcc
+    main: ./main.go
+  - id: darwin_arm64
+    binary: kaytu
+    ldflags:
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+    goos:
+      - darwin
+    goarch:
+      - arm64
     main: ./main.go
   - id: windows
     binary: kaytu
