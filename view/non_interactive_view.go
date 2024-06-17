@@ -317,6 +317,7 @@ func (v *NonInteractiveView) WaitForJobs() {
 		case job := <-v.jobChan:
 			v.jobMutex.Lock()
 			if !job.Done {
+				os.Stderr.WriteString(job.Description + " Running...\n")
 				v.runningJobsMap[job.Id] = job.Description
 			} else {
 				os.Stderr.WriteString(job.Description + " Done.\n")
