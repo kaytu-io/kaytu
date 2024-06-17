@@ -11,7 +11,7 @@ release:
 checksum: {}
 
 builds:
-  - id: linux
+  - id: linux_amd64
     binary: kaytu
     ldflags:
       - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
@@ -19,9 +19,19 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
     env:
       - CC=/usr/bin/musl-gcc
+    main: ./main.go
+  - id: linux_arm64
+    binary: kaytu
+    ldflags:
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CGO_ENABLED=0
     main: ./main.go
   - id: darwin_amd64
     binary: kaytu
@@ -42,6 +52,8 @@ builds:
       - darwin
     goarch:
       - arm64
+    env:
+      - CGO_ENABLED=0
     main: ./main.go
   - id: windows
     binary: kaytu
