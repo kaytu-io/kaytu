@@ -11,46 +11,26 @@ release:
 checksum: {}
 
 builds:
-  - id: linux_amd64
-    binary: kaytu
-    ldflags:
-      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
-    goos:
-      - linux
-    goarch:
-      - amd64
-    env:
-      - CC=/usr/bin/musl-gcc
-    main: ./main.go
-  - id: linux_arm64
+  - id: linux
     binary: kaytu
     ldflags:
       - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - linux
     goarch:
+      - amd64
       - arm64
     env:
       - CGO_ENABLED=0
     main: ./main.go
-  - id: darwin_amd64
-    binary: kaytu
-    ldflags:
-      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
-    goos:
-      - darwin
-    goarch:
-      - amd64
-    env:
-      - CC=/usr/bin/musl-gcc
-    main: ./main.go
-  - id: darwin_arm64
+  - id: darwin
     binary: kaytu
     ldflags:
       - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
+      - amd64
       - arm64
     env:
       - CGO_ENABLED=0
@@ -58,13 +38,13 @@ builds:
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
       - amd64
     env:
-      - CC=/usr/bin/musl-gcc
+      - CGO_ENABLED=0
     main: ./main.go
 archives:
   - id: binary
