@@ -14,31 +14,37 @@ builds:
   - id: linux
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - linux
     goarch:
       - amd64
       - arm64
+    env:
+      - CC=/usr/bin/musl-gcc
     main: ./main.go
   - id: darwin
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - darwin
     goarch:
       - amd64
       - arm64
+    env:
+      - CC=/usr/bin/musl-gcc
     main: ./main.go
   - id: windows
     binary: kaytu
     ldflags:
-      - -s -w -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
+      - -s -w -linkmode external -extldflags '-static' -X github.com/{{ .Env.REPOSITORY_OWNER }}/{{ .Env.REPOSITORY_NAME }}/pkg/version.VERSION={{ .Version }}
     goos:
       - windows
     goarch:
       - amd64
+    env:
+      - CC=/usr/bin/musl-gcc
     main: ./main.go
 archives:
   - id: binary
