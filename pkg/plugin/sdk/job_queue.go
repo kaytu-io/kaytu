@@ -59,17 +59,18 @@ func (q *JobQueue) finisher() {
 		go q.finisher()
 	}
 
-	for i := 0; true; i++ {
-		if i%120 == 119 {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	lastTickLog := time.Now()
+	for range ticker.C {
+		if time.Since(lastTickLog) > time.Minute {
 			log.Printf("Job queue finisher: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
+			lastTickLog = time.Now()
 		}
-		i %= 120
 		if q.finishedCounter.Load() == q.pendingCounter.Load() && q.onFinish != nil {
 			time.Sleep(500 * time.Millisecond)
 			log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
 			q.onFinish()
 		}
-		time.Sleep(500 * time.Millisecond)
 	}
 }
 
