@@ -96,8 +96,10 @@ func (q *JobQueue) run() {
 		log.Printf("Running job %s", job.Id())
 		if err := job.Run(); err != nil {
 			jobResult.FailureMessage = err.Error()
+			log.Printf("Failed job %s: %s", job.Id(), err.Error())
+		} else {
+			log.Printf("Finished job %s", job.Id())
 		}
-		log.Printf("Finished job %s", job.Id())
 
 		q.stream.Send(&golang.PluginMessage{
 			PluginMessage: &golang.PluginMessage_Job{
