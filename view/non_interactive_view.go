@@ -37,8 +37,8 @@ type PluginResourceDetails struct {
 }
 
 type NonInteractiveView struct {
-	runningJobsMap map[string]string
-	failedJobsMap  map[string]string
+	runningJobsMap sync.Map
+	failedJobsMap  sync.Map
 	statusErr      string
 
 	Optimizations *controller.Optimizations[golang.OptimizationItem]
@@ -51,9 +51,8 @@ type NonInteractiveView struct {
 
 	errorChan chan error
 
-	jobChan  chan *golang.JobResult
-	jobs     []*golang.JobResult
-	jobMutex sync.RWMutex
+	jobChan chan *golang.JobResult
+	jobs    []*golang.JobResult
 
 	resultsReady chan bool
 	output       *os.File
@@ -61,9 +60,8 @@ type NonInteractiveView struct {
 
 func NewNonInteractiveView() *NonInteractiveView {
 	v := &NonInteractiveView{
-		runningJobsMap: map[string]string{},
-		failedJobsMap:  map[string]string{},
-		jobMutex:       sync.RWMutex{},
+		runningJobsMap: sync.Map{},
+		failedJobsMap:  sync.Map{},
 		jobChan:        make(chan *golang.JobResult, 10000),
 		errorChan:      make(chan error, 10000),
 		resultsReady:   make(chan bool),
@@ -315,24 +313,19 @@ func (v *NonInteractiveView) WaitForJobs() {
 	for {
 		select {
 		case job := <-v.jobChan:
-			v.jobMutex.Lock()
 			if !job.Done {
 				os.Stderr.WriteString(job.Description + " Running...\n")
-				v.runningJobsMap[job.Id] = job.Description
+				v.runningJobsMap.Store(job.Id, job.Description)
 			} else {
 				os.Stderr.WriteString(job.Description + " Done.\n")
-				if _, ok := v.runningJobsMap[job.Id]; ok {
-					delete(v.runningJobsMap, job.Id)
-				}
+				v.runningJobsMap.Delete(job.Id)
 			}
 			if len(job.FailureMessage) > 0 {
 				if utils.MatchesLimitPattern(fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)) {
 					v.errorChan <- fmt.Errorf(utils.ContactUsMessage)
 				}
-				v.failedJobsMap[job.Id] = fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)
+				v.failedJobsMap.Store(job.Id, fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage))
 			}
-			v.jobMutex.Unlock()
-
 		case err := <-v.errorChan:
 			os.Stderr.WriteString(err.Error() + "\n")
 			v.statusErr = fmt.Sprintf("Failed due to %v", err)
