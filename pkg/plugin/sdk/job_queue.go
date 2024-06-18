@@ -3,6 +3,7 @@ package sdk
 import (
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"log"
 	"time"
 )
 
@@ -31,6 +32,7 @@ func NewJobQueue(maxConcurrent int, stream golang.Plugin_RegisterClient) *JobQue
 }
 
 func (q *JobQueue) Push(job Job) {
+	log.Printf("Pushing job %s to queue", job.Id())
 	q.pendingCounter.Increment()
 
 	q.stream.Send(&golang.PluginMessage{
@@ -86,9 +88,11 @@ func (q *JobQueue) run() {
 			Description: job.Description(),
 			Done:        true,
 		}
+		log.Printf("Running job %s", job.Id())
 		if err := job.Run(); err != nil {
 			jobResult.FailureMessage = err.Error()
 		}
+		log.Printf("Finished job %s", job.Id())
 
 		q.stream.Send(&golang.PluginMessage{
 			PluginMessage: &golang.PluginMessage_Job{
