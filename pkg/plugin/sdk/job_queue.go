@@ -58,6 +58,7 @@ func (q *JobQueue) Start() {
 		for {
 			if q.finishedCounter.Get() == q.pendingCounter.Get() && q.onFinish != nil {
 				time.Sleep(500 * time.Millisecond)
+				log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Get(), q.pendingCounter.Get())
 				q.onFinish()
 			}
 			time.Sleep(500 * time.Millisecond)
