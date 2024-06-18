@@ -12,7 +12,7 @@ import (
 
 var ApiKeyRootCmd = &cobra.Command{
 	Use:   "apikey",
-	Short: "Kaytu API key create/list/delete",
+	Short: "Kaytu API key generate/list/delete",
 }
 
 var ApiKeyListCmd = &cobra.Command{
@@ -32,7 +32,7 @@ var ApiKeyListCmd = &cobra.Command{
 		fmt.Println("List of all API keys:")
 		fmt.Println("Name, CreatedAt, Active, Masked Key")
 		for _, item := range resp {
-			fmt.Printf("%s, %s, %s, %s", item.Name, item.CreatedAt.Format(time.RFC822), strconv.FormatBool(item.Active), item.MaskedKey)
+			fmt.Printf("%s, %s, %s, %s\n", item.Name, item.CreatedAt.Format(time.RFC822), strconv.FormatBool(item.Active), item.MaskedKey)
 		}
 
 		return nil
@@ -74,7 +74,7 @@ var ApiKeyDeleteCmd = &cobra.Command{
 			return err
 		}
 		name := ""
-		if len(args) == 0 || len(strings.TrimSpace(args[0])) == 0 {
+		if len(args) != 0 && len(strings.TrimSpace(args[0])) != 0 {
 			name = args[0]
 		}
 
