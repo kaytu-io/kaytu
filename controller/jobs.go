@@ -9,22 +9,20 @@ import (
 )
 
 type Jobs struct {
-	runningJobsMap map[string]string
-	failedJobsMap  map[string]string
+	runningJobsMap sync.Map
+	failedJobsMap  sync.Map
 
 	statusErr string
 
-	jobMutex  sync.RWMutex
 	jobChan   chan *golang.JobResult
 	errorChan chan error
 }
 
 func NewJobs() *Jobs {
 	jobs := Jobs{
-		runningJobsMap: map[string]string{},
-		failedJobsMap:  map[string]string{},
+		runningJobsMap: sync.Map{},
+		failedJobsMap:  sync.Map{},
 		statusErr:      "",
-		jobMutex:       sync.RWMutex{},
 		jobChan:        make(chan *golang.JobResult, 10000),
 		errorChan:      make(chan error, 10000),
 	}
@@ -34,90 +32,37 @@ func NewJobs() *Jobs {
 }
 
 func (m *Jobs) RunningJobs() []string {
-	m.jobMutex.RLock()
-	defer m.jobMutex.RUnlock()
-
-	if len(m.runningJobsMap) == 0 {
-		return nil
-	}
 	var res []string
-	for _, v := range m.runningJobsMap {
-		res = append(res, v)
-	}
+	m.runningJobsMap.Range(func(key, value any) bool {
+		res = append(res, value.(string))
+		return true
+	})
 	sort.Strings(res)
 	return res
-}
-
-func (m *Jobs) RunningJobsSummary() ([]string, bool) {
-	m.jobMutex.RLock()
-	defer m.jobMutex.RUnlock()
-
-	if len(m.runningJobsMap) == 0 {
-		return nil, false
-	}
-	var res []string
-	for _, v := range m.runningJobsMap {
-		res = append(res, v)
-	}
-	sort.Strings(res)
-	count := 3
-	if len(res) < 3 {
-		count = len(res)
-	}
-	return res[:count], len(m.runningJobsMap) > 3
 }
 
 func (m *Jobs) FailedJobs() []string {
-	m.jobMutex.RLock()
-	defer m.jobMutex.RUnlock()
-
-	if len(m.failedJobsMap) == 0 {
-		return nil
-	}
 	var res []string
-	for _, v := range m.failedJobsMap {
-		res = append(res, v)
-	}
+	m.failedJobsMap.Range(func(key, value any) bool {
+		res = append(res, value.(string))
+		return true
+	})
 	sort.Strings(res)
 	return res
-}
-
-func (m *Jobs) FailedJobsSummary() ([]string, bool) {
-	m.jobMutex.RLock()
-	defer m.jobMutex.RUnlock()
-
-	if len(m.failedJobsMap) == 0 {
-		return nil, false
-	}
-	var res []string
-	for _, v := range m.failedJobsMap {
-		res = append(res, v)
-	}
-	sort.Strings(res)
-	count := 3
-	if len(res) < 3 {
-		count = len(res)
-	}
-	return res[:count], len(m.failedJobsMap) > 3
 }
 
 func (m *Jobs) UpdateStatus() {
 	for {
 		select {
 		case job := <-m.jobChan:
-			m.jobMutex.Lock()
 			if !job.Done {
-				m.runningJobsMap[job.Id] = job.Description
+				m.runningJobsMap.Store(job.Id, job.Description)
 			} else {
-				if _, ok := m.runningJobsMap[job.Id]; ok {
-					delete(m.runningJobsMap, job.Id)
-				}
+				m.runningJobsMap.Delete(job.Id)
 			}
 			if len(job.FailureMessage) > 0 {
-				m.failedJobsMap[job.Id] = fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage)
+				m.failedJobsMap.Store(job.Id, fmt.Sprintf("%s failed due to %s", job.Description, job.FailureMessage))
 			}
-			m.jobMutex.Unlock()
-
 		case err := <-m.errorChan:
 			m.statusErr = fmt.Sprintf("%s\nFailed due to %v", m.statusErr, err)
 		}
