@@ -103,7 +103,10 @@ func (m *Manager) StartServer() error {
 
 	m.port = m.lis.Addr().(*net.TCPAddr).Port
 
-	m.grpcServer = grpc.NewServer()
+	m.grpcServer = grpc.NewServer(
+		grpc.MaxRecvMsgSize(64*1024*1024),
+		grpc.MaxSendMsgSize(64*1024*1024),
+	)
 	golang.RegisterPluginServer(m.grpcServer, m)
 	go func() {
 		err = m.grpcServer.Serve(m.lis)
