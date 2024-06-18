@@ -13,6 +13,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v62 v62.0.0
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/hcl/v2 v2.20.1
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/muesli/reflow v0.3.0
