@@ -8,12 +8,13 @@ import (
 )
 
 var GenerateCmd = &cobra.Command{
-	Use: "generate",
+	Use:   "generate",
+	Short: "Generating Kaytu API key to use for Kaytu agent",
 }
 
 var ApiKeyCmd = &cobra.Command{
 	Use:   "apikey",
-	Short: "Generate",
+	Short: "Generating Kaytu API key to use for Kaytu agent",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := server.GetConfig()
 		if err != nil {
