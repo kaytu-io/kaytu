@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"log"
+	"sync/atomic"
 	"time"
 )
 
@@ -18,8 +19,8 @@ type JobQueue struct {
 	maxConcurrent int
 	stream        golang.Plugin_RegisterClient
 
-	pendingCounter  SafeCounter
-	finishedCounter SafeCounter
+	pendingCounter  atomic.Uint32
+	finishedCounter atomic.Uint32
 	onFinish        func()
 }
 
@@ -28,12 +29,15 @@ func NewJobQueue(maxConcurrent int, stream golang.Plugin_RegisterClient) *JobQue
 		queue:         make(chan Job, 10000),
 		maxConcurrent: maxConcurrent,
 		stream:        stream,
+
+		pendingCounter:  atomic.Uint32{},
+		finishedCounter: atomic.Uint32{},
 	}
 }
 
 func (q *JobQueue) Push(job Job) {
 	log.Printf("Pushing job %s to queue", job.Id())
-	q.pendingCounter.Increment()
+	q.pendingCounter.Add(1)
 
 	q.stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Job{
@@ -56,9 +60,9 @@ func (q *JobQueue) Start() {
 
 	go func() {
 		for {
-			if q.finishedCounter.Get() == q.pendingCounter.Get() && q.onFinish != nil {
+			if q.finishedCounter.Load() == q.pendingCounter.Load() && q.onFinish != nil {
 				time.Sleep(500 * time.Millisecond)
-				log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Get(), q.pendingCounter.Get())
+				log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
 				q.onFinish()
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -100,6 +104,6 @@ func (q *JobQueue) run() {
 				Job: jobResult,
 			},
 		})
-		q.finishedCounter.Increment()
+		q.finishedCounter.Add(1)
 	}
 }
