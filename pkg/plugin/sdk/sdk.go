@@ -1,7 +1,6 @@
 package sdk
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
@@ -31,36 +30,37 @@ func New(prc Processor, jobMaxConcurrent int) *Plugin {
 }
 
 func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
 	serverFlag := cmd.Flags().Lookup("server")
 	if serverFlag == nil || serverFlag.Value.String() == "" {
 		return errors.New("server address not provided")
 	}
 
-	conn, err := grpc.Dial(serverFlag.Value.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(serverFlag.Value.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
 	client := golang.NewPluginClient(conn)
-	stream, err := client.Register(context.Background())
+	rawStream, err := client.Register(ctx)
 	if err != nil {
 		return err
 	}
-	p.prc.SetStream(stream)
 
+	stream := NewStreamController(rawStream)
+	stream.Start()
+
+	p.prc.SetStream(stream)
 	conf := p.prc.GetConfig()
-	err = stream.Send(&golang.PluginMessage{
+	stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Conf{
 			Conf: &conf,
 		},
 	})
-	if err != nil {
-		return err
-	}
-
 	jobQueue := NewJobQueue(p.jobMaxConcurrent, stream)
-	jobQueue.Start()
+	jobQueue.Start(ctx)
 
 	for {
 		msg, err := stream.Recv()
