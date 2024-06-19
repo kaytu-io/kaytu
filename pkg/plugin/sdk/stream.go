@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"log"
 	"sync/atomic"
@@ -45,6 +47,10 @@ func (s *StreamController) startReceiver() {
 	for {
 		msg, err := s.stream.Recv()
 		if err != nil && !errors.Is(err, io.EOF) {
+			grpcStatus, ok := status.FromError(err)
+			if ok && grpcStatus.Code() == codes.Unavailable && grpcStatus.Err().Error() == io.EOF.Error() {
+				continue
+			}
 			log.Printf("receive error: %v", err)
 			time.Sleep(1 * time.Second)
 			continue
