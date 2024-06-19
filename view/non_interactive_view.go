@@ -207,7 +207,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 								return err
 							}
 						} else {
-							jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
+							jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items(), v.agentMode))
 							if err != nil {
 								return err
 							}
@@ -293,7 +293,7 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 							return "", err
 						}
 					} else {
-						jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items()))
+						jsonData, err = json.Marshal(convertOptimizeJson(v.PluginCustomOptimizations.Items(), v.agentMode))
 						if err != nil {
 							return "", err
 						}
@@ -396,7 +396,7 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 	for _, i := range items {
 		row := make(map[string]string)
 		for key, value := range i.OverviewChartRow.Values {
-			if strings.HasPrefix(key, "x_kaytu") {
+			if strings.HasPrefix(key, "x_kaytu") && !v.agentMode {
 				continue
 			}
 			row[fmt.Sprintf("Item-%s", toSnakeCase(key))] = removeANSI(value.Value)
@@ -405,7 +405,7 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 		for _, d := range i.DevicesChartRows {
 			rowDevice := make(map[string]string)
 			for key, value := range d.Values {
-				if strings.HasPrefix(key, "x_kaytu") {
+				if strings.HasPrefix(key, "x_kaytu") && !v.agentMode {
 					continue
 				}
 				rowDevice[fmt.Sprintf("Device-%s", toSnakeCase(key))] = removeANSI(value.Value)
@@ -447,13 +447,13 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 	var itemHeaders []string
 	var deviceHeaders []string
 	for _, value := range v.OverviewChart.Columns {
-		if strings.HasPrefix(value.Id, "x_kaytu") {
+		if strings.HasPrefix(value.Id, "x_kaytu") && !v.agentMode {
 			continue
 		}
 		itemHeaders = append(itemHeaders, fmt.Sprintf("Item-%s", toSnakeCase(value.Id)))
 	}
 	for _, value := range v.DevicesChart.Columns {
-		if strings.HasPrefix(value.Id, "x_kaytu") {
+		if strings.HasPrefix(value.Id, "x_kaytu") && !v.agentMode {
 			continue
 		}
 		deviceHeaders = append(deviceHeaders, fmt.Sprintf("Device-%s", toSnakeCase(value.Id)))
@@ -482,7 +482,7 @@ func (v *NonInteractiveView) exportCustomCsv(items []*golang.ChartOptimizationIt
 	return append(itemHeaders, append(deviceHeaders, "Device-Additional-Details")...), rows
 }
 
-func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
+func convertOptimizeJson(items []*golang.ChartOptimizationItem, agentMode bool) []PluginResult {
 	var mappedItems []PluginResult
 	for _, i := range items {
 		item := PluginResult{
@@ -490,7 +490,7 @@ func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
 			Resources:  nil,
 		}
 		for key, value := range i.OverviewChartRow.Values {
-			if strings.HasPrefix(key, "x_kaytu") {
+			if strings.HasPrefix(key, "x_kaytu") && !agentMode {
 				continue
 			}
 			item.Properties[key] = removeANSI(value.Value)
@@ -502,7 +502,7 @@ func convertOptimizeJson(items []*golang.ChartOptimizationItem) []PluginResult {
 				Details:  map[string]PluginResourceDetails{},
 			}
 			for key, value := range d.Values {
-				if strings.HasPrefix(key, "x_kaytu") {
+				if strings.HasPrefix(key, "x_kaytu") && !agentMode {
 					continue
 				}
 				resource.Overview[key] = removeANSI(value.Value)
@@ -781,7 +781,7 @@ func (v *NonInteractiveView) getCustomItemString(item *golang.ChartOptimizationI
 	}
 
 	for _, column := range v.OverviewChart.Columns {
-		if strings.HasPrefix(column.Id, "x_kaytu") {
+		if strings.HasPrefix(column.Id, "x_kaytu") && !v.agentMode {
 			continue
 		}
 		headers = append(headers, underline.Sprint(column.Name))
@@ -836,7 +836,7 @@ func (v *NonInteractiveView) getCustomDeviceString(item *golang.ChartOptimizatio
 	}
 
 	for _, column := range v.DevicesChart.Columns {
-		if strings.HasPrefix(column.Id, "x_kaytu") {
+		if strings.HasPrefix(column.Id, "x_kaytu") && !v.agentMode {
 			continue
 		}
 		headers = append(headers, underline.Sprint(column.Name))
