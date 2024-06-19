@@ -1,8 +1,10 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"io"
 	"log"
 	"sync/atomic"
 	"time"
@@ -42,7 +44,7 @@ func (s *StreamController) startReceiver() {
 
 	for {
 		msg, err := s.stream.Recv()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			log.Printf("receive error: %v", err)
 			time.Sleep(1 * time.Second)
 			continue
@@ -69,7 +71,7 @@ func (s *StreamController) startSender() {
 			return
 		}
 		err := s.stream.Send(msg)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			log.Printf("send error: %v", err)
 			time.Sleep(1 * time.Second)
 			continue
