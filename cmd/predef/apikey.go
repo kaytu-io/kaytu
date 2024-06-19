@@ -1,6 +1,7 @@
 package predef
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/api/kaytu"
 	"github.com/kaytu-io/kaytu/pkg/server"
@@ -49,8 +50,12 @@ var ApiKeyCreateCmd = &cobra.Command{
 		}
 
 		name := ""
-		if len(args) == 0 || len(strings.TrimSpace(args[0])) == 0 {
+		if len(args) != 0 && len(strings.TrimSpace(args[0])) != 0 {
 			name = args[0]
+		}
+
+		if strings.TrimSpace(name) == "" {
+			return errors.New("api key name must be provided")
 		}
 
 		resp, err := kaytu.CreateApiKeyRequest(cfg.AccessToken, name)
@@ -76,6 +81,10 @@ var ApiKeyDeleteCmd = &cobra.Command{
 		name := ""
 		if len(args) != 0 && len(strings.TrimSpace(args[0])) != 0 {
 			name = args[0]
+		}
+
+		if strings.TrimSpace(name) == "" {
+			return errors.New("api key name must be provided")
 		}
 
 		err = kaytu.DeleteApiKeyRequest(cfg.AccessToken, name)
