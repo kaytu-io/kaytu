@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"log"
@@ -11,20 +12,20 @@ import (
 type Job interface {
 	Id() string
 	Description() string
-	Run() error
+	Run(ctx context.Context) error
 }
 
 type JobQueue struct {
 	queue         chan Job
 	maxConcurrent int
-	stream        golang.Plugin_RegisterClient
+	stream        *StreamController
 
 	pendingCounter  atomic.Uint32
 	finishedCounter atomic.Uint32
-	onFinish        func()
+	onFinish        func(ctx context.Context)
 }
 
-func NewJobQueue(maxConcurrent int, stream golang.Plugin_RegisterClient) *JobQueue {
+func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
 	return &JobQueue{
 		queue:         make(chan Job, 10000),
 		maxConcurrent: maxConcurrent,
@@ -53,10 +54,10 @@ func (q *JobQueue) Push(job Job) {
 	q.queue <- job
 }
 
-func (q *JobQueue) finisher() {
+func (q *JobQueue) finisher(ctx context.Context) {
 	if err := recover(); err != nil {
 		log.Printf("Job queue finisher panic: %v", err)
-		go q.finisher()
+		go q.finisher(ctx)
 	}
 
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -69,23 +70,23 @@ func (q *JobQueue) finisher() {
 		if q.finishedCounter.Load() == q.pendingCounter.Load() && q.onFinish != nil {
 			time.Sleep(500 * time.Millisecond)
 			log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
-			q.onFinish()
+			q.onFinish(ctx)
 		}
 	}
 }
 
-func (q *JobQueue) Start() {
+func (q *JobQueue) Start(ctx context.Context) {
 	for i := 0; i < q.maxConcurrent; i++ {
-		go q.run()
+		go q.run(ctx)
 	}
-	go q.finisher()
+	go q.finisher(ctx)
 }
 
-func (q *JobQueue) SetOnFinish(f func()) {
+func (q *JobQueue) SetOnFinish(f func(ctx context.Context)) {
 	q.onFinish = f
 }
 
-func (q *JobQueue) handleJob(job Job) {
+func (q *JobQueue) handleJob(ctx context.Context, job Job) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Job queue handle job panic: %v", r)
@@ -104,21 +105,21 @@ func (q *JobQueue) handleJob(job Job) {
 		Done:        true,
 	}
 	log.Printf("Running job %s", job.Id())
-	if err := job.Run(); err != nil {
+	if err := job.Run(ctx); err != nil {
 		jobResult.FailureMessage = err.Error()
 		log.Printf("Failed job %s: %s", job.Id(), err.Error())
 	} else {
 		log.Printf("Finished job %s", job.Id())
 	}
 
-	_ = q.stream.Send(&golang.PluginMessage{
+	q.stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Job{
 			Job: jobResult,
 		},
 	})
 }
 
-func (q *JobQueue) run() {
+func (q *JobQueue) run(ctx context.Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Job queue run panic: %v", r)
@@ -128,11 +129,11 @@ func (q *JobQueue) run() {
 				},
 			})
 
-			go q.run()
+			go q.run(ctx)
 		}
 	}()
 
 	for job := range q.queue {
-		q.handleJob(job)
+		q.handleJob(ctx, job)
 	}
 }

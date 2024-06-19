@@ -6,5 +6,5 @@ type Processor interface {
 	ReEvaluate(evaluate *golang.ReEvaluate)
 	GetConfig() golang.RegisterConfig
 	StartProcess(cmd string, flags map[string]string, kaytuAccessToken string, jobQueue *JobQueue) error
-	SetStream(stream golang.Plugin_RegisterClient)
+	SetStream(stream *StreamController)
 }
