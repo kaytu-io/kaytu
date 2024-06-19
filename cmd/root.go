@@ -53,6 +53,7 @@ func init() {
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
 	optimizeCmd.PersistentFlags().String("output", "interactive", "Show optimization results in selected output (possible values: interactive, table, csv, json. default value: interactive)")
 	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
+	optimizeCmd.PersistentFlags().Bool("agent-mode", false, "Enable agent mode (to run on kaytu agent)")
 
 	terraformCmd.Flags().String("preferences", "", "Path to preferences file (yaml)")
 	terraformCmd.Flags().String("github-owner", "", "Github owner")
@@ -134,8 +135,10 @@ func Execute() {
 						return fmt.Errorf("output mode not recognized\npossible values: interactive, table, csv, json. default value: interactive (default \"interactive\")")
 					}
 
+					agentMode := utils.ReadBooleanFlag(c, "agent-mode")
+
 					if nonInteractiveFlag != "interactive" {
-						manager.SetNonInteractiveView(false)
+						manager.SetNonInteractiveView(agentMode)
 					}
 
 					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
