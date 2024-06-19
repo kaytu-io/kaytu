@@ -69,7 +69,7 @@ func (q *JobQueue) finisher(ctx context.Context) {
 			lastTickLog = time.Now()
 		}
 		if q.finishedCounter.Load() == q.pendingCounter.Load() && q.onFinish != nil {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(5000 * time.Millisecond)
 			log.Printf("All jobs are finished - calling onFinish, job counts: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
 			q.onFinish(ctx)
 		}
