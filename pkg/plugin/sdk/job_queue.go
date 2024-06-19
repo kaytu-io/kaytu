@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"log"
+	"runtime/debug"
 	"sync/atomic"
 	"time"
 )
@@ -89,7 +90,7 @@ func (q *JobQueue) SetOnFinish(f func(ctx context.Context)) {
 func (q *JobQueue) handleJob(ctx context.Context, job Job) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("Job queue handle job panic: %v", r)
+			log.Printf("Job queue handle job panic: %v, stack: %v", r, debug.Stack())
 			q.stream.Send(&golang.PluginMessage{
 				PluginMessage: &golang.PluginMessage_Err{
 					Err: &golang.Error{Error: fmt.Sprintf("job %s paniced: %v", job.Id(), r)},
