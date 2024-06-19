@@ -75,7 +75,7 @@ func (m *Manager) GetPlugin(name string) *RunningPlugin {
 	return nil
 }
 
-func (m *Manager) StartPlugin(cmd string) error {
+func (m *Manager) StartPlugin(ctx context.Context, cmd string) error {
 	plugins, err := server.GetPlugins()
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func (m *Manager) StartPlugin(cmd string) error {
 	for _, plg := range plugins {
 		for _, c := range plg.Config.Commands {
 			if cmd == c.Name {
-				_, err := startPlugin(plg, fmt.Sprintf("localhost:%d", m.port))
+				_, err := startPlugin(ctx, plg, fmt.Sprintf("localhost:%d", m.port))
 				return err
 			}
 		}
@@ -223,7 +223,7 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	}
 }
 
-func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) error {
+func (m *Manager) Install(ctx context.Context, addr, token string, unsafe, pluginDebugMode bool) error {
 	cfg, err := server.GetConfig()
 	if err != nil {
 		return err
@@ -342,7 +342,7 @@ func (m *Manager) Install(addr, token string, unsafe, pluginDebugMode bool) erro
 				},
 			}
 			os.Stderr.WriteString("Starting the plugin...")
-			runningCmd, err := startPlugin(&plugin, fmt.Sprintf("localhost:%d", m.port))
+			runningCmd, err := startPlugin(ctx, &plugin, fmt.Sprintf("localhost:%d", m.port))
 			if err != nil {
 				return err
 			}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/cmd/plugin"
@@ -98,7 +99,7 @@ func Execute() {
 			panic(err)
 		}
 
-		err = manager.Install("aws", "", false, false)
+		err = manager.Install(context.Background(), "aws", "", false, false)
 		if err != nil {
 			panic(err)
 		}
@@ -118,6 +119,8 @@ func Execute() {
 				Short: cmd.Description,
 				Long:  cmd.Description,
 				RunE: func(c *cobra.Command, args []string) error {
+					ctx := c.Context()
+
 					cfg, err := server.GetConfig()
 					if err != nil {
 						return err
@@ -156,14 +159,14 @@ func Execute() {
 						if plg.Config.Name == "aws" {
 							repoAddr = "aws"
 						}
-						err = manager.Install(repoAddr, "", false, false)
+						err = manager.Install(ctx, repoAddr, "", false, false)
 						if err != nil {
 							fmt.Println("failed due to", err)
 						}
 
 						runningPlg := manager.GetPlugin(plg.Config.Name)
 						if runningPlg == nil {
-							err = manager.StartPlugin(cmd.Name)
+							err = manager.StartPlugin(ctx, cmd.Name)
 							if err != nil {
 								return err
 							}

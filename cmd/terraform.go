@@ -26,6 +26,8 @@ var terraformCmd = &cobra.Command{
 	Short: "Create pull request for right sizing opportunities on your terraform git",
 	Long:  "Create pull request for right sizing opportunities on your terraform git",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
 		ignoreYoungerThan := utils.ReadIntFlag(cmd, "ignore-younger-than")
 		contentBytes, err := github.GetFile(
 			utils.ReadStringFlag(cmd, "github-owner"),
@@ -45,7 +47,7 @@ var terraformCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = manager.StartPlugin("rds-instance")
+		err = manager.StartPlugin(ctx, "rds-instance")
 		if err != nil {
 			return err
 		}
