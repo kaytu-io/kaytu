@@ -91,7 +91,7 @@ get_release_version() {
 # Find version from Github metadata
 get_latest_pre_release_version() {
     local RELEASE_URL="https://api.github.com/repos/${GITHUB_REPO}/releases"
-    KAYTU_VERSION=$(jq -r 'map(select(.prerelease)) | first | .tag_name' <<< $(curl --silent $RELEASE_URL))
+    KAYTU_VERSION=$(curl --silent $RELEASE_URL | jq -r 'map(select(.prerelease)) | first | .tag_name')
 }
 
 # Download from file from URL
