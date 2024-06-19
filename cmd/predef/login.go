@@ -25,14 +25,17 @@ func LoginCmd() *cobra.Command {
 					return err
 				}
 
-				authToken := cmd.Flag("auth-token").Value.String()
-				if authToken != "" {
-					cfg.AccessToken = authToken
-					err = server.SetConfig(*cfg)
-					if err != nil {
-						return fmt.Errorf("[login-setConfig]: %v", err)
+				authFlag := cmd.Flag("auth-token")
+				if authFlag != nil {
+					authToken := authFlag.Value.String()
+					if authToken != "" {
+						cfg.AccessToken = authToken
+						err = server.SetConfig(*cfg)
+						if err != nil {
+							return fmt.Errorf("[login-setConfig]: %v", err)
+						}
+						return nil
 					}
-					return nil
 				}
 
 				deviceCode, err := auth0.RequestDeviceCode()
