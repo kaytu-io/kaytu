@@ -67,7 +67,10 @@ verify_downloader() {
 
 # Find version from Github metadata
 get_release_version() {
-    if [ -n "${KAYTU_VERSION}" ]; then
+    if [ -n "${PRE_RELEASE}" ]; then
+      get_latest_pre_release_version
+      SUFFIX_URL="tags/${KAYTU_VERSION}"
+    elif [ -n "${KAYTU_VERSION}" ]; then
       SUFFIX_URL="tags/v${KAYTU_VERSION}"
     else
       SUFFIX_URL="latest"
@@ -83,6 +86,12 @@ get_release_version() {
     else
         fatal "Unable to determine release version"
     fi
+}
+
+# Find version from Github metadata
+get_latest_pre_release_version() {
+    local RELEASE_URL="https://api.github.com/repos/${GITHUB_REPO}/releases"
+    KAYTU_VERSION=$(jq -r 'map(select(.prerelease)) | first | .tag_name' <<< $(curl --silent $RELEASE_URL))
 }
 
 # Download from file from URL
