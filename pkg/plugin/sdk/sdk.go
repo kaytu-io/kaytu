@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
@@ -64,9 +65,12 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	jobQueue.Start(ctx)
 
 	for {
-		if ctx.Err() != nil {
-			log.Printf("context error: %v", ctx.Err())
-			return nil
+		if err := ctx.Err(); err != nil {
+			log.Printf("context error: %v", err)
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
 		}
 
 		msg, err := stream.Recv()
