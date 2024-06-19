@@ -11,6 +11,8 @@ import (
 var installCmd = &cobra.Command{
 	Use: "install",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
 		pluginDebugMode := utils.ReadBooleanFlag(cmd, "plugin-debug-mode")
 
 		manager := plugin.New()
@@ -29,7 +31,7 @@ var installCmd = &cobra.Command{
 
 		token := utils.ReadStringFlag(cmd, "token")
 		unsafe := utils.ReadBooleanFlag(cmd, "unsafe")
-		err = manager.Install(args[0], token, unsafe, pluginDebugMode)
+		err = manager.Install(ctx, args[0], token, unsafe, pluginDebugMode)
 		if err != nil {
 			fmt.Printf("failed to install plugin due to %v\n", err)
 			return err

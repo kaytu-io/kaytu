@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/server"
 	"os"
@@ -9,9 +10,9 @@ import (
 	"strings"
 )
 
-func startPlugin(plg *server.Plugin, serverAddr string) (*exec.Cmd, error) {
+func startPlugin(ctx context.Context, plg *server.Plugin, serverAddr string) (*exec.Cmd, error) {
 	logsDir := server.LogsDir()
-	cmd := exec.Command(plg.Path(), "--server", serverAddr)
+	cmd := exec.CommandContext(ctx, plg.Path(), "--server", serverAddr)
 
 	errLogs, err := os.OpenFile(filepath.Join(logsDir, fmt.Sprintf("%s.err.logs", strings.ReplaceAll(plg.Config.Name, "/", "_"))), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
