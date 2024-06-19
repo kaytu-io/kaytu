@@ -37,6 +37,8 @@ type PluginResourceDetails struct {
 }
 
 type NonInteractiveView struct {
+	agentMode bool
+
 	runningJobsMap sync.Map
 	failedJobsMap  sync.Map
 	statusErr      string
@@ -58,8 +60,9 @@ type NonInteractiveView struct {
 	output       *os.File
 }
 
-func NewNonInteractiveView() *NonInteractiveView {
+func NewNonInteractiveView(agentMode bool) *NonInteractiveView {
 	v := &NonInteractiveView{
+		agentMode:      agentMode,
 		runningJobsMap: sync.Map{},
 		failedJobsMap:  sync.Map{},
 		jobChan:        make(chan *golang.JobResult, 10000),

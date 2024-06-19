@@ -39,7 +39,7 @@ var terraformCmd = &cobra.Command{
 		}
 
 		manager := plugin2.New()
-		manager.SetNonInteractiveView()
+		manager.SetNonInteractiveView(false)
 		manager.NonInteractiveView.SetOptimizations(controller.NewOptimizations[golang.OptimizationItem](), nil, nil, nil)
 		err = manager.StartServer()
 		if err != nil {
