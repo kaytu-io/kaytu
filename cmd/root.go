@@ -135,7 +135,7 @@ func Execute() {
 					}
 
 					if nonInteractiveFlag != "interactive" {
-						manager.SetNonInteractiveView()
+						manager.SetNonInteractiveView(false)
 					}
 
 					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")

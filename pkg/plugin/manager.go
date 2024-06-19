@@ -426,8 +426,8 @@ func (m *Manager) SetCustomUI(jobs *controller.Jobs, optimizations *controller.O
 	})
 }
 
-func (m *Manager) SetNonInteractiveView() {
-	m.NonInteractiveView = view.NewNonInteractiveView()
+func (m *Manager) SetNonInteractiveView(agentMode bool) {
+	m.NonInteractiveView = view.NewNonInteractiveView(agentMode)
 }
 
 func (m *Manager) isPluginApproved(tc *http.Client, pluginName string) (bool, error) {
