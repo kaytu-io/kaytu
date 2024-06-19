@@ -1,10 +1,13 @@
 package sdk
 
-import "github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+import (
+	"context"
+	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+)
 
 type Processor interface {
-	ReEvaluate(evaluate *golang.ReEvaluate)
-	GetConfig() golang.RegisterConfig
-	StartProcess(cmd string, flags map[string]string, kaytuAccessToken string, jobQueue *JobQueue) error
-	SetStream(stream *StreamController)
+	ReEvaluate(ctx context.Context, evaluate *golang.ReEvaluate)
+	GetConfig(ctx context.Context) golang.RegisterConfig
+	StartProcess(ctx context.Context, cmd string, flags map[string]string, kaytuAccessToken string, jobQueue *JobQueue) error
+	SetStream(ctx context.Context, stream *StreamController)
 }

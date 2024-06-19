@@ -1,12 +1,14 @@
 package sdk
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
 	"os"
 	"time"
 )
@@ -52,8 +54,8 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	stream := NewStreamController(rawStream)
 	stream.Start()
 
-	p.prc.SetStream(stream)
-	conf := p.prc.GetConfig()
+	p.prc.SetStream(ctx, stream)
+	conf := p.prc.GetConfig(ctx)
 	stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Conf{
 			Conf: &conf,
@@ -63,6 +65,14 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	jobQueue.Start(ctx)
 
 	for {
+		if err := ctx.Err(); err != nil {
+			log.Printf("context error: %v", err)
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
+		}
+
 		msg, err := stream.Recv()
 		if err != nil {
 			return err
@@ -70,10 +80,10 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 
 		switch {
 		case msg.GetReEvaluate() != nil:
-			p.prc.ReEvaluate(msg.GetReEvaluate())
+			p.prc.ReEvaluate(ctx, msg.GetReEvaluate())
 		case msg.GetStart() != nil:
 			startMsg := msg.GetStart()
-			err = p.prc.StartProcess(startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken(), jobQueue)
+			err = p.prc.StartProcess(ctx, startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken(), jobQueue)
 			if err != nil {
 				stream.Send(&golang.PluginMessage{
 					PluginMessage: &golang.PluginMessage_Err{
