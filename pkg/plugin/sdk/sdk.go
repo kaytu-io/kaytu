@@ -74,7 +74,7 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		msg, err := stream.Recv()
+		msg, err := stream.Recv(ctx)
 		if err != nil {
 			return err
 		}
