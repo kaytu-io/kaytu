@@ -64,6 +64,11 @@ func (q *JobQueue) finisher(ctx context.Context) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	lastTickLog := time.Now()
 	for range ticker.C {
+		if err := ctx.Err(); err != nil {
+			log.Printf("Job queue finisher context error: %v", err)
+			return
+		}
+
 		if time.Since(lastTickLog) > time.Minute {
 			log.Printf("Job queue finisher: %d/%d", q.finishedCounter.Load(), q.pendingCounter.Load())
 			lastTickLog = time.Now()
@@ -135,6 +140,10 @@ func (q *JobQueue) run(ctx context.Context) {
 	}()
 
 	for job := range q.queue {
+		if err := ctx.Err(); err != nil {
+			log.Printf("context error: %v", err)
+			return
+		}
 		q.handleJob(ctx, job)
 	}
 }
