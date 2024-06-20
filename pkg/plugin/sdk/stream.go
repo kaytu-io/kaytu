@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
@@ -35,21 +36,25 @@ func NewStreamController(stream golang.Plugin_RegisterClient) *StreamController 
 	return &controller
 }
 
-func (s *StreamController) startReceiver() {
+func (s *StreamController) startReceiver(ctx context.Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("StreamController receiver panic: %v", r)
 			time.Sleep(1 * time.Second)
-			go s.startReceiver()
+			go s.startReceiver(ctx)
 		}
 	}()
 
 	for {
+		if err := ctx.Err(); err != nil {
+			log.Printf("stream controller context error: %v", err)
+			return
+		}
 		msg, err := s.stream.Recv()
 		if err != nil && !errors.Is(err, io.EOF) {
 			grpcStatus, ok := status.FromError(err)
-			if ok && grpcStatus.Code() == codes.Unavailable && grpcStatus.Err().Error() == io.EOF.Error() {
-				continue
+			if ok && grpcStatus.Code() == codes.Unavailable && grpcStatus.Message() == "error reading from server: EOF" {
+				return
 			}
 			log.Printf("receive error: %v", err)
 			time.Sleep(1 * time.Second)
@@ -62,16 +67,23 @@ func (s *StreamController) startReceiver() {
 	}
 }
 
-func (s *StreamController) startSender() {
+func (s *StreamController) startSender(ctx context.Context) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("StreamController sender panic: %v", r)
+			log.Printf("stream controller sender panic: %v", r)
 			time.Sleep(1 * time.Second)
-			go s.startSender()
+			go s.startSender(ctx)
 		}
 	}()
 
 	for {
+		if len(s.sendChan) == 0 && s.sendClosed.Load() {
+			return
+		}
+		if err := ctx.Err(); len(s.sendChan) == 0 && err != nil {
+			log.Printf("stream controller context error: %v", err)
+			return
+		}
 		msg, ok := <-s.sendChan
 		if !ok {
 			return
@@ -85,9 +97,9 @@ func (s *StreamController) startSender() {
 	}
 }
 
-func (s *StreamController) Start() {
-	go s.startReceiver()
-	go s.startSender()
+func (s *StreamController) Start(ctx context.Context) {
+	go s.startReceiver(ctx)
+	go s.startSender(ctx)
 }
 
 func (s *StreamController) Send(msg *golang.PluginMessage) (err error) {
