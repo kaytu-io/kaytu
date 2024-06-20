@@ -7,11 +7,11 @@ import (
 
 type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] struct {
 	itemsChan          chan *T
-	inProcessItemCount atomic.Uint32
+	inProcessItemCount atomic.Int32
 	items              []*T
 
 	summaryChan           chan string
-	inProcessSummaryCount atomic.Uint32
+	inProcessSummaryCount atomic.Int32
 	summary               string
 
 	selectedItem *T
@@ -23,10 +23,10 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem]() *Optimizations[T] {
 	o := Optimizations[T]{
 		itemsChan:             make(chan *T, 1000),
-		inProcessItemCount:    atomic.Uint32{},
+		inProcessItemCount:    atomic.Int32{},
 		initializing:          true,
 		summaryChan:           make(chan string),
-		inProcessSummaryCount: atomic.Uint32{},
+		inProcessSummaryCount: atomic.Int32{},
 	}
 	go o.Process()
 	go o.SummaryProcess()
@@ -36,7 +36,7 @@ func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem](
 func (o *Optimizations[T]) Process() {
 	defer func() {
 		if r := recover(); r != nil {
-			o.inProcessItemCount = atomic.Uint32{}
+			o.inProcessItemCount = atomic.Int32{}
 			o.Process()
 		}
 	}()
@@ -75,7 +75,7 @@ func (o *Optimizations[T]) Process() {
 func (o *Optimizations[T]) SummaryProcess() {
 	defer func() {
 		if r := recover(); r != nil {
-			o.inProcessSummaryCount = atomic.Uint32{}
+			o.inProcessSummaryCount = atomic.Int32{}
 			o.SummaryProcess()
 		}
 	}()
