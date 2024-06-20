@@ -54,6 +54,7 @@ func (s *StreamController) startReceiver(ctx context.Context) {
 		if err != nil && !errors.Is(err, io.EOF) {
 			grpcStatus, ok := status.FromError(err)
 			if ok && grpcStatus.Code() == codes.Unavailable && grpcStatus.Message() == "error reading from server: EOF" {
+				s.CloseRecv()
 				return
 			}
 			log.Printf("receive error: %v", err)
@@ -82,6 +83,7 @@ func (s *StreamController) startSender(ctx context.Context) {
 		}
 		if err := ctx.Err(); len(s.sendChan) == 0 && err != nil {
 			log.Printf("stream controller context error: %v", err)
+			s.CloseSend()
 			return
 		}
 		msg, ok := <-s.sendChan
@@ -113,13 +115,16 @@ func (s *StreamController) Send(msg *golang.PluginMessage) (err error) {
 	return nil
 }
 
-func (s *StreamController) Recv() (*golang.ServerMessage, error) {
+func (s *StreamController) Recv(ctx context.Context) (*golang.ServerMessage, error) {
 	select {
 	case msg, ok := <-s.receiveChan:
 		if !ok {
 			return nil, fmt.Errorf("receive is closed")
 		}
 		return msg, nil
+	case <-ctx.Done():
+		s.receiveClosed.Store(true)
+		return nil, fmt.Errorf("receive is closed")
 	}
 }
 
