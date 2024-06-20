@@ -2,14 +2,17 @@ package controller
 
 import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"sync/atomic"
 )
 
 type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] struct {
-	itemsChan chan *T
-	items     []*T
+	itemsChan          chan *T
+	inProcessItemCount atomic.Uint32
+	items              []*T
 
-	summaryChan chan string
-	summary     string
+	summaryChan           chan string
+	inProcessSummaryCount atomic.Uint32
+	summary               string
 
 	selectedItem *T
 
@@ -19,9 +22,11 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 
 func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem]() *Optimizations[T] {
 	o := Optimizations[T]{
-		itemsChan:    make(chan *T, 1000),
-		initializing: true,
-		summaryChan: make(chan string),
+		itemsChan:             make(chan *T, 1000),
+		inProcessItemCount:    atomic.Uint32{},
+		initializing:          true,
+		summaryChan:           make(chan string),
+		inProcessSummaryCount: atomic.Uint32{},
 	}
 	go o.Process()
 	go o.SummaryProcess()
@@ -29,7 +34,15 @@ func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem](
 }
 
 func (o *Optimizations[T]) Process() {
+	defer func() {
+		if r := recover(); r != nil {
+			o.inProcessItemCount = atomic.Uint32{}
+			o.Process()
+		}
+	}()
+
 	for newItem := range o.itemsChan {
+		o.inProcessItemCount.Add(1)
 		if o.initializing {
 			o.initializing = false
 		}
@@ -55,12 +68,22 @@ func (o *Optimizations[T]) Process() {
 		if !updated {
 			o.items = append(o.items, newItem)
 		}
+		o.inProcessItemCount.Add(-1)
 	}
 }
 
 func (o *Optimizations[T]) SummaryProcess() {
+	defer func() {
+		if r := recover(); r != nil {
+			o.inProcessSummaryCount = atomic.Uint32{}
+			o.SummaryProcess()
+		}
+	}()
+
 	for msg := range o.summaryChan {
+		o.inProcessSummaryCount.Add(1)
 		o.summary = msg
+		o.inProcessSummaryCount.Add(-1)
 	}
 }
 
@@ -98,4 +121,26 @@ func (o *Optimizations[T]) SetResultSummary(msg string) {
 
 func (o *Optimizations[T]) GetResultSummary() string {
 	return o.summary
+}
+
+func (o *Optimizations[T]) IsProcessing() bool {
+	if len(o.itemsChan) > 0 {
+		return true
+	}
+	if len(o.summaryChan) > 0 {
+		return true
+	}
+
+	if o.inProcessItemCount.Load() > 0 {
+		return true
+	}
+	if o.inProcessSummaryCount.Load() > 0 {
+		return true
+	}
+
+	if o.initializing {
+		return true
+	}
+
+	return false
 }
