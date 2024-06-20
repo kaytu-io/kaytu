@@ -126,6 +126,10 @@ func CheckExpirationTime(accessToken string) (bool, error) {
 		return false, err
 	}
 
+	if _, ok := claims["exp"]; !ok {
+		return false, nil
+	}
+
 	var tm time.Time
 	switch iat := claims["exp"].(type) {
 	case float64:
