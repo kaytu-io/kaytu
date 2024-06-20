@@ -25,7 +25,7 @@ func LoginCmd() *cobra.Command {
 					return err
 				}
 
-				authFlag := cmd.Flag("auth-token")
+				authFlag := cmd.Flag("api-key")
 				if authFlag != nil {
 					authToken := authFlag.Value.String()
 					if authToken != "" {
@@ -65,7 +65,7 @@ func LoginCmd() *cobra.Command {
 			},
 		}
 
-		loginCmd.Flags().String("auth-token", "", "API auth token - if provided, it'll be set as the access token")
+		loginCmd.Flags().String("api-key", "", "API key - if provided, it'll be set as the access token")
 	}
 	return loginCmd
 }
