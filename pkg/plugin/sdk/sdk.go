@@ -101,10 +101,10 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func (p *Plugin) Execute() {
+func (p *Plugin) Execute(ctx context.Context) {
 	p.rootCmd.Flags().String("server", "", "")
 
-	err := p.rootCmd.Execute()
+	err := p.rootCmd.ExecuteContext(ctx)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -74,6 +74,10 @@ func init() {
 }
 
 func Execute() {
+	ExecuteContext(context.Background())
+}
+
+func ExecuteContext(ctx context.Context) {
 	err := server.CheckForUpdate()
 	if err != nil {
 		panic(err)
@@ -87,7 +91,7 @@ func Execute() {
 	for _, p := range plugins {
 		if p.Config.Name == "aws" {
 			server.RemoveConfig()
-			Execute()
+			ExecuteContext(ctx)
 			return
 		}
 	}
@@ -318,7 +322,7 @@ func Execute() {
 		}
 	}
 
-	err = rootCmd.Execute()
+	err = rootCmd.ExecuteContext(ctx)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
