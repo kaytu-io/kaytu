@@ -118,9 +118,16 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 		select {
 		case ready := <-v.resultsReady:
 			if ready == true {
-				for v.Optimizations.IsProcessing() {
-					os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
-					time.Sleep(1 * time.Second)
+				if v.Optimizations != nil {
+					for v.Optimizations.IsProcessing() {
+						os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
+						time.Sleep(1 * time.Second)
+					}
+				} else {
+					for v.PluginCustomOptimizations.IsProcessing() {
+						os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
+						time.Sleep(1 * time.Second)
+					}
 				}
 				if nonInteractiveFlag == "table" {
 					if v.NonInteractiveExport != nil && v.NonInteractiveExport.Table != "" {
@@ -243,9 +250,16 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 		select {
 		case ready := <-v.resultsReady:
 			if ready == true {
-				for v.Optimizations.IsProcessing() {
-					os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
-					time.Sleep(1 * time.Second)
+				if v.Optimizations != nil {
+					for v.Optimizations.IsProcessing() {
+						os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
+						time.Sleep(1 * time.Second)
+					}
+				} else {
+					for v.PluginCustomOptimizations.IsProcessing() {
+						os.Stderr.WriteString(fmt.Sprintf("%s - Export still processing, waiting for it to finish...\n", time.Now().Format(time.RFC3339)))
+						time.Sleep(1 * time.Second)
+					}
 				}
 				if nonInteractiveFlag == "table" {
 					var str string
