@@ -33,6 +33,7 @@ func New(prc Processor, jobMaxConcurrent int) *Plugin {
 
 func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
+	log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
 
 	serverFlag := cmd.Flags().Lookup("server")
 	if serverFlag == nil || serverFlag.Value.String() == "" {
@@ -52,7 +53,7 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 	}
 
 	stream := NewStreamController(rawStream)
-	stream.Start()
+	stream.Start(ctx)
 
 	p.prc.SetStream(ctx, stream)
 	conf := p.prc.GetConfig(ctx)
