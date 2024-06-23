@@ -407,6 +407,7 @@ func ExecuteContext(ctx context.Context) {
 							Service: p.Service,
 							Key:     p.Key,
 							Value:   v,
+							Pinned:  p.Pinned,
 						})
 					}
 					out, err := yaml.Marshal(preferences.PreferencesYamlFile{Preferences: items})
