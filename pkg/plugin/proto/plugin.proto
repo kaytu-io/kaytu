@@ -170,6 +170,7 @@ message StartProcess {
   string command = 1;
   map<string,string> flags = 2;
   string kaytu_access_token = 3;
+  repeated PreferenceItem default_preferences = 4;
 }
 
 message ServerMessage {
