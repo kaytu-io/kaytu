@@ -259,8 +259,6 @@ func ExecuteContext(ctx context.Context) {
 						if err != nil {
 							return err
 						}
-
-						fmt.Println(preferences.DefaultPreferences())
 					}
 
 					err = runningPlg.Stream.Send(&golang.ServerMessage{
