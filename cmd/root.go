@@ -16,7 +16,7 @@ import (
 	"github.com/kaytu-io/kaytu/view"
 	"github.com/rogpeppe/go-internal/semver"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"os"
 	"time"
 )
@@ -28,6 +28,15 @@ var optimizeCmd = &cobra.Command{
 	},
 	Short: "Identify right sizing opportunities based on your usage",
 	Long:  "Identify right sizing opportunities based on your usage",
+}
+
+var preferencesCmd = &cobra.Command{
+	Use: "get-preferences",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
+	Short: "Show command specific preferences with default values",
+	Long:  "Show command specific preferences with default values",
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,6 +54,7 @@ func init() {
 	rootCmd.AddCommand(predef.LogoutCmd)
 	rootCmd.AddCommand(predef.ApiKeyRootCmd)
 	rootCmd.AddCommand(optimizeCmd)
+	rootCmd.AddCommand(preferencesCmd)
 	rootCmd.AddCommand(terraformCmd)
 
 	predef.ApiKeyRootCmd.AddCommand(predef.ApiKeyCreateCmd)
@@ -240,20 +250,26 @@ func ExecuteContext(ctx context.Context) {
 						if err != nil {
 							return err
 						}
-						var p []*golang.PreferenceItem
+						var p preferences.PreferencesYamlFile
 						err = yaml.Unmarshal(cnt, &p)
 						if err != nil {
 							return err
 						}
-						preferences.Update(p)
+						err = preferences.UpdateValues(p.Preferences)
+						if err != nil {
+							return err
+						}
+
+						fmt.Println(preferences.DefaultPreferences())
 					}
 
 					err = runningPlg.Stream.Send(&golang.ServerMessage{
 						ServerMessage: &golang.ServerMessage_Start{
 							Start: &golang.StartProcess{
-								Command:          cmd.Name,
-								Flags:            flagValues,
-								KaytuAccessToken: cfg.AccessToken,
+								Command:            cmd.Name,
+								Flags:              flagValues,
+								KaytuAccessToken:   cfg.AccessToken,
+								DefaultPreferences: preferences.DefaultPreferences(),
 							},
 						},
 					})
@@ -319,6 +335,91 @@ func ExecuteContext(ctx context.Context) {
 					cobra.MarkFlagRequired(theCmd.Flags(), flag.Name)
 				}
 			}
+
+			thePreferencesCmd := &cobra.Command{
+				Use:   cmd.Name,
+				Short: cmd.Description,
+				Long:  cmd.Description,
+				RunE: func(c *cobra.Command, args []string) error {
+					ctx := c.Context()
+
+					manager := plugin2.New()
+					pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
+					if pluginDebugMode {
+						manager.SetListenPort(30422)
+					}
+
+					err = manager.StartServer()
+					if err != nil {
+						return err
+					}
+
+					if !pluginDebugMode {
+						repoAddr := "github.com/" + plg.Config.Name
+						if plg.Config.Name == "aws" {
+							repoAddr = "aws"
+						}
+						err = manager.Install(ctx, repoAddr, "", false, false)
+						if err != nil {
+							fmt.Println("failed due to", err)
+						}
+
+						runningPlg := manager.GetPlugin(plg.Config.Name)
+						if runningPlg == nil {
+							err = manager.StartPlugin(ctx, cmd.Name)
+							if err != nil {
+								return err
+							}
+						}
+					}
+
+					waitLoopCount := 100
+					if pluginDebugMode {
+						waitLoopCount = 1000
+					}
+
+					for i := 0; i < waitLoopCount; i++ {
+						runningPlg := manager.GetPlugin(plg.Config.Name)
+						if runningPlg != nil {
+							break
+						}
+						time.Sleep(100 * time.Millisecond)
+					}
+					runningPlg := manager.GetPlugin(plg.Config.Name)
+					if runningPlg == nil {
+						return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
+					}
+
+					for _, rcmd := range runningPlg.Plugin.Config.Commands {
+						if rcmd.Name == cmd.Name {
+							preferences.Update(rcmd.DefaultPreferences)
+							break
+						}
+					}
+
+					var items []preferences.PreferenceValueItem
+					for _, p := range preferences.DefaultPreferences() {
+						var v *string
+						if p.Value != nil {
+							v = &p.Value.Value
+						}
+						items = append(items, preferences.PreferenceValueItem{
+							Service: p.Service,
+							Key:     p.Key,
+							Value:   v,
+						})
+					}
+					out, err := yaml.Marshal(preferences.PreferencesYamlFile{Preferences: items})
+					if err != nil {
+						return err
+					}
+
+					fmt.Println(string(out))
+
+					return nil
+				},
+			}
+			preferencesCmd.AddCommand(thePreferencesCmd)
 		}
 	}
 

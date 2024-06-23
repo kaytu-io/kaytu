@@ -81,9 +81,10 @@ var terraformCmd = &cobra.Command{
 		err = runningPlg.Stream.Send(&golang.ServerMessage{
 			ServerMessage: &golang.ServerMessage_Start{
 				Start: &golang.StartProcess{
-					Command:          "rds-instance",
-					Flags:            nil,
-					KaytuAccessToken: cfg.AccessToken,
+					Command:            "rds-instance",
+					Flags:              nil,
+					KaytuAccessToken:   cfg.AccessToken,
+					DefaultPreferences: preferences.DefaultPreferences(),
 				},
 			},
 		})
