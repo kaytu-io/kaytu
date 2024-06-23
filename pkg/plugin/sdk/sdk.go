@@ -84,7 +84,7 @@ func (p *Plugin) runE(cmd *cobra.Command, args []string) error {
 			p.prc.ReEvaluate(ctx, msg.GetReEvaluate())
 		case msg.GetStart() != nil:
 			startMsg := msg.GetStart()
-			err = p.prc.StartProcess(ctx, startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken(), jobQueue)
+			err = p.prc.StartProcess(ctx, startMsg.GetCommand(), startMsg.GetFlags(), startMsg.GetKaytuAccessToken(), startMsg.GetDefaultPreferences(), jobQueue)
 			if err != nil {
 				stream.Send(&golang.PluginMessage{
 					PluginMessage: &golang.PluginMessage_Err{
