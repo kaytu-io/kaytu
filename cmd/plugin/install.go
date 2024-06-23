@@ -6,6 +6,7 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin"
 	"github.com/kaytu-io/kaytu/pkg/utils"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var installCmd = &cobra.Command{
@@ -33,7 +34,7 @@ var installCmd = &cobra.Command{
 		unsafe := utils.ReadBooleanFlag(cmd, "unsafe")
 		err = manager.Install(ctx, args[0], token, unsafe, pluginDebugMode)
 		if err != nil {
-			fmt.Printf("failed to install plugin due to %v\n", err)
+			os.Stderr.WriteString(fmt.Sprintf("failed to install plugin due to %v\n", err))
 			return err
 		}
 		return nil

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 )
@@ -66,11 +67,11 @@ func RequestDeviceCode() (string, error) {
 		return "", fmt.Errorf("[requestDeviceCode] : %v", err)
 	}
 
-	fmt.Println("open this url in your browser:")
-	fmt.Println(response.VerificationUrlComplete)
+	os.Stderr.WriteString("open this url in your browser:")
+	os.Stderr.WriteString(response.VerificationUrlComplete)
 	err = openUrl(response.VerificationUrlComplete)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to open url in browser: %v", err))
+		os.Stderr.WriteString(fmt.Sprintf("failed to open url in browser: %v", err))
 	}
 
 	return response.DeviceCode, nil

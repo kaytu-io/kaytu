@@ -2,9 +2,9 @@ package plugin
 
 import (
 	"errors"
-	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var uninstallCmd = &cobra.Command{
@@ -22,7 +22,7 @@ var uninstallCmd = &cobra.Command{
 
 		err = manager.Uninstall(args[0])
 		if err != nil {
-			fmt.Printf("failed to uninstall plugin due to %v\n", err)
+			os.Stderr.WriteString("failed to uninstall plugin due to %v\n", err)
 			return err
 		}
 		return nil

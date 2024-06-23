@@ -165,7 +165,7 @@ func ExecuteContext(ctx context.Context) {
 						}
 						err = manager.Install(ctx, repoAddr, "", false, false)
 						if err != nil {
-							fmt.Println("failed due to", err)
+							os.Stderr.WriteString(fmt.Sprintf("failed due to %s", err))
 						}
 
 						runningPlg := manager.GetPlugin(plg.Config.Name)
@@ -324,7 +324,7 @@ func ExecuteContext(ctx context.Context) {
 
 	err = rootCmd.ExecuteContext(ctx)
 	if err != nil {
-		fmt.Println(err)
+		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 }
