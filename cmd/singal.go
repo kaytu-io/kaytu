@@ -16,6 +16,7 @@ func AppendSignalHandling(ctx context.Context) context.Context {
 	go func() {
 		<-cancelChan
 		cancel()
+		os.Exit(1)
 	}()
 
 	return ctx
