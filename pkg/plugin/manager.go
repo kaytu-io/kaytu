@@ -147,6 +147,12 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 			case receivedMsg.GetErr() != nil:
 				m.NonInteractiveView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
+				if m.optimizations != nil && receivedMsg.GetReady().GetReady() {
+					m.optimizations.SetInitialization(false)
+				}
+				if m.pluginCustomOptimizations != nil && receivedMsg.GetReady().GetReady() {
+					m.pluginCustomOptimizations.SetInitialization(false)
+				}
 				m.NonInteractiveView.PublishResultsReady(receivedMsg.GetReady())
 			case receivedMsg.GetNonInteractive() != nil:
 				m.NonInteractiveView.PublishNonInteractiveExport(receivedMsg.GetNonInteractive())
@@ -180,22 +186,18 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					Plugin: server.Plugin{Config: conf},
 					Stream: stream,
 				})
-
 			case receivedMsg.GetJob() != nil:
 				m.jobs.Publish(receivedMsg.GetJob())
-
 			case receivedMsg.GetOi() != nil:
 				if m.optimizations == nil {
 					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
 				}
 				m.optimizations.SendItem(receivedMsg.GetOi())
-
 			case receivedMsg.GetCoi() != nil:
 				if m.pluginCustomOptimizations == nil {
 					return errors.New("custom optimizations controller not set - is plugin running in default ui mode?")
 				}
 				m.pluginCustomOptimizations.SendItem(receivedMsg.GetCoi())
-
 			case receivedMsg.GetUpdateChart() != nil:
 				if m.pluginCustomOptimizations == nil {
 					return errors.New("custom optimizations controller not set - is plugin running in default ui mode?")
@@ -207,12 +209,17 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				if updateChart.GetDevicesChart() != nil && m.detailsPage != nil {
 					m.detailsPage.SetChartDefinition(updateChart.GetDevicesChart())
 				}
-
+			case receivedMsg.GetReady() != nil:
+				if m.optimizations != nil && receivedMsg.GetReady().GetReady() {
+					m.optimizations.SetInitialization(false)
+				}
+				if m.pluginCustomOptimizations != nil && receivedMsg.GetReady().GetReady() {
+					m.pluginCustomOptimizations.SetInitialization(false)
+				}
 			case receivedMsg.GetErr() != nil:
 				if m.jobs != nil {
 					m.jobs.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 				}
-
 			case receivedMsg.GetSummary() != nil:
 				if m.pluginCustomOptimizations == nil {
 					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
