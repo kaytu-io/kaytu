@@ -233,7 +233,7 @@ func (v *NonInteractiveView) WaitAndShowResults(nonInteractiveFlag string) error
 						}
 					}
 				} else {
-					os.Stderr.WriteString("output mode not recognized!")
+					os.Stderr.WriteString("output mode not recognized!\n")
 				}
 				return nil
 			}
@@ -322,12 +322,12 @@ func (v *NonInteractiveView) WaitAndReturnResults(nonInteractiveFlag string) (st
 
 					return string(jsonData), nil
 				} else {
-					os.Stderr.WriteString("output mode not recognized!")
+					os.Stderr.WriteString("output mode not recognized!\n")
 				}
 				return "", nil
 			}
 		case err := <-v.errorChan:
-			os.Stderr.WriteString(err.Error())
+			os.Stderr.WriteString(err.Error() + "\n")
 			return "", nil
 		}
 	}

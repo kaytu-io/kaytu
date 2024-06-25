@@ -67,11 +67,11 @@ func RequestDeviceCode() (string, error) {
 		return "", fmt.Errorf("[requestDeviceCode] : %v", err)
 	}
 
-	os.Stderr.WriteString("open this url in your browser:")
-	os.Stderr.WriteString(response.VerificationUrlComplete)
+	os.Stderr.WriteString("open this url in your browser:\n")
+	os.Stderr.WriteString(response.VerificationUrlComplete + "\n")
 	err = openUrl(response.VerificationUrlComplete)
 	if err != nil {
-		os.Stderr.WriteString(fmt.Sprintf("failed to open url in browser: %v", err))
+		os.Stderr.WriteString(fmt.Sprintf("failed to open url in browser: %v\n", err))
 	}
 
 	return response.DeviceCode, nil

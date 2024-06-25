@@ -293,7 +293,7 @@ func (m *Manager) Install(ctx context.Context, addr, token string, unsafe, plugi
 				return nil
 			}
 			os.Stderr.WriteString(fmt.Sprintf("Installing plugin %s, version %s\n", addr, assetVersion))
-			os.Stderr.WriteString("Downloading the plugin...")
+			os.Stderr.WriteString("Downloading the plugin...\n")
 
 			rc, url, err := api.Repositories.DownloadReleaseAsset(context.Background(), owner, repository, *asset.ID, nil)
 			if err != nil {
@@ -341,7 +341,7 @@ func (m *Manager) Install(ctx context.Context, addr, token string, unsafe, plugi
 					Commands: nil,
 				},
 			}
-			os.Stderr.WriteString("Starting the plugin...")
+			os.Stderr.WriteString("Starting the plugin...\n")
 			runningCmd, err := startPlugin(ctx, &plugin, fmt.Sprintf("localhost:%d", m.port))
 			if err != nil {
 				return err
@@ -351,7 +351,7 @@ func (m *Manager) Install(ctx context.Context, addr, token string, unsafe, plugi
 				m.plugins = nil
 			}()
 
-			os.Stderr.WriteString("Waiting for plugin to load...")
+			os.Stderr.WriteString("Waiting for plugin to load...\n")
 			installed := false
 			for i := 0; i < 30; i++ {
 				for _, runningPlugin := range m.plugins {
