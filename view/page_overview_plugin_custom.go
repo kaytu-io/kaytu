@@ -15,8 +15,9 @@ import (
 )
 
 type PluginCustomOverviewPage struct {
-	table       table.Model
-	clearScreen bool
+	table        table.Model
+	summaryTable table.Model
+	clearScreen  bool
 
 	filterInput   textinput.Model
 	focusOnFilter bool
@@ -57,11 +58,19 @@ func NewPluginCustomOverviewPageView(
 		Filtered(true).
 		HighlightStyle(style.HighlightStyle)
 
+	summaryTable := table.New([]table.Column{}).
+		Focused(false).
+		WithPageSize(1).
+		WithBaseStyle(style.ActiveStyleBase).
+		WithFooterVisibility(false).
+		BorderRounded()
+
 	return PluginCustomOverviewPage{
 		filterInput:          filterInput,
 		optimizations:        optimizations,
 		helpController:       helpController,
 		table:                t,
+		summaryTable:         summaryTable,
 		statusBar:            statusBar,
 		chartDefinition:      chartDefinition,
 		chartDefinitionDirty: false,
@@ -197,6 +206,29 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.table = m.table.WithRows(m.rows)
 	m.table = m.table.WithFilterInputValue(m.filterInput.Value())
 
+	if m.optimizations.GetResultSummaryTable() != nil {
+		var columns []table.Column
+		for idx, c := range m.optimizations.GetResultSummaryTable().Headers {
+			columns = append(columns, table.NewColumn(fmt.Sprintf("%d", idx), c, len(c)))
+		}
+
+		var rows []table.Row
+		for _, row := range m.optimizations.GetResultSummaryTable().Message {
+			rowData := table.RowData{}
+			for idx, c := range row.Cells {
+				rowData[fmt.Sprintf("%d", idx)] = c
+				if len(c) > columns[idx].Width() {
+					columns[idx] = table.NewColumn(fmt.Sprintf("%d", idx), columns[idx].Title(), len(c))
+				}
+			}
+			rows = append(rows, table.NewRow(rowData))
+		}
+		m.summaryTable = m.summaryTable.
+			WithColumns(columns).
+			WithRows(rows).
+			WithPageSize(len(rows))
+	}
+
 	var changePageCmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -323,13 +355,23 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.statusBar = newStatusBar.(StatusBarView)
 	m.statusBar.initialization = m.optimizations.GetInitialization()
 
-	m.table = m.table.WithPageSize(m.GetHeight() - (8 + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
+	summaryHeight := 1
+	if m.optimizations.GetResultSummaryTable() != nil {
+		summaryHeight = len(m.optimizations.GetResultSummaryTable().Message) + 4
+	}
+
+	m.table = m.table.WithPageSize(m.GetHeight() - (7 + summaryHeight + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
 	return m, cmd
 }
 
 func (m *PluginCustomOverviewPage) View() string {
+	summaryView := m.optimizations.GetResultSummary()
+	if m.optimizations.GetResultSummaryTable() != nil {
+		summaryView = m.summaryTable.View()
+	}
+
 	return fmt.Sprintf("%s\n%s\nFilter: %s\n%s",
-		m.optimizations.GetResultSummary(),
+		summaryView,
 		m.table.View(),
 		m.filterInput.View(),
 		m.statusBar.View(),
