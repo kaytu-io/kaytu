@@ -175,7 +175,7 @@ func ExecuteContext(ctx context.Context) {
 						}
 						err = manager.Install(ctx, repoAddr, "", false, false)
 						if err != nil {
-							os.Stderr.WriteString(fmt.Sprintf("failed due to %s", err))
+							os.Stderr.WriteString(fmt.Sprintf("failed due to %s\n", err))
 						}
 
 						runningPlg := manager.GetPlugin(plg.Config.Name)

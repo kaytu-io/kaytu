@@ -20,7 +20,7 @@ func CheckForUpdate() error {
 	}
 
 	if cfg.LastVersion != "" && semver.Compare(cfg.LastVersion, "v"+version.VERSION) > 0 {
-		os.Stderr.WriteString("There's a new version for Kaytu CLI. Update it to latest version and enjoy the new features.")
+		os.Stderr.WriteString("There's a new version for Kaytu CLI. Update it to latest version and enjoy the new features.\n")
 		time.Sleep(2 * time.Second)
 		return nil
 	}
