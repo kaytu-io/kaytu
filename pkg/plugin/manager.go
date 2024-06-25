@@ -225,6 +225,12 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
 				}
 				m.pluginCustomOptimizations.SetResultSummary(receivedMsg.GetSummary().Message)
+
+			case receivedMsg.GetSummaryTable() != nil:
+				if m.pluginCustomOptimizations == nil {
+					return errors.New("default optimizations controller not set - is plugin running in custom ui mode?")
+				}
+				m.pluginCustomOptimizations.SetResultSummaryTable(receivedMsg.GetSummaryTable())
 			}
 		}
 	}

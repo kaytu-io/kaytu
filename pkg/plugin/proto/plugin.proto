@@ -137,6 +137,15 @@ message ResultSummary {
   string message = 1;
 }
 
+message ResultSummaryTableRow {
+  repeated string cells = 1;
+}
+
+message ResultSummaryTable {
+  repeated string headers = 1;
+  repeated ResultSummaryTableRow message = 2;
+}
+
 message CSVRow {
   repeated string row = 1;
 }
@@ -158,6 +167,7 @@ message PluginMessage {
     UpdateChartDefinition update_chart = 7;
     ResultSummary summary = 8;
     NonInteractiveExport non_interactive = 9;
+    ResultSummaryTable summary_table = 10;
   }
 }
 

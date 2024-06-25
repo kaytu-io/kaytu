@@ -11,8 +11,10 @@ type Optimizations[T golang.OptimizationItem | golang.ChartOptimizationItem] str
 	items              []*T
 
 	summaryChan           chan string
+	summaryTableChan      chan *golang.ResultSummaryTable
 	inProcessSummaryCount atomic.Int32
 	summary               string
+	summaryTable          *golang.ResultSummaryTable
 
 	selectedItem *T
 
@@ -26,6 +28,7 @@ func NewOptimizations[T golang.OptimizationItem | golang.ChartOptimizationItem](
 		inProcessItemCount:    atomic.Int32{},
 		initializing:          true,
 		summaryChan:           make(chan string),
+		summaryTableChan:      make(chan *golang.ResultSummaryTable),
 		inProcessSummaryCount: atomic.Int32{},
 	}
 	go o.Process()
@@ -80,10 +83,18 @@ func (o *Optimizations[T]) SummaryProcess() {
 		}
 	}()
 
-	for msg := range o.summaryChan {
-		o.inProcessSummaryCount.Add(1)
-		o.summary = msg
-		o.inProcessSummaryCount.Add(-1)
+	for {
+		select {
+		case msg := <-o.summaryChan:
+			o.inProcessSummaryCount.Add(1)
+			o.summary = msg
+			o.inProcessSummaryCount.Add(-1)
+
+		case msg := <-o.summaryTableChan:
+			o.inProcessSummaryCount.Add(1)
+			o.summaryTable = msg
+			o.inProcessSummaryCount.Add(-1)
+		}
 	}
 }
 
@@ -123,8 +134,16 @@ func (o *Optimizations[T]) SetResultSummary(msg string) {
 	o.summaryChan <- msg
 }
 
+func (o *Optimizations[T]) SetResultSummaryTable(msg *golang.ResultSummaryTable) {
+	o.summaryTableChan <- msg
+}
+
 func (o *Optimizations[T]) GetResultSummary() string {
 	return o.summary
+}
+
+func (o *Optimizations[T]) GetResultSummaryTable() *golang.ResultSummaryTable {
+	return o.summaryTable
 }
 
 func (o *Optimizations[T]) IsProcessing() bool {
@@ -132,6 +151,9 @@ func (o *Optimizations[T]) IsProcessing() bool {
 		return true
 	}
 	if len(o.summaryChan) > 0 {
+		return true
+	}
+	if len(o.summaryTableChan) > 0 {
 		return true
 	}
 
