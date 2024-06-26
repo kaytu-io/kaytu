@@ -10,9 +10,14 @@ import (
 	"time"
 )
 
+type JobProperties struct {
+	ID          string
+	Description string
+	MaxRetry    int
+}
+
 type Job interface {
-	Id() string
-	Description() string
+	Properties() JobProperties
 	Run(ctx context.Context) error
 }
 
@@ -24,6 +29,7 @@ type JobQueue struct {
 	pendingCounter  atomic.Uint32
 	finishedCounter atomic.Uint32
 	onFinish        func(ctx context.Context)
+	retryCount      map[string]int
 }
 
 func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
@@ -31,6 +37,7 @@ func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
 		queue:         make(chan Job, 10000),
 		maxConcurrent: maxConcurrent,
 		stream:        stream,
+		retryCount:    map[string]int{},
 
 		pendingCounter:  atomic.Uint32{},
 		finishedCounter: atomic.Uint32{},
@@ -38,14 +45,15 @@ func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
 }
 
 func (q *JobQueue) Push(job Job) {
-	log.Printf("Pushing job %s to queue", job.Id())
+	props := job.Properties()
+	log.Printf("Pushing job %s to queue", props.ID)
 	q.pendingCounter.Add(1)
 
 	q.stream.Send(&golang.PluginMessage{
 		PluginMessage: &golang.PluginMessage_Job{
 			Job: &golang.JobResult{
-				Id:             job.Id(),
-				Description:    job.Description(),
+				Id:             props.ID,
+				Description:    props.Description,
 				FailureMessage: "",
 				Done:           false,
 			},
@@ -92,13 +100,25 @@ func (q *JobQueue) SetOnFinish(f func(ctx context.Context)) {
 	q.onFinish = f
 }
 
+func (q *JobQueue) runJob(ctx context.Context, job Job) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("job paniced: %v, stack: %v", r, string(debug.Stack()))
+		}
+	}()
+
+	return job.Run(ctx)
+}
+
 func (q *JobQueue) handleJob(ctx context.Context, job Job) {
+	props := job.Properties()
+
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Job queue handle job panic: %v, stack: %v", r, string(debug.Stack()))
 			q.stream.Send(&golang.PluginMessage{
 				PluginMessage: &golang.PluginMessage_Err{
-					Err: &golang.Error{Error: fmt.Sprintf("job %s paniced: %v", job.Id(), r)},
+					Err: &golang.Error{Error: fmt.Sprintf("job %s paniced: %v", props.ID, r)},
 				},
 			})
 		}
@@ -106,16 +126,24 @@ func (q *JobQueue) handleJob(ctx context.Context, job Job) {
 	defer q.finishedCounter.Add(1)
 
 	jobResult := &golang.JobResult{
-		Id:          job.Id(),
-		Description: job.Description(),
+		Id:          props.ID,
+		Description: props.Description,
 		Done:        true,
 	}
-	log.Printf("Running job %s", job.Id())
-	if err := job.Run(ctx); err != nil {
+	log.Printf("Running job %s", props.ID)
+	if err := q.runJob(ctx, job); err != nil {
 		jobResult.FailureMessage = err.Error()
-		log.Printf("Failed job %s: %s", job.Id(), err.Error())
+		if q.retryCount[props.ID] < props.MaxRetry {
+			q.retryCount[props.ID]++
+
+			log.Printf("Failed job %s: %s, retrying[%d/%d]", props.ID, err.Error(), q.retryCount[props.ID], props.MaxRetry)
+			q.handleJob(ctx, job)
+			return
+		} else {
+			log.Printf("Failed job %s: %s", props.ID, err.Error())
+		}
 	} else {
-		log.Printf("Finished job %s", job.Id())
+		log.Printf("Finished job %s", props.ID)
 	}
 
 	q.stream.Send(&golang.PluginMessage{
