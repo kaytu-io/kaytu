@@ -269,7 +269,7 @@ func pinnedValidator(s string) error {
 }
 
 func numberValidator(s string) error {
-	n, err := strconv.ParseInt(s, 10, 64)
+	n, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return err
 	}
