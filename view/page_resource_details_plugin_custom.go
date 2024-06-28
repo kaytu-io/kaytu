@@ -10,9 +10,11 @@ import (
 	"github.com/kaytu-io/kaytu/view/responsive"
 	"github.com/muesli/reflow/wordwrap"
 	"strings"
+	"time"
 )
 
 const XKaytuRowId = "x_kaytu_row_id"
+const XKaytuObservabilityDuration = "x_kaytu_observability_duration"
 
 type RowsWithId []RowWithId
 
@@ -268,6 +270,18 @@ func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cm
 				}
 				if len(cellContent) > width {
 					width = len(cellContent)
+				}
+			}
+
+			if column.Key() == "2" && m.deviceTable.HighlightedRow().Data[XKaytuObservabilityDuration] != nil {
+				duration, err := time.ParseDuration(m.deviceTable.HighlightedRow().Data[XKaytuObservabilityDuration].(string))
+				if err == nil {
+					duration = duration.Round(time.Minute)
+					durationString := duration.String()
+					if duration.Hours() >= 24 {
+						durationString = fmt.Sprintf("%.0f days", duration.Hours()/24.0)
+					}
+					column = table.NewColumn(column.Key(), fmt.Sprintf("%s usage", durationString), 0)
 				}
 			}
 
