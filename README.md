@@ -61,6 +61,10 @@ To see how you can optimize EC2 Instances, run this command:
 kaytu optimize ec2-instance
 ```
 
+To Optimize Kubernetes Clusters:
+
+[click here for documentation](docs/how-to-kubernetes.md)
+
 For RDS:
 
 ```shell
