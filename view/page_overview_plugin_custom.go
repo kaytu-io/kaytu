@@ -63,6 +63,7 @@ func NewPluginCustomOverviewPageView(
 		WithPageSize(1).
 		WithBaseStyle(style.ActiveStyleBase).
 		WithFooterVisibility(false).
+		WithMaxTotalWidth(20).
 		BorderRounded()
 
 	return PluginCustomOverviewPage{
@@ -226,7 +227,8 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.summaryTable = m.summaryTable.
 			WithColumns(columns).
 			WithRows(rows).
-			WithPageSize(len(rows))
+			WithPageSize(len(rows)).
+			WithMaxTotalWidth(m.GetWidth())
 	}
 
 	var changePageCmd tea.Cmd
@@ -318,9 +320,11 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "right":
 			m.table = m.table.ScrollRight()
+			m.summaryTable = m.summaryTable.ScrollRight()
 			dontSendUpdateToTable = true
 		case "left":
 			m.table = m.table.ScrollLeft()
+			m.summaryTable = m.summaryTable.ScrollLeft()
 			dontSendUpdateToTable = true
 		case "enter":
 			if m.table.TotalRows() == 0 {
@@ -360,7 +364,8 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		summaryHeight = len(m.optimizations.GetResultSummaryTable().Message) + 4
 	}
 
-	m.table = m.table.WithPageSize(m.GetHeight() - (7 + summaryHeight + m.statusBar.Height())).WithMaxTotalWidth(m.GetWidth())
+	pageSize := max(1, m.GetHeight()-(7+summaryHeight+m.statusBar.Height()))
+	m.table = m.table.WithPageSize(pageSize).WithMaxTotalWidth(m.GetWidth())
 	return m, cmd
 }
 
