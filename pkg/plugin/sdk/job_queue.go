@@ -144,13 +144,13 @@ func (q *JobQueue) handleJob(ctx context.Context, job Job) {
 			for !q.retryCount.CompareAndSwap(props.ID, v, v+1) {
 				v, _ = q.retryCount.Get(props.ID)
 			}
-			if v+1 >= props.MaxRetry {
+			if v+1 < props.MaxRetry {
+				log.Printf("Failed job %s: %s, retrying[%d/%d]", props.ID, err.Error(), v+1, props.MaxRetry)
+				q.Push(job)
 				return
+			} else {
+				log.Printf("Failed job %s: %s", props.ID, err.Error())
 			}
-
-			log.Printf("Failed job %s: %s, retrying[%d/%d]", props.ID, err.Error(), v+1, props.MaxRetry)
-			q.Push(job)
-			return
 		} else {
 			log.Printf("Failed job %s: %s", props.ID, err.Error())
 		}
