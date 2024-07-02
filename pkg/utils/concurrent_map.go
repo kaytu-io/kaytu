@@ -45,9 +45,13 @@ func (cm *ConcurrentMap[K, V]) CompareAndDelete(key K, value V) bool {
 }
 
 func (cm *ConcurrentMap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
-	return cm.data.LoadOrStore(key, value)
+	v, loaded := cm.data.LoadOrStore(key, value)
+	actual = v.(V)
+	return actual, loaded
 }
 
 func (cm *ConcurrentMap[K, V]) LoadAndDelete(key K) (value V, loaded bool) {
-	return cm.data.LoadAndDelete(key)
+	v, loaded := cm.data.LoadAndDelete(key)
+	value = v.(V)
+	return value, loaded
 }
