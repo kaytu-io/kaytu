@@ -5,6 +5,7 @@ on:
       types: [released]
 
 env:
+    REPOSITORY_OWNER: "adorigi"
     HOMEBREW_TAP: "homebrew-adorigi"
 
 jobs:
@@ -22,7 +23,7 @@ jobs:
 
   Deb-Package:
     runs-on: ubuntu-latest
-    container: ubuntu:24.10
+    container: debian
     needs: 
         - Version-from-tag
     steps:
@@ -39,15 +40,33 @@ jobs:
       - name: Print Kaytu Version
         run: kaytu version
 
+  RPM-Package:
+    runs-on: ubuntu-latest
+    container: redhat/ubi8:latest
+    needs: 
+        - Version-from-tag
+        - Deb-Package
+    steps:
+      - name: Setup image
+        run: |
+            yum install wget -y
+      - name: Download Release
+        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
+      - name: Install Kaytu
+        run: |
+            rpm -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
+            kaytu
+      - name: Print Kaytu Version
+        run: kaytu version
 
   Homebrew:
     runs-on: macos-latest
     if: always()
     needs: 
-        - Version-from-tag
+        - RPM-Package
     steps:
       - name: Tap Kaytu's cli-tap
-        run: brew tap kaytu-io/cli-tap 
+        run: brew tap ${{ env.REPOSITORY_OWNER }}/${{ env.HOMEBREW_TAP }}
       - name: Install Kaytu 
         run: |
             brew install kaytu
