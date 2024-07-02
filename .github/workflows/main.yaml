@@ -12,10 +12,10 @@ on:
                 default: "false"
 
 env:
-    REPOSITORY_OWNER: "kaytu-io"
+    REPOSITORY_OWNER: "adorigi"
     REPOSITORY_NAME: "kaytu"
-    HOMEBREW_TAP: "homebrew-cli-tap"
-    OWNER_EMAIL: "dev@kaytu.io"
+    HOMEBREW_TAP: "homebrew-adorigi"
+    OWNER_EMAIL: "gulegulzaradnan@gmail.com"
 
 jobs:
   tag:
