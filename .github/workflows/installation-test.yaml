@@ -1,0 +1,57 @@
+name: Installation Tests
+
+on:
+    release:
+      types: [released]
+
+env:
+    HOMEBREW_TAP: "homebrew-adorigi"
+
+jobs:
+
+  Version-from-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.remove_tag.outputs.version }}
+    steps:
+      - name: Remove tag
+        id: remove_tag
+        run: |
+            TAG=${{ github.event.release.tag_name }}
+            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+  Deb-Package:
+    runs-on: ubuntu-latest
+    container: ubuntu:24.10
+    needs: 
+        - Version-from-tag
+    steps:
+      - name: Setup image
+        run: |
+            apt update
+            apt install wget -y
+      - name: Download Release
+        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
+      - name: Install Kaytu
+        run: |
+            dpkg -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
+            kaytu
+      - name: Print Kaytu Version
+        run: kaytu version
+
+
+  Homebrew:
+    runs-on: macos-latest
+    if: always()
+    needs: 
+        - Version-from-tag
+    steps:
+      - name: Tap Kaytu's cli-tap
+        run: brew tap kaytu-io/cli-tap 
+      - name: Install Kaytu 
+        run: |
+            brew install kaytu
+            kaytu 
+      - name: Print Kaytu Version
+        run: kaytu version
+       
