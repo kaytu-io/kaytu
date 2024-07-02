@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
+	"github.com/kaytu-io/kaytu/pkg/utils"
 	"log"
 	"runtime/debug"
 	"sync/atomic"
@@ -29,7 +30,7 @@ type JobQueue struct {
 	pendingCounter  atomic.Uint32
 	finishedCounter atomic.Uint32
 	onFinish        func(ctx context.Context)
-	retryCount      map[string]int
+	retryCount      utils.ConcurrentMap[string, int]
 }
 
 func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
@@ -37,7 +38,7 @@ func NewJobQueue(maxConcurrent int, stream *StreamController) *JobQueue {
 		queue:         make(chan Job, 10000),
 		maxConcurrent: maxConcurrent,
 		stream:        stream,
-		retryCount:    map[string]int{},
+		retryCount:    utils.NewConcurrentMap[string, int](),
 
 		pendingCounter:  atomic.Uint32{},
 		finishedCounter: atomic.Uint32{},
@@ -133,10 +134,21 @@ func (q *JobQueue) handleJob(ctx context.Context, job Job) {
 	log.Printf("Running job %s", props.ID)
 	if err := q.runJob(ctx, job); err != nil {
 		jobResult.FailureMessage = err.Error()
-		if q.retryCount[props.ID] < props.MaxRetry {
-			q.retryCount[props.ID]++
+		if v, ok := q.retryCount.Get(props.ID); v < props.MaxRetry {
+			if !ok {
+				v2, loaded := q.retryCount.LoadOrStore(props.ID, 0)
+				if loaded {
+					v = v2
+				}
+			}
+			for !q.retryCount.CompareAndSwap(props.ID, v, v+1) {
+				v, _ = q.retryCount.Get(props.ID)
+			}
+			if v+1 >= props.MaxRetry {
+				return
+			}
 
-			log.Printf("Failed job %s: %s, retrying[%d/%d]", props.ID, err.Error(), q.retryCount[props.ID], props.MaxRetry)
+			log.Printf("Failed job %s: %s, retrying[%d/%d]", props.ID, err.Error(), v+1, props.MaxRetry)
 			q.Push(job)
 			return
 		} else {
