@@ -14,7 +14,7 @@ type PreferenceValueItem struct {
 	Service string
 	Key     string
 	Value   *string
-	Pinned  bool `yaml:"pinned,omitempty"`
+	Pinned  *bool `yaml:"pinned,omitempty"`
 }
 
 var (
@@ -47,7 +47,9 @@ func UpdateValues(pis []PreferenceValueItem) error {
 				} else {
 					defaultPref[idx].Value = wrapperspb.String(*pi.Value)
 				}
-				defaultPref[idx].Pinned = pi.Pinned
+				if pi.Pinned != nil {
+					defaultPref[idx].Pinned = *pi.Pinned
+				}
 				found = true
 				break
 			}
