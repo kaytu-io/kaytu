@@ -12,10 +12,10 @@ on:
                 default: "false"
 
 env:
-    REPOSITORY_OWNER: "adorigi"
+    REPOSITORY_OWNER: "kaytu-io"
     REPOSITORY_NAME: "kaytu"
-    HOMEBREW_TAP: "homebrew-adorigi"
-    OWNER_EMAIL: "gulegulzaradnan@gmail.com"
+    HOMEBREW_TAP: "homebrew-cli-tap"
+    OWNER_EMAIL: "dev@kaytu.io"
 
 jobs:
   tag:
@@ -34,7 +34,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GH_TOKEN }}
-          release_branches: linux-packaging
+          release_branches: main
           tag_prefix: v
       - name: Set latest tag output
         id: set_latest_tag

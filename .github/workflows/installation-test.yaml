@@ -5,8 +5,8 @@ on:
       types: [released]
 
 env:
-    REPOSITORY_OWNER: "adorigi"
-    HOMEBREW_TAP: "homebrew-adorigi"
+    REPOSITORY_OWNER: "kaytu-io"
+    HOMEBREW_TAP: "cli-tap"
 
 jobs:
 
