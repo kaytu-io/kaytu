@@ -397,6 +397,7 @@ func ExecuteContext(ctx context.Context) {
 
 					var items []preferences.PreferenceValueItem
 					for _, p := range preferences.DefaultPreferences() {
+						p := p
 						var v *string
 						if p.Value != nil {
 							v = &p.Value.Value
@@ -405,7 +406,7 @@ func ExecuteContext(ctx context.Context) {
 							Service: p.Service,
 							Key:     p.Key,
 							Value:   v,
-							Pinned:  p.Pinned,
+							Pinned:  &p.Pinned,
 						})
 					}
 					out, err := yaml.Marshal(preferences.PreferencesYamlFile{Preferences: items})
