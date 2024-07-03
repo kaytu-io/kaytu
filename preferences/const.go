@@ -7,14 +7,14 @@ import (
 )
 
 type PreferencesYamlFile struct {
-	Preferences []PreferenceValueItem
+	Preferences []PreferenceValueItem `yaml:"preferences"`
 }
 
 type PreferenceValueItem struct {
-	Service string
-	Key     string
-	Value   *string
-	Pinned  *bool `yaml:"pinned,omitempty"`
+	Service string  `yaml:"service"`
+	Key     string  `yaml:"key"`
+	Value   *string `yaml:"value,omitempty"`
+	Pinned  *bool   `yaml:"pinned,omitempty"`
 }
 
 var (
