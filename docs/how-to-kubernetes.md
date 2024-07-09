@@ -26,7 +26,7 @@ Ensure Kubectl configured and connected to Kubernetes Cluster
 ## 5. Add the helm Repo
 
    
-    helm repo add kaytu-io [https://kaytu-io.github.io/kaytu-charts](https://kaytu-io.github.io/kaytu-charts)
+    helm repo add kaytu-io https://kaytu-io.github.io/kaytu-charts
 
 
 ## 6. Generate API Key
