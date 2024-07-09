@@ -159,6 +159,7 @@ func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 	m.detailTable = table.New(m.detailColumns).
 		WithPageSize(1).
 		WithHorizontalFreezeColumnCount(1).
+		WithMultiline(true).
 		WithBaseStyle(style.Base).BorderRounded()
 	m.deviceTable = table.New(deviceColumns).
 		WithRows(m.deviceRows.ToTableRows()).
