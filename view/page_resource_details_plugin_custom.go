@@ -279,9 +279,9 @@ func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cm
 					duration = duration.Round(time.Minute)
 					durationString := duration.String()
 					if duration.Hours() >= 24 {
-						durationString = fmt.Sprintf("%.0f days", duration.Hours()/24.0)
+						durationString = fmt.Sprintf("Actual Usage (past %.0f days)", duration.Hours()/24.0)
 					}
-					column = table.NewColumn(column.Key(), fmt.Sprintf("%s usage", durationString), 0)
+					column = table.NewColumn(column.Key(), fmt.Sprintf("Actual Usage (past %s)", durationString), 0)
 				}
 			}
 
