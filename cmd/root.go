@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/kaytu-io/kaytu/cmd/plugin"
 	"github.com/kaytu-io/kaytu/cmd/predef"
 	"github.com/kaytu-io/kaytu/controller"
@@ -14,6 +15,7 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/version"
 	"github.com/kaytu-io/kaytu/preferences"
 	"github.com/kaytu-io/kaytu/view"
+	"github.com/muesli/termenv"
 	"github.com/rogpeppe/go-internal/semver"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -61,6 +63,7 @@ func init() {
 	predef.ApiKeyRootCmd.AddCommand(predef.ApiKeyListCmd)
 	predef.ApiKeyRootCmd.AddCommand(predef.ApiKeyDeleteCmd)
 
+	optimizeCmd.PersistentFlags().String("color-profile", "", "Color profile (true-color, ansi256, ansi, ascii)")
 	optimizeCmd.PersistentFlags().String("preferences", "", "Path to preferences file (yaml)")
 	optimizeCmd.PersistentFlags().String("output", "interactive", "Show optimization results in selected output (possible values: interactive, table, csv, json. default value: interactive)")
 	optimizeCmd.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
@@ -316,6 +319,24 @@ func ExecuteContext(ctx context.Context) {
 						}
 						go checkForLimitsError(app, jobsController)
 
+						if cpf := c.Flag("color-profile"); cpf != nil {
+							out := termenv.DefaultOutput()
+							switch cpf.Value.String() {
+							case "true-color":
+								lipgloss.SetColorProfile(termenv.TrueColor)
+								out = termenv.NewOutput(os.Stdout, termenv.WithProfile(termenv.TrueColor))
+							case "ansi256":
+								lipgloss.SetColorProfile(termenv.ANSI256)
+								out = termenv.NewOutput(os.Stdout, termenv.WithProfile(termenv.ANSI256))
+							case "ansi":
+								lipgloss.SetColorProfile(termenv.ANSI)
+								out = termenv.NewOutput(os.Stdout, termenv.WithProfile(termenv.ANSI))
+							case "ascii":
+								lipgloss.SetColorProfile(termenv.Ascii)
+								out = termenv.NewOutput(os.Stdout, termenv.WithProfile(termenv.Ascii))
+							}
+							lipgloss.DefaultRenderer().SetOutput(out)
+						}
 						p := tea.NewProgram(app, tea.WithFPS(10))
 						if _, err := p.Run(); err != nil {
 							return err
