@@ -2,7 +2,7 @@
 
 yum install -y wget curl
 
-RPM_FILE_URL=$(curl -s https://api.github.com/repos/adorigi/kaytu/releases/latest \
+RPM_FILE_URL=$(curl -s https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
 | grep "browser_download_url.*arm64.rpm" \
 | cut -d : -f 2,3 \
 | tr -d \" )
