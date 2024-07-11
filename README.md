@@ -10,14 +10,14 @@
 
 
 - **Ease of use**: One-line command. Use without modifying workloads or making configuration changes.
-- **Optimize**: Optimize AWS Infrastructure(EC2 Instances, EBS Storage,RDS Instances & Clusters) & **Kubernetes Clusters**.
-- **Base on actual Usage**: Analyzes the past seven days of usage from Cloud native monitoring (CloudWatch).
+- **Optimize**: Optimize AWS workloads (EC2 Instances, EBS Storage, RDS, Kubernetes/EKS), Azure Kubernetes, and Google Kubernetes (GKE)
+- **Base on actual Usage**: Analyzes based on actual usage from Monitoring (CloudWatch & Prometheus).
 - **Customize**: Optimize for region, CPU, memory, network performance, storage, licenses, and more to match your specific requirements.
 - **Secure** - no credentials to share; extracts required metrics from the client side
 - **Open philosophy** Use without fear of lock-in. The CLI is open-sourced, and the Server side will be open-sourced soon.
-- **Coming Soon**: GCP, Azure, GPU Optimization
+- **Coming Soon**: GPU Optimization, Amazon EFS
 
-#### To optimize Kubernetes Clusters [click here for a walk through.](docs/how-to-kubernetes.md)
+#### To optimize Kubernetes Clusters [click here for a walk through](https://docs.kaytu.io/oss/quick-start/optimize-kubernetes-clusters)
 
 
 
