@@ -109,21 +109,31 @@ func ExecuteContext(ctx context.Context) {
 		}
 	}
 
-	if len(plugins) == 0 {
-		manager := plugin2.New()
-		err := manager.StartServer()
-		if err != nil {
-			panic(err)
-		}
+	foundMap := map[string]bool{}
+	for _, p := range plugins {
+		foundMap[p.Config.Name] = true
+	}
 
-		err = manager.Install(context.Background(), "aws", "", false, false)
-		if err != nil {
-			panic(err)
-		}
+	autoInstallList := []string{"aws", "kubernetes"}
+	for _, autoInstall := range autoInstallList {
+		if _, ok := foundMap[autoInstall]; !ok {
+			manager := plugin2.New()
+			err := manager.StartServer()
+			if err != nil {
+				panic(err)
+			}
 
-		plugins, err = server.GetPlugins()
-		if err != nil {
-			panic(err)
+			err = manager.Install(context.Background(), autoInstall, "", false, false)
+			if err != nil {
+				panic(err)
+			}
+
+			plugins, err = server.GetPlugins()
+			if err != nil {
+				panic(err)
+			}
+
+			manager.StopServer()
 		}
 	}
 
