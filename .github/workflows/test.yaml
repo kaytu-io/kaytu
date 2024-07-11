@@ -5,6 +5,12 @@ on:
       branches:
         - main
 
+env:
+  REPOSITORY_OWNER: "kaytu-io"
+  REPOSITORY_NAME: "kaytu"
+  HOMEBREW_TAP: "homebrew-cli-tap"
+  OWNER_EMAIL: "dev@kaytu.io"
+
 jobs:
   release:
     runs-on: ubuntu-latest
