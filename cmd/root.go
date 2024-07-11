@@ -104,6 +104,9 @@ func ExecuteContext(ctx context.Context) {
 	foundMap := map[string]bool{}
 	for _, p := range plugins {
 		foundMap[p.Config.Name] = true
+		if p.Config.Name == "aws" {
+			server.RemoveConfig()
+		}
 	}
 
 	autoInstallList := []string{"aws", "kubernetes"}
