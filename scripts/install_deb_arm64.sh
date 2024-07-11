@@ -1,12 +1,10 @@
 #!/bin/bash
 
 apt update
-apt install -y wget curl
+apt install -y wget curl jq
 
 DEB_FILE_URL=$(curl -s https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
-| grep "browser_download_url.*arm64.deb" \
-| cut -d : -f 2,3 \
-| tr -d \" )
+| jq -r '.assets[] | select(.name | endswith("arm64.deb")).browser_download_url')
 
 echo $DEB_FILE_URL
 

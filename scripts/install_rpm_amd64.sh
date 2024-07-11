@@ -3,9 +3,7 @@
 yum install -y wget curl
 
 RPM_FILE_URL=$(curl -s https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
-| grep "browser_download_url.*amd64.rpm" \
-| cut -d : -f 2,3 \
-| tr -d \" )
+| jq -r '.assets[] | select(.name | endswith("amd64.rpm")).browser_download_url')
 
 echo $RPM_FILE_URL
 

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-yum install -y wget curl
+yum install -y wget curl jq
 
 RPM_FILE_URL=$(curl -s https://api.github.com/repos/kaytu-io/kaytu/releases/latest \
-| grep "browser_download_url.*arm64.rpm" \
-| cut -d : -f 2,3 \
-| tr -d \" )
+| jq -r '.assets[] | select(.name | endswith("arm64.rpm")).browser_download_url')
 
 echo $RPM_FILE_URL
 
