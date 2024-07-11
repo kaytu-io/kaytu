@@ -32,7 +32,7 @@ jobs:
             apt update
             apt install wget -y
       - name: Download Release
-        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
+        run: wget https://github.com/kaytu-io/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
       - name: Install Kaytu
         run: |
             dpkg -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
@@ -51,7 +51,7 @@ jobs:
         run: |
             yum install wget -y
       - name: Download Release
-        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
+        run: wget https://github.com/kaytu-io/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
       - name: Install Kaytu
         run: |
             rpm -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
