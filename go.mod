@@ -15,13 +15,14 @@ require (
 	github.com/hashicorp/hcl/v2 v2.20.1
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/muesli/reflow v0.3.0
+	github.com/muesli/termenv v0.15.2
 	github.com/rogpeppe/go-internal v1.12.0
 	github.com/schollz/progressbar/v3 v3.14.3
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/zclconf/go-cty v1.14.4
 	golang.org/x/oauth2 v0.20.0
-	google.golang.org/grpc v1.64.0
+	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -60,7 +61,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
