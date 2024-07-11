@@ -1,0 +1,76 @@
+name: Installation Tests
+
+on:
+    release:
+      types: [released]
+
+env:
+    REPOSITORY_OWNER: "kaytu-io"
+    HOMEBREW_TAP: "cli-tap"
+
+jobs:
+
+  Version-from-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.remove_tag.outputs.version }}
+    steps:
+      - name: Remove tag
+        id: remove_tag
+        run: |
+            TAG=${{ github.event.release.tag_name }}
+            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+  Deb-Package:
+    runs-on: ubuntu-latest
+    container: debian
+    needs: 
+        - Version-from-tag
+    steps:
+      - name: Setup image
+        run: |
+            apt update
+            apt install wget -y
+      - name: Download Release
+        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
+      - name: Install Kaytu
+        run: |
+            dpkg -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.deb
+            kaytu
+      - name: Print Kaytu Version
+        run: kaytu version
+
+  RPM-Package:
+    runs-on: ubuntu-latest
+    container: redhat/ubi8:latest
+    needs: 
+        - Version-from-tag
+        - Deb-Package
+    steps:
+      - name: Setup image
+        run: |
+            yum install wget -y
+      - name: Download Release
+        run: wget https://github.com/ADorigi/kaytu/releases/download/${{ github.event.release.tag_name }}/kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
+      - name: Install Kaytu
+        run: |
+            rpm -i kaytu_${{ needs.Version-from-tag.outputs.version }}_linux_amd64.rpm
+            kaytu
+      - name: Print Kaytu Version
+        run: kaytu version
+
+  Homebrew:
+    runs-on: macos-latest
+    if: always()
+    needs: 
+        - RPM-Package
+    steps:
+      - name: Tap Kaytu's cli-tap
+        run: brew tap ${{ env.REPOSITORY_OWNER }}/${{ env.HOMEBREW_TAP }}
+      - name: Install Kaytu 
+        run: |
+            brew install kaytu
+            kaytu 
+      - name: Print Kaytu Version
+        run: kaytu version
+       
