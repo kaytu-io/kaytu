@@ -101,12 +101,17 @@ func ExecuteContext(ctx context.Context) {
 		panic(err)
 	}
 
+	for _, p := range plugins {
+		if p.Config.Name == "aws" {
+			server.RemoveConfig()
+			ExecuteContext(ctx)
+			return
+		}
+	}
+
 	foundMap := map[string]bool{}
 	for _, p := range plugins {
 		foundMap[p.Config.Name] = true
-		if p.Config.Name == "aws" {
-			server.RemoveConfig()
-		}
 	}
 
 	autoInstallList := []string{"aws", "kubernetes"}
@@ -127,6 +132,8 @@ func ExecuteContext(ctx context.Context) {
 			if err != nil {
 				panic(err)
 			}
+
+			manager.StopServer()
 		}
 	}
 

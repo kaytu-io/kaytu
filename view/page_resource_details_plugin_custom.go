@@ -150,8 +150,8 @@ func (m *PluginCustomResourceDetailsPage) OnOpen() Page {
 	}
 	m.detailColumns = []table.Column{
 		table.NewColumn("0", "", 30),
-		table.NewColumn("1", "Current", 30),
-		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 15),
+		table.NewColumn("1", "Current Configuration", 30),
+		table.NewColumn("2", fmt.Sprintf("%s day usage", days), 20),
 		table.NewColumn("3", "Recommendation", 30),
 	}
 
@@ -278,11 +278,12 @@ func (m *PluginCustomResourceDetailsPage) Update(msg tea.Msg) (tea.Model, tea.Cm
 				duration, err := time.ParseDuration(m.deviceTable.HighlightedRow().Data[XKaytuObservabilityDuration].(string))
 				if err == nil {
 					duration = duration.Round(time.Minute)
-					durationString := duration.String()
+					durationString := fmt.Sprintf("Actual Usage (past %s)", duration.String())
 					if duration.Hours() >= 24 {
 						durationString = fmt.Sprintf("Actual Usage (past %.0f days)", duration.Hours()/24.0)
 					}
-					column = table.NewColumn(column.Key(), fmt.Sprintf("Actual Usage (past %s)", durationString), 0)
+					width = len(durationString)
+					column = table.NewColumn(column.Key(), durationString, width+2)
 				}
 			}
 
