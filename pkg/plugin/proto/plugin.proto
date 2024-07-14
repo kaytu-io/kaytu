@@ -28,6 +28,8 @@ message RegisterConfig {
 
   ChartDefinition overview_chart = 6;
   ChartDefinition devices_chart = 7;
+
+  repeated Command root_commands = 8;
 }
 
 message ChartRowItem {

@@ -1,6 +1,8 @@
 module github.com/kaytu-io/kaytu
 
-go 1.21.3
+go 1.22.0
+
+toolchain go1.22.5
 
 require (
 	github.com/charmbracelet/bubbles v0.18.0
@@ -10,10 +12,12 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang/protobuf v1.5.4
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v62 v62.0.0
 	github.com/hashicorp/hcl/v2 v2.20.1
 	github.com/jedib0t/go-pretty/v6 v6.5.9
+	github.com/kaytu-io/kaytu-agent v0.5.2
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
 	github.com/rogpeppe/go-internal v1.12.0
@@ -41,7 +45,7 @@ require (
 	github.com/charmbracelet/x/windows v0.1.2 // indirect
 	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.5 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect

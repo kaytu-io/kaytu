@@ -51,6 +51,7 @@ type Manager struct {
 	detailsPage  *view.PluginCustomResourceDetailsPage
 
 	NonInteractiveView *view.NonInteractiveView
+	RootCommandView    *view.RootCommandView
 	lis                net.Listener
 	grpcServer         *grpc.Server
 }
@@ -124,7 +125,29 @@ func (m *Manager) StopServer() error {
 
 func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 	m.stream = stream
-	if m.NonInteractiveView != nil {
+	if m.RootCommandView != nil {
+		for {
+			receivedMsg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case receivedMsg.GetConf() != nil:
+				conf := receivedMsg.GetConf()
+				m.plugins = append(m.plugins, RunningPlugin{
+					Plugin: server.Plugin{Config: conf},
+					Stream: stream,
+				})
+			case receivedMsg.GetJob() != nil:
+				m.RootCommandView.PublishJobs(receivedMsg.GetJob())
+			case receivedMsg.GetErr() != nil:
+				m.RootCommandView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
+			case receivedMsg.GetReady() != nil:
+				m.RootCommandView.PublishResultsReady(receivedMsg.GetReady())
+			}
+		}
+	} else if m.NonInteractiveView != nil {
 		for {
 			receivedMsg, err := stream.Recv()
 			if err != nil {
@@ -441,6 +464,10 @@ func (m *Manager) SetCustomUI(jobs *controller.Jobs, optimizations *controller.O
 
 func (m *Manager) SetNonInteractiveView(agentMode bool) {
 	m.NonInteractiveView = view.NewNonInteractiveView(agentMode)
+}
+
+func (m *Manager) SetRootCommandView() {
+	m.RootCommandView = view.NewRootCommandView()
 }
 
 func (m *Manager) isPluginApproved(tc *http.Client, pluginName string) (bool, error) {
