@@ -5,14 +5,14 @@ import (
 	"github.com/kaytu-io/kaytu/pkg/plugin/proto/src/golang"
 	"github.com/kaytu-io/kaytu/pkg/utils"
 	"os"
-	"time"
 )
 
 type RootCommandView struct {
 	statusErr string
 	errorChan chan error
 
-	jobChan chan *golang.JobResult
+	jobChan     chan *golang.JobResult
+	summaryChan chan *golang.ResultSummary
 
 	resultsReady chan bool
 }
@@ -20,6 +20,7 @@ type RootCommandView struct {
 func NewRootCommandView() *RootCommandView {
 	v := &RootCommandView{
 		jobChan:      make(chan *golang.JobResult, 10000),
+		summaryChan:  make(chan *golang.ResultSummary, 10000),
 		errorChan:    make(chan error, 10000),
 		resultsReady: make(chan bool),
 	}
@@ -38,19 +39,17 @@ func (v *RootCommandView) PublishResultsReady(ready *golang.ResultsReady) {
 	v.resultsReady <- ready.Ready
 }
 
-func (v *RootCommandView) WaitAndShowResults() error {
-	go v.WaitForJobs()
-	for {
-		select {
-		case _ = <-v.resultsReady:
-			return nil
-		}
-	}
+func (v *RootCommandView) PublishResultsSummary(summary *golang.ResultSummary) {
+	v.summaryChan <- summary
 }
 
-func (v *RootCommandView) WaitForJobs() {
+func (v *RootCommandView) WaitAndShowResults() error {
 	for {
 		select {
+		case ready := <-v.resultsReady:
+			if ready == true {
+				return nil
+			}
 		case job := <-v.jobChan:
 			if !job.Done {
 				os.Stderr.WriteString(job.Description + " Running...\n")
@@ -65,7 +64,8 @@ func (v *RootCommandView) WaitForJobs() {
 		case err := <-v.errorChan:
 			os.Stderr.WriteString(err.Error() + "\n")
 			v.statusErr = fmt.Sprintf("Failed due to %v", err)
+		case summary := <-v.summaryChan:
+			os.Stderr.WriteString(summary.Message + "\n")
 		}
-		time.Sleep(50 * time.Millisecond)
 	}
 }
