@@ -145,6 +145,8 @@ func (m *Manager) Register(stream golang.Plugin_RegisterServer) error {
 				m.RootCommandView.PublishError(fmt.Errorf(receivedMsg.GetErr().Error))
 			case receivedMsg.GetReady() != nil:
 				m.RootCommandView.PublishResultsReady(receivedMsg.GetReady())
+			case receivedMsg.GetSummary() != nil:
+				m.RootCommandView.PublishResultsSummary(receivedMsg.GetSummary())
 			}
 		}
 	} else if m.NonInteractiveView != nil {

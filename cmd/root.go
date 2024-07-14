@@ -462,6 +462,8 @@ func ExecuteContext(ctx context.Context) {
 				},
 			}
 			rootCmd.AddCommand(pluginRootCommands)
+			pluginRootCommands.PersistentFlags().Bool("plugin-debug-mode", false, "Enable plugin debug mode (manager wont start plugin)")
+
 			for _, plgRootCmd := range plg.Config.RootCommands {
 				cmd := plgRootCmd
 				theCmd := &cobra.Command{
@@ -576,6 +578,12 @@ func ExecuteContext(ctx context.Context) {
 					},
 				}
 				pluginRootCommands.AddCommand(theCmd)
+				for _, flag := range cmd.Flags {
+					theCmd.Flags().String(flag.Name, flag.Default, flag.Description)
+					if flag.Required {
+						cobra.MarkFlagRequired(theCmd.Flags(), flag.Name)
+					}
+				}
 			}
 		}
 	}
