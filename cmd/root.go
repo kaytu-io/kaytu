@@ -452,6 +452,132 @@ func ExecuteContext(ctx context.Context) {
 			}
 			preferencesCmd.AddCommand(thePreferencesCmd)
 		}
+		if plg.Config.RootCommands != nil {
+			pluginRootCommands := &cobra.Command{
+				Use:   plg.Config.Name,
+				Short: "Plugin root commands",
+				Long:  "Plugin root commands",
+				RunE: func(c *cobra.Command, args []string) error {
+					return c.Help()
+				},
+			}
+			rootCmd.AddCommand(pluginRootCommands)
+			for _, plgRootCmd := range plg.Config.RootCommands {
+				cmd := plgRootCmd
+				theCmd := &cobra.Command{
+					Use:   cmd.Name,
+					Short: cmd.Description,
+					Long:  cmd.Description,
+					RunE: func(c *cobra.Command, args []string) error {
+						ctx := c.Context()
+
+						cfg, err := server.GetConfig()
+						if err != nil {
+							return err
+						}
+
+						manager := plugin2.New()
+						manager.SetRootCommandView()
+
+						pluginDebugMode := utils.ReadBooleanFlag(c, "plugin-debug-mode")
+						if pluginDebugMode {
+							manager.SetListenPort(30422)
+						}
+
+						err = manager.StartServer()
+						if err != nil {
+							return err
+						}
+
+						if !pluginDebugMode {
+							repoAddr := "github.com/" + plg.Config.Name
+							if plg.Config.Name == "aws" {
+								repoAddr = "aws"
+							}
+							err = manager.Install(ctx, repoAddr, "", false, false)
+							if err != nil {
+								os.Stderr.WriteString(fmt.Sprintf("failed due to %s\n", err))
+							}
+
+							runningPlg := manager.GetPlugin(plg.Config.Name)
+							if runningPlg == nil {
+								err = manager.StartPlugin(ctx, cmd.Name)
+								if err != nil {
+									return err
+								}
+							}
+						}
+
+						waitLoopCount := 100
+						if pluginDebugMode {
+							waitLoopCount = 1000
+						}
+
+						for i := 0; i < waitLoopCount; i++ {
+							runningPlg := manager.GetPlugin(plg.Config.Name)
+							if runningPlg != nil {
+								break
+							}
+							time.Sleep(100 * time.Millisecond)
+						}
+						runningPlg := manager.GetPlugin(plg.Config.Name)
+						if runningPlg == nil {
+							return fmt.Errorf("running plugin not found: %s", plg.Config.Name)
+						}
+						if runningPlg.Plugin.Config.MinKaytuVersion != "" && semver.Compare("v"+version.VERSION, runningPlg.Plugin.Config.MinKaytuVersion) == -1 {
+							return fmt.Errorf("plugin requires kaytu version %s, please update your Kaytu CLI", runningPlg.Plugin.Config.MinKaytuVersion)
+						}
+
+						flagValues := map[string]string{}
+						for _, flag := range cmd.GetFlags() {
+							value := utils.ReadStringFlag(c, flag.Name)
+							flagValues[flag.Name] = value
+						}
+
+						for _, rcmd := range runningPlg.Plugin.Config.Commands {
+							if rcmd.Name == cmd.Name {
+								preferences.Update(rcmd.DefaultPreferences)
+
+								if rcmd.LoginRequired && cfg.AccessToken == "" {
+									// login
+									err := predef.LoginCmd().RunE(c, args)
+									if err != nil {
+										return err
+									}
+
+									cfg, err = server.GetConfig()
+									if err != nil {
+										return err
+									}
+								}
+								break
+							}
+						}
+
+						err = runningPlg.Stream.Send(&golang.ServerMessage{
+							ServerMessage: &golang.ServerMessage_Start{
+								Start: &golang.StartProcess{
+									Command:          cmd.Name,
+									Flags:            flagValues,
+									KaytuAccessToken: cfg.AccessToken,
+								},
+							},
+						})
+						if err != nil {
+							return err
+						}
+
+						err = manager.RootCommandView.WaitAndShowResults()
+						if err != nil {
+							return err
+						}
+
+						return nil
+					},
+				}
+				pluginRootCommands.AddCommand(theCmd)
+			}
+		}
 	}
 
 	err = rootCmd.ExecuteContext(ctx)
