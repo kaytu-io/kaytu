@@ -73,18 +73,13 @@ func (m OverviewPage) OnClose() Page {
 func (m OverviewPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
-		"pgdown/pgup/shift+↑/↓: next/prev page",
-		"home/end/shift+h/shift+e: first/last page",
 		"←/→: scroll in the table",
 		"enter: see resource details",
 		"p: change preferences",
 		"P: change preferences for all resources",
 		"r: load all items in current page",
 		"shift+r: load all items",
-		"/: filter results",
-		"s: sort by next column",
-		"shift+r: load all items in all pages",
-		"ctrl+j: list of jobs",
+		"s: change sort",
 		"q/ctrl+c: exit",
 	})
 	return m

@@ -34,6 +34,7 @@ type PluginCustomOverviewPage struct {
 	chartDefinitionDirty bool
 
 	responsive.ResponsiveView
+	filterPlaceHolder string
 }
 
 func NewPluginCustomOverviewPageView(
@@ -91,18 +92,13 @@ func (m *PluginCustomOverviewPage) OnClose() Page {
 func (m *PluginCustomOverviewPage) OnOpen() Page {
 	m.helpController.SetKeyMap([]string{
 		"↑/↓: move",
-		"pgdown/pgup/shift+↑/↓: next/prev page",
-		"home/end/shift+h/shift+e: first/last page",
 		"←/→: scroll in the table",
 		"enter: see resource details",
 		"p: change preferences",
 		"P: change preferences for all resources",
 		"r: load all items in current page",
 		"shift+r: load all items",
-		"/: filter results",
-		"s: sort by next column",
-		"shift+r: load all items in all pages",
-		"ctrl+j: list of jobs",
+		"s: change sort",
 		"q/ctrl+c: exit",
 	})
 	return m
@@ -114,8 +110,14 @@ func (m *PluginCustomOverviewPage) Init() tea.Cmd {
 
 func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	dontSendUpdateToTable := false
+	m.table = m.table.WithStaticFooter(
+		fmt.Sprintf("%d/%d ", m.table.CurrentPage(), m.table.MaxPages()) +
+			style.HelpStyle.Render("- pgdown | pgup | shift+↑/↓ | home | end | shift+h/e"),
+	)
 
 	if m.focusOnFilter {
+		m.filterPlaceHolder = style.HelpStyle.Render("Press enter to apply")
+
 		var filterCmd tea.Cmd
 		m.filterInput, filterCmd = m.filterInput.Update(msg)
 		switch msg := msg.(type) {
@@ -131,6 +133,7 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table = m.table.WithFilterInputValue(m.filterInput.Value())
 		return m, filterCmd
 	}
+	m.filterPlaceHolder = style.HelpStyle.Render("Press / to filter")
 
 	var rows RowsWithId
 
@@ -140,20 +143,21 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			name := column.GetName()
 			if idx == m.sortColumnIdx {
 				if m.sortDesc {
-					name = name + " ↓"
+					name = style.SortedStyle.Render(name + " ↓")
 				} else {
-					name = name + " ↑"
+					name = style.SortedStyle.Render(name + " ↑")
 				}
 			}
-			width := len(name)
+			width := len(style.StyleSelector.ReplaceAllString(name, ""))
 			for _, row := range m.rows {
 				cell := row.Data[column.GetId()]
 				cellContent := ""
 				if cell != nil {
 					cellContent = strings.TrimSpace(style.StyleSelector.ReplaceAllString(cell.(string), ""))
 				}
-				if len(cellContent) > width {
-					width = len(cellContent)
+				cellLength := len(style.StyleSelector.ReplaceAllString(cellContent, ""))
+				if cellLength > width {
+					width = cellLength
 				}
 			}
 			columns = append(columns, table.NewColumn(column.GetId(), name, width).WithFiltered(true))
@@ -218,8 +222,9 @@ func (m *PluginCustomOverviewPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			rowData := table.RowData{}
 			for idx, c := range row.Cells {
 				rowData[fmt.Sprintf("%d", idx)] = c
-				if len(c) > columns[idx].Width() {
-					columns[idx] = table.NewColumn(fmt.Sprintf("%d", idx), columns[idx].Title(), len(c))
+				rowLength := len(style.StyleSelector.ReplaceAllString(c, ""))
+				if rowLength > columns[idx].Width() {
+					columns[idx] = table.NewColumn(fmt.Sprintf("%d", idx), columns[idx].Title(), rowLength)
 				}
 			}
 			rows = append(rows, table.NewRow(rowData))
@@ -375,10 +380,11 @@ func (m *PluginCustomOverviewPage) View() string {
 		summaryView = m.summaryTable.View()
 	}
 
-	return fmt.Sprintf("%s\n%s\nFilter: %s\n%s",
+	return fmt.Sprintf("%s\n%s\n Filter: %s%s\n%s",
 		summaryView,
 		m.table.View(),
 		m.filterInput.View(),
+		m.filterPlaceHolder,
 		m.statusBar.View(),
 	)
 }
