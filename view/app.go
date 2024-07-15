@@ -164,7 +164,7 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	m.pages[currentPageIdx] = model.(Page)
 
-	return m, tea.Batch(cmd, TickCmdWithDuration(100*time.Microsecond))
+	return m, tea.Batch(cmd, TickCmdWithDuration(200*time.Microsecond))
 }
 
 func (m *App) View() string {

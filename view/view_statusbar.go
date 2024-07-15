@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kaytu-io/kaytu/controller"
 	"github.com/kaytu-io/kaytu/pkg/style"
@@ -14,13 +15,17 @@ type StatusBarView struct {
 	initialization bool
 	content        string
 	width          int
+	spinner        spinner.Model
 }
 
 func NewStatusBarView(JobsController *controller.Jobs, helpController *controller.Help) StatusBarView {
-	return StatusBarView{jobsController: JobsController, helpController: helpController}
+	return StatusBarView{jobsController: JobsController, helpController: helpController,
+		spinner: spinner.New(spinner.WithSpinner(spinner.MiniDot))}
 }
 
-func (v StatusBarView) Init() tea.Cmd { return nil }
+func (v StatusBarView) Init() tea.Cmd {
+	return nil
+}
 func (v StatusBarView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -35,14 +40,13 @@ func (v StatusBarView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var helpLines []string
 	w := 0
 
-	if v.initialization {
-		line := " initializing "
+	if runningCount > 0 {
+
+		line := " " + v.spinner.View() + fmt.Sprintf(" running %d jobs, press ctrl+j to see list of jobs ", runningCount)
 		w += len(line)
 		helpLines = append(helpLines, style.JobsStatusStyle.Render(line))
-	}
-
-	if runningCount > 0 {
-		line := fmt.Sprintf(" running jobs: %d ", runningCount)
+	} else if v.initialization {
+		line := " " + v.spinner.View() + " initializing "
 		w += len(line)
 		helpLines = append(helpLines, style.JobsStatusStyle.Render(line))
 	}
@@ -70,7 +74,15 @@ func (v StatusBarView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		status = append(status, style.ErrorStatusStyle.Render(fmt.Sprintf("failed job: %s, press ctrl+j to see more", failedJobs[0]))+"\n")
 	}
 	v.content = strings.Join(status, "")
-	return v, nil
+
+	var spinnerCmd tea.Cmd
+	if _, ok := msg.(tickMsg); ok {
+		v.spinner, spinnerCmd = v.spinner.Update(v.spinner.Tick())
+	} else {
+		v.spinner, spinnerCmd = v.spinner.Update(msg)
+	}
+
+	return v, tea.Batch(spinnerCmd)
 }
 func (v StatusBarView) View() string {
 	return v.content

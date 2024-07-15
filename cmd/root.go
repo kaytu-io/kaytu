@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -93,7 +94,7 @@ func Execute() {
 func ExecuteContext(ctx context.Context) {
 	err := server.CheckForUpdate()
 	if err != nil {
-		panic(err)
+		os.Stderr.WriteString("failed to check for kaytu update due to " + err.Error())
 	}
 
 	plugins, err := server.GetPlugins()
@@ -116,7 +117,15 @@ func ExecuteContext(ctx context.Context) {
 
 	autoInstallList := []string{"aws", "kubernetes"}
 	for _, autoInstall := range autoInstallList {
-		if _, ok := foundMap[autoInstall]; !ok {
+		pluginName := autoInstall
+		if !strings.HasPrefix(pluginName, "github.com") {
+			pluginName = fmt.Sprintf("github.com/kaytu-io/plugin-%s", pluginName)
+		}
+		pluginName = strings.TrimPrefix(pluginName, "github.com/")
+		owner, repository, _ := strings.Cut(pluginName, "/")
+		pluginName = owner + "/" + repository
+
+		if _, ok := foundMap[pluginName]; !ok {
 			manager := plugin2.New()
 			err := manager.StartServer()
 			if err != nil {
@@ -188,7 +197,7 @@ func ExecuteContext(ctx context.Context) {
 						}
 						err = manager.Install(ctx, repoAddr, "", false, false)
 						if err != nil {
-							os.Stderr.WriteString(fmt.Sprintf("failed due to %s\n", err))
+							os.Stderr.WriteString(fmt.Sprintf("plugin auto-update check failed due to %s\n", err))
 						}
 
 						runningPlg := manager.GetPlugin(plg.Config.Name)

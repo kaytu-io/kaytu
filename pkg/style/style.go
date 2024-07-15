@@ -34,6 +34,7 @@ var (
 	ErrorStatusStyle = lipgloss.NewStyle().Background(lipgloss.Color("#aa2222")).Foreground(lipgloss.Color("#ffffff"))
 
 	HighlightStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#d6e6f4")).Background(lipgloss.Color("#3a5369"))
+	SortedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#dd5200"))
 
 	InfoStatusStyle  = lipgloss.NewStyle().Background(lipgloss.Color("#3a3835")).Foreground(lipgloss.Color("#ffffff"))
 	InfoStatusStyle2 = lipgloss.NewStyle().Background(lipgloss.Color("#006d69")).Foreground(lipgloss.Color("#ffffff"))
