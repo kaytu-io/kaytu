@@ -462,8 +462,12 @@ func ExecuteContext(ctx context.Context) {
 			preferencesCmd.AddCommand(thePreferencesCmd)
 		}
 		if plg.Config.RootCommands != nil {
+			pluginName := plg.Config.Name
+			if strings.HasPrefix(plg.Config.Name, "kaytu-io/") {
+				pluginName, _ = strings.CutPrefix(strings.Split(plg.Config.Name, "/")[1], "plugin-")
+			}
 			pluginRootCommands := &cobra.Command{
-				Use:   plg.Config.Name,
+				Use:   pluginName,
 				Short: "Plugin root commands",
 				Long:  "Plugin root commands",
 				RunE: func(c *cobra.Command, args []string) error {
