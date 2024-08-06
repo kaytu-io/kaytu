@@ -18,7 +18,7 @@ func CreateApiKeyRequest(accessToken, name string) (*CreateAPIKeyResponse, error
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.kaytu.io/kaytu/auth/api/v1/key/create", bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", "https://app.kaytu.io/kaytu/auth/api/v1/key/create", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("[CreateApiKeyRequest]: %v", err)
 	}
@@ -55,7 +55,7 @@ func CreateApiKeyRequest(accessToken, name string) (*CreateAPIKeyResponse, error
 }
 
 func ListApiKeyRequest(accessToken string) ([]ApiKey, error) {
-	req, err := http.NewRequest("GET", "https://api.kaytu.io/kaytu/auth/api/v1/keys", nil)
+	req, err := http.NewRequest("GET", "https://app.kaytu.io/kaytu/auth/api/v1/keys", nil)
 	if err != nil {
 		return nil, fmt.Errorf("[ListApiKeyRequest]: %v", err)
 	}
@@ -92,7 +92,7 @@ func ListApiKeyRequest(accessToken string) ([]ApiKey, error) {
 }
 
 func DeleteApiKeyRequest(accessToken, name string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://api.kaytu.io/kaytu/auth/api/v1/key/%s/delete", name), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://app.kaytu.io/kaytu/auth/api/v1/key/%s/delete", name), nil)
 	if err != nil {
 		return fmt.Errorf("[DeleteApiKeyRequest]: %v", err)
 	}
